@@ -1,0 +1,107 @@
+﻿@model BarManegment.Models.ExamEnrollment
+@{
+    ViewBag.Title = "نتيجة الامتحان";
+    Layout = "~/Areas/ExamPortal/Views/Shared/_ExamLayout.cshtml";
+
+    bool showInstantly = Model.Exam.ShowResultInstantly;
+    string result = Model.Result;
+    double? score = Model.Score;
+    double totalScore = ViewBag.TotalPossibleScore ?? 0;
+    double percentage = totalScore > 0 ? (score.GetValueOrDefault() / totalScore) * 100 : 0;
+
+    var applicantType = Session["ApplicantType"] as string ?? "Graduate";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 text-center">
+
+                <div class="card-body p-5">
+                    <h4 class="text-muted mb-4">@Model.Exam.Title</h4>
+
+                    @if (!showInstantly && (result == "ناجح" || result == "راسب"))
+                    {
+                        <div class="my-5">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                            <h2 class="mt-3 fw-bold">تم التسليم بنجاح</h2>
+                            <p class="text-muted">شكراً لك. سيتم إعلان النتائج رسمياً من قبل النقابة.</p>
+                        </div>
+                    }
+                    else if (result == "بانتظار التصحيح اليدوي")
+                    {
+                        <div class="my-5">
+                            <i class="bi bi-hourglass-split text-warning" style="font-size: 5rem;"></i>
+                            <h2 class="mt-3 fw-bold text-warning">قيد المراجعة</h2>
+                            <p class="text-muted">تم استلام إجاباتك. الامتحان يحتوي على أسئلة مقالية تتطلب تصحيحاً يدوياً.</p>
+                            @if (showInstantly && score.HasValue)
+                            {
+                                <div class="alert alert-light mt-3 border">
+                                    الدرجة الأولية (الأسئلة الموضوعية فقط): <strong dir="ltr">@score / @totalScore</strong>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (result == "ناجح")
+                    {
+                        <div class="my-5">
+                            <div class="mb-3">
+                                <i class="bi bi-trophy-fill text-warning" style="font-size: 5rem;"></i>
+                            </div>
+                            <h1 class="fw-bold text-success mb-3">ناجح</h1>
+
+                            @if (score.HasValue)
+                            {
+                                <div class="display-4 fw-bold my-4" dir="ltr">
+                                    @percentage.ToString("0")<span class="fs-2">%</span>
+                                </div>
+                                <p class="text-muted">الدرجة: @score / @totalScore</p>
+                            }
+
+                            <div class="alert alert-success mt-4">
+                                <strong>ألف مبروك!</strong> لقد اجتزت الامتحان بنجاح.
+                            </div>
+                        </div>
+                    }
+                    else if (result == "راسب")
+                    {
+                        <div class="my-5">
+                            <div class="mb-3">
+                                <i class="bi bi-x-circle text-danger" style="font-size: 5rem;"></i>
+                            </div>
+                            <h1 class="fw-bold text-danger mb-3">لم تجتز الامتحان</h1>
+
+                            @if (score.HasValue)
+                            {
+                                <div class="display-4 fw-bold my-4 text-secondary" dir="ltr">
+                                    @percentage.ToString("0")<span class="fs-2">%</span>
+                                </div>
+                                <p class="text-muted">الدرجة: @score / @totalScore</p>
+                            }
+
+                            <div class="alert alert-danger mt-4">
+                                حظاً أوفر في المرة القادمة.
+                            </div>
+                        </div>
+                    }
+
+                    <hr />
+
+                    <div class="d-grid gap-2">
+                        @if (applicantType == "ExamApplicant" && result == "ناجح")
+                        {
+                            <a href="@Url.Action("Register", "Account", new { area = "Members" })" class="btn btn-success btn-lg fw-bold shadow">
+                                <i class="bi bi-person-plus-fill me-2"></i> استكمال إجراءات التسجيل
+                            </a>
+                        }
+
+                        <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-primary">
+                            العودة للرئيسية
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

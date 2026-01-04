@@ -1,0 +1,31 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.AssignGradersViewModel
+@{ ViewBag.Title = "تعيين مصححين لامتحان: " + Model.ExamTitle; }
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header"><h4>@ViewBag.Title</h4></div>
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.ExamId)
+            @Html.HiddenFor(m => m.ExamTitle)
+            <div class="card-body">
+                <p>اختر الموظفين الذين سيقومون بتصحيح الأسئلة المقالية في هذا الامتحان. سيتم توزيع الإجابات عليهم بالتساوي.</p>
+                <hr />
+                @for (int i = 0; i < Model.Graders.Count; i++)
+                {
+                    <div class="form-check form-switch mb-2">
+                        @Html.HiddenFor(m => m.Graders[i].GraderId)
+                        @Html.HiddenFor(m => m.Graders[i].GraderName)
+                        @Html.CheckBoxFor(m => m.Graders[i].IsAssigned, new { @class = "form-check-input", role = "switch" })
+                        <label class="form-check-label">@Model.Graders[i].GraderName</label>
+                    </div>
+                }
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="حفظ وتوزيع المهام" class="btn btn-primary" />
+                @Html.ActionLink("العودة إلى الامتحانات", "Index", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

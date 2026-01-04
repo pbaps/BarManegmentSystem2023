@@ -1,0 +1,39 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.MemberSuspensionViewModel>
+
+<div class="card-body p-0">
+    @if (!Model.Any())
+    {
+        <div class="alert alert-light text-center mb-0">
+            لا يوجد فترات إيقاف مسجلة لك.
+        </div>
+    }
+    else
+    {
+        <table class="table table-hover small mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>تاريخ البدء</th>
+                    <th>تاريخ الانتهاء</th>
+                    <th>السبب</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var suspension in Model)
+                {
+                    <tr>
+                        <td>@suspension.StartDate.ToString("yyyy/MM/dd")</td>
+                        <td>@(suspension.EndDate.HasValue ? suspension.EndDate.Value.ToString("yyyy/MM/dd") : "إيقاف مفتوح")</td>
+                        <td>@suspension.Reason</td>
+                        <td>
+                            @if (suspension.Status == "سارية")
+                            {<span class="badge bg-danger">@suspension.Status</span> }
+                        else
+                        { <span class="badge bg-secondary">@suspension.Status</span>}
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

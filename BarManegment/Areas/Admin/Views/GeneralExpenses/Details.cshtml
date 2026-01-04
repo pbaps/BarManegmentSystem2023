@@ -1,0 +1,174 @@
+﻿@model BarManegment.Models.GeneralExpense
+
+@{
+    ViewBag.Title = "تفاصيل سند الصرف";
+}
+
+<style>
+    /* تنسيقات خاصة بالطباعة لجعل السند يبدو رسمياً */
+    @@media print {
+        .d-print-none {
+            display: none !important;
+        }
+        body {
+            background-color: white !important;
+            font-size: 14pt;
+        }
+        .card {
+            border: 1px solid #000 !important;
+            box-shadow: none !important;
+        }
+        .card-header {
+            background-color: #f0f0f0 !important;
+            border-bottom: 2px solid #000 !important;
+            color: black !important;
+        }
+        /* إخفاء القوائم الجانبية والعلوية في القالب الخاص بك */
+        #sidebar, #content > nav, footer {
+            display: none !important;
+        }
+        .wrapper {
+            display: block !important;
+        }
+    }
+
+    .signature-box {
+        margin-top: 50px;
+        border-top: 1px dashed #000;
+        padding-top: 10px;
+        text-align: center;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <h4 class="text-gray-800">تفاصيل سند الصرف</h4>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="bi bi-arrow-right"></i> عودة للقائمة
+            </a>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="bi bi-printer"></i> طباعة السند
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="m-0 font-weight-bold text-dark">نقابة المحامين الفلسطينيين</h5>
+                <small>الشؤون المالية</small>
+            </div>
+            <div class="text-center">
+                <h3 class="fw-bold text-decoration-underline">سند صرف مالي</h3>
+            </div>
+            <div class="text-end">
+                <div><strong>رقم السند:</strong> @Model.VoucherNumber</div>
+                <div><strong>التاريخ:</strong> @Model.ExpenseDate.ToString("yyyy/MM/dd")</div>
+            </div>
+        </div>
+        <div class="card-body">
+
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h5 class="mb-3">
+                        اصرفوا لأمر السيد/ة: <span class="fw-bold text-primary border-bottom border-dark px-3">@Model.PayeeName</span>
+                    </h5>
+                </div>
+                <div class="col-md-4">
+                    <div class="border p-2 text-center rounded bg-light">
+                        <strong>المبلغ:</strong>
+                        <span class="fs-4 fw-bold text-danger">@Model.Amount.ToString("N2")</span>
+                        <span class="small text-muted">@ViewBag.CurrencySymbol</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <p class="fs-5">
+                        <strong>مبلغ وقدره:</strong>
+                        <span class="fst-italic px-2">@ViewBag.AmountInWords</span>
+                        لا غير.
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered border-dark">
+                    <thead class="table-light border-dark">
+                        <tr>
+                            <th style="width: 20%">طريقة الدفع</th>
+                            <th style="width: 25%">الحساب المسحوب منه</th>
+                            <th style="width: 25%">حساب المصروف</th>
+                            <th style="width: 30%">البيان (وذلك عن)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                @Model.PaymentMethod
+                                @if (!string.IsNullOrEmpty(Model.ReferenceNumber))
+                                {
+                                    <br /><small>(@Model.ReferenceNumber)</small>
+                                }
+                            </td>
+                            <td>
+                                @if (Model.TreasuryAccount != null)
+                                {
+                                    @Model.TreasuryAccount.Name <span class="text-muted small">(@Model.TreasuryAccount.Code)</span>
+                                }
+                            </td>
+                            <td>
+                                @if (Model.ExpenseAccount != null)
+                                {
+                                    @Model.ExpenseAccount.Name <span class="text-muted small">(@Model.ExpenseAccount.Code)</span>
+                                }
+                                @if (Model.CostCenter != null)
+                                {
+                                    <div class="badge bg-secondary">مركز: @Model.CostCenter.Name</div>
+                                }
+                            </td>
+                            <td>@Model.Description</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-4">
+                    <div class="signature-box">
+                        توقيع المحاسب
+                        <br /><br />
+                        <small>@Model.CreatedByUserId (النظام)</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="signature-box">
+                        أمين الصندوق
+                        <br /><br />
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="signature-box">
+                        استلام المستفيد
+                        <br /><br />
+                        <small>الاسم والتوقيع</small>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="card-footer text-muted text-center small d-print-none">
+            تم الإنشاء بتاريخ: @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+            @if (Model.IsPosted)
+            {
+                <span class="badge bg-success ms-2">مرحل محاسبياً</span>
+            }
+            else
+            {
+                <span class="badge bg-warning text-dark ms-2">غير مرحل</span>
+            }
+        </div>
+    </div>
+</div>

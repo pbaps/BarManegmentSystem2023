@@ -1,0 +1,136 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.MemberOralGradingViewModel
+@{
+    ViewBag.Title = "رصد درجات الاختبار الشفوي";
+    Layout = "~/Areas/Members/Views/Shared/_CommitteeLayout.cshtml";
+
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">@Model.CommitteeName</h4>
+            <span class="text-muted"><i class="bi bi-calendar-check me-1"></i> تاريخ الامتحان: @Model.ExamDate.ToString("yyyy-MM-dd")</span>
+        </div>
+        <a href="@Url.Action("Dashboard")" class="btn btn-outline-secondary">عودة للوحة التحكم</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-success text-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i> قائمة المتدربين للتقييم</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">اسم المتدرب</th>
+                            <th>رقم الملف</th>
+                            <th>الحالة الحالية</th>
+                            <th style="width: 150px;">الدرجة (100)</th>
+                            <th>التوصية</th>
+                            <th>ملاحظات</th>
+                            <th style="width: 100px;">إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Trainees)
+                        {
+                            <tr id="row-@item.EnrollmentId">
+                                <td class="ps-4 fw-bold">@item.TraineeName</td>
+                                <td class="font-monospace">@item.TraineeNumber</td>
+                                <td>
+                                    @if (item.CurrentResult == "ناجح")
+                                    {<span class="badge bg-success">ناجح</span> }
+                                    else if (item.CurrentResult == "راسب")
+                                    { <span class="badge bg-danger">راسب</span> }
+                                    else
+                                    { <span class="badge bg-warning text-dark">@item.CurrentResult</span>}
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control grade-input" id="score-@item.EnrollmentId" value="@item.MemberScore" min="0" max="100" step="0.1" placeholder="0-100">
+                                </td>
+                                <td>
+                                    <select class="form-select result-select" id="result-@item.EnrollmentId">
+                                        <option value="">-- اختر --</option>
+                                        <option value="ناجح" @(item.CurrentResult == "ناجح" ? "selected" : "")>ناجح</option>
+                                        <option value="راسب" @(item.CurrentResult == "راسب" ? "selected" : "")>راسب</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control notes-input" id="notes-@item.EnrollmentId" value="@item.MemberNotes" placeholder="ملاحظات...">
+                                </td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm w-100 btn-save" data-id="@item.EnrollmentId">
+                                        <i class="bi bi-save"></i> حفظ
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.btn-save').click(function () {
+                var btn = $(this);
+                var id = btn.data('id');
+                var score = $('#score-' + id).val();
+                var result = $('#result-' + id).val();
+                var notes = $('#notes-' + id).val();
+                // التقاط التوكن بشكل صريح لضمان صحته
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                // التحقق من المدخلات
+                if (!score || !result) {
+                    alert('الرجاء إدخال الدرجة والتوصية.');
+                    return;
+                }
+
+                // تفعيل حالة التحميل
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+                // إرسال الطلب باستخدام ajax بدلاً من post للتحكم الأفضل
+                $.ajax({
+                    url: '@Url.Action("SubmitOralGrade")',
+                    type: 'POST',
+                    data: {
+                        enrollmentId: id,
+                        score: score,
+                        recommendation: result,
+                        notes: notes,
+                        __RequestVerificationToken: token
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            // نجاح
+                            btn.removeClass('btn-primary').addClass('btn-success').html('<i class="bi bi-check-lg"></i> تم');
+                            setTimeout(function() {
+                                btn.prop('disabled', false).removeClass('btn-success').addClass('btn-primary').html('<i class="bi bi-save"></i> حفظ');
+                            }, 2000);
+                        } else {
+                            // فشل منطقي من السيرفر مع التأكد من وجود الرسالة
+                            var errorMsg = "حدث خطأ غير محدد.";
+                            if(response && response.message) {
+                                errorMsg = response.message;
+                            }
+                            alert('خطأ: ' + errorMsg);
+                            btn.prop('disabled', false).html('<i class="bi bi-save"></i> حفظ');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // فشل الاتصال (500, 404, etc)
+                        console.error(xhr.responseText);
+                        alert('فشل الاتصال بالخادم. رمز الخطأ: ' + xhr.status);
+                        btn.prop('disabled', false).html('<i class="bi bi-save"></i> حفظ');
+                    }
+                });
+            });
+        });
+    </script>
+}

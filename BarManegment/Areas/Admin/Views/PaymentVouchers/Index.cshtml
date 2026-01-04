@@ -1,0 +1,306 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.VoucherIndexViewModel
+
+@{
+    ViewBag.Title = "إدارة قسائم الدفع";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // حساب العدادات بأمان
+    int traineeCount = Model.UnpaidTraineeVouchers?.Count ?? 0;
+    int contractorCount = Model.UnpaidContractorVouchers?.Count ?? 0;
+    int generalCount = Model.UnpaidGeneralVouchers?.Count ?? 0;
+    int paidCount = Model.PaidVouchers?.Count ?? 0;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+    <style>
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+            box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
+        }
+
+        .nav-pills .nav-link {
+            color: #495057;
+            font-weight: 600;
+            padding: 10px 20px;
+            transition: all 0.3s;
+        }
+
+            .nav-pills .nav-link:hover:not(.active) {
+                background-color: #e9ecef;
+            }
+    </style>
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="text-primary fw-bold mb-1"><i class="bi bi-cash-stack me-2"></i> @ViewBag.Title</h4>
+            <p class="text-muted small mb-0">إدارة السندات الصادرة، التحصيل، والأرشيف المالي.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("SelectTrainee", "PaymentVouchers", new { area = "Admin" })" class="btn btn-success shadow-sm"><i class="bi bi-person-plus-fill me-1"></i> قسيمة رسوم</a>
+            <a href="@Url.Action("CreateContractorVoucher", "PaymentVouchers", new { area = "Admin" })" class="btn btn-outline-primary shadow-sm"><i class="bi bi-briefcase-fill me-1"></i> قسيمة متعهد</a>
+            <a href="@Url.Action("CreateGeneralVoucher", "PaymentVouchers", new { area = "Admin" })" class="btn btn-outline-dark shadow-sm"><i class="bi bi-file-earmark-plus me-1"></i> قسيمة عامة</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+            <ul class="nav nav-pills card-header-tabs" id="voucherTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="trainee-tab" data-bs-toggle="tab" data-bs-target="#trainee" type="button" role="tab">
+                        <i class="bi bi-mortarboard me-2"></i> قسائم المتدربين <span class="badge bg-white text-primary ms-2 border rounded-pill">@traineeCount</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                        <i class="bi bi-receipt me-2"></i> قسائم عامة <span class="badge bg-white text-dark ms-2 border rounded-pill">@generalCount</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contractor-tab" data-bs-toggle="tab" data-bs-target="#contractor" type="button" role="tab">
+                        <i class="bi bi-building me-2"></i> قسائم المتعهدين <span class="badge bg-white text-dark ms-2 border rounded-pill">@contractorCount</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#paid" type="button" role="tab">
+                        <i class="bi bi-archive me-2"></i> الأرشيف <span class="badge bg-white text-success ms-2 border rounded-pill">@paidCount</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body bg-light">
+            <div class="tab-content" id="voucherTabsContent">
+
+                <div class="tab-pane fade show active" id="trainee" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table id="traineeTable" class="table table-hover align-middle mb-0 w-100">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>رقم القسيمة</th>
+                                            <th>اسم المستفيد</th>
+                                            <th>تاريخ الإصدار</th>
+                                            <th>تاريخ الانتهاء</th>
+                                            <th>المبلغ</th>
+                                            <th>الحالة</th>
+                                            <th class="text-end">إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.UnpaidTraineeVouchers != null)
+                                        {
+                                            foreach (var item in Model.UnpaidTraineeVouchers)
+                                            {
+                                                <tr>
+                                                    <td class="font-monospace">@item.Id</td>
+                                                    <td class="fw-bold text-primary">@(item.GraduateApplication?.ArabicName ?? "غير مسجل")</td>
+                                                    <td>@item.IssueDate.ToString("yyyy-MM-dd")</td>
+                                                    <td>
+                                                        @if (item.ExpiryDate < DateTime.Now)
+                                                        {<span class="text-danger fw-bold">@item.ExpiryDate.ToString("yyyy-MM-dd") (منتهية)</span> }
+                                                    else
+                                                    { <span>@item.ExpiryDate.ToString("yyyy-MM-dd")</span>}
+                                                    </td>
+                                                    <td class="fw-bold">@item.TotalAmount.ToString("N0")</td>
+                                                    <td><span class="badge bg-info text-dark">@item.Status</span></td>
+                                                    <td class="text-end">
+                                                        <div class="btn-group">
+                                                            <a href="@Url.Action("Details", new { id = item.Id, area = "Admin" })" class="btn btn-sm btn-outline-secondary" title="التفاصيل"><i class="bi bi-eye"></i></a>
+                                                            <a href="@Url.Action("PrintVoucher", new { id = item.Id, area = "Admin" })" target="_blank" class="btn btn-sm btn-outline-dark" title="طباعة"><i class="bi bi-printer"></i></a>
+                                                            <a href="@Url.Action("Create", "Receipts", new { voucherId = item.Id, area = "Admin" })" class="btn btn-sm btn-success" title="سداد"><i class="bi bi-cash-coin"></i></a>
+                                                            <a href="@Url.Action("Delete", new { id = item.Id, area = "Admin" })" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('هل أنت متأكد؟');"><i class="bi bi-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="general" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table id="generalTable" class="table table-hover align-middle mb-0 w-100">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>رقم القسيمة</th>
+                                            <th>الجهة / المستفيد</th>
+                                            <th>تاريخ الإصدار</th>
+                                            <th>تاريخ الانتهاء</th>
+                                            <th>المبلغ</th>
+                                            <th>الحالة</th>
+                                            <th class="text-end">إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.UnpaidGeneralVouchers != null)
+                                        {
+                                            foreach (var item in Model.UnpaidGeneralVouchers)
+                                            {
+                                                <tr>
+                                                    <td class="font-monospace">@item.Id</td>
+                                                    <td class="fw-bold text-dark">@(item.CheckNumber ?? "جهة خارجية")</td>
+                                                    <td>@item.IssueDate.ToString("yyyy-MM-dd")</td>
+                                                    <td>@item.ExpiryDate.ToString("yyyy-MM-dd")</td>
+                                                    <td class="fw-bold">@item.TotalAmount.ToString("N0")</td>
+                                                    <td><span class="badge bg-warning text-dark">@item.Status</span></td>
+                                                    <td class="text-end">
+                                                        <div class="btn-group">
+                                                            <a href="@Url.Action("Details", new { id = item.Id, area = "Admin" })" class="btn btn-sm btn-outline-secondary" title="التفاصيل"><i class="bi bi-eye"></i></a>
+                                                            <a href="@Url.Action("PrintVoucher", new { id = item.Id, area = "Admin" })" target="_blank" class="btn btn-sm btn-outline-dark" title="طباعة"><i class="bi bi-printer"></i></a>
+                                                            <a href="@Url.Action("Create", "Receipts", new { voucherId = item.Id, area = "Admin" })" class="btn btn-sm btn-success" title="سداد"><i class="bi bi-cash-coin"></i></a>
+                                                            <a href="@Url.Action("Delete", new { id = item.Id, area = "Admin" })" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('هل أنت متأكد؟');"><i class="bi bi-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="contractor" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table id="contractorTable" class="table table-hover align-middle mb-0 w-100">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>رقم القسيمة</th>
+                                            <th>اسم المتعهد</th>
+                                            <th>تاريخ الإصدار</th>
+                                            <th>المبلغ</th>
+                                            <th>الحالة</th>
+                                            <th class="text-end">إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.UnpaidContractorVouchers != null)
+                                        {
+                                            foreach (var item in Model.UnpaidContractorVouchers)
+                                            {
+                                                <tr>
+                                                    <td class="font-monospace">@item.Voucher.Id</td>
+                                                    <td class="fw-bold text-dark">@item.ContractorName</td>
+                                                    <td>@item.Voucher.IssueDate.ToString("yyyy-MM-dd")</td>
+                                                    <td class="fw-bold">@item.Voucher.TotalAmount.ToString("N0")</td>
+                                                    <td><span class="badge bg-warning text-dark">@item.Voucher.Status</span></td>
+                                                    <td class="text-end">
+                                                        <div class="btn-group">
+                                                            <a href="@Url.Action("PrintStampContractorVoucher", new { id = item.Voucher.Id, area = "Admin" })" target="_blank" class="btn btn-sm btn-outline-dark" title="طباعة"><i class="bi bi-printer"></i></a>
+                                                            <a href="@Url.Action("CreateContractorReceipt", "Receipts", new { voucherId = item.Voucher.Id, area = "Admin" })" class="btn btn-sm btn-success" title="سداد"><i class="bi bi-cash-coin"></i></a>
+                                                            <a href="@Url.Action("Delete", new { id = item.Voucher.Id, area = "Admin" })" class="btn btn-sm btn-danger" title="حذف" onclick="return confirm('هل أنت متأكد؟');"><i class="bi bi-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="paid" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table id="paidTable" class="table table-hover align-middle mb-0 w-100">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>رقم القسيمة</th>
+                                            <th>اسم المستفيد</th>
+                                            <th>تاريخ السداد</th>
+                                            <th>المبلغ</th>
+                                            <th>الحالة</th>
+                                            <th class="text-end">إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.PaidVouchers != null)
+                                        {
+                                            foreach (var item in Model.PaidVouchers)
+                                            {
+                                                <tr>
+                                                    <td class="font-monospace">@item.Id</td>
+                                                    <td>
+                                                        @if (item.GraduateApplication != null)
+                                                        {@item.GraduateApplication.ArabicName }
+                                                    else if (!string.IsNullOrEmpty(item.CheckNumber))
+                                                    { @item.CheckNumber }
+                                                else
+                                                { <span class="text-muted">متعهد/جهة خارجية</span>}
+                                                    </td>
+                                                    <td>@item.IssueDate.ToString("yyyy-MM-dd")</td>
+                                                    <td class="fw-bold text-success">@item.TotalAmount.ToString("N0")</td>
+                                                    <td><span class="badge bg-success">مسدد</span></td>
+                                                    <td class="text-end">
+                                                        <div class="btn-group">
+                                                            <a href="@Url.Action("Details", new { id = item.Id, area = "Admin" })" class="btn btn-sm btn-outline-secondary">تفاصيل</a>
+                                                            <a href="@Url.Action("Details", "Receipts", new { id = item.Id, area = "Admin" })" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-text"></i> الإيصال</a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var options = {
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.8/i18n/ar.json" },
+                "pageLength": 10,
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "الكل"]],
+                "order": [[0, "desc"]]
+            };
+
+            // تهيئة الجداول
+            $('#traineeTable').DataTable(options);
+            $('#generalTable').DataTable(options);
+            $('#contractorTable').DataTable(options);
+            $('#paidTable').DataTable(options);
+        });
+    </script>
+}

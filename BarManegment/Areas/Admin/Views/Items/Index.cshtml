@@ -1,0 +1,76 @@
+﻿@model IEnumerable<BarManegment.Models.Item>
+
+@{
+    ViewBag.Title = "إدارة الأصناف والمخزون";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary fw-bold"><i class="bi bi-list-ul me-2"></i> دليل الأصناف والمخزون</h4>
+        <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> تعريف صنف جديد
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الصنف</th>
+                            <th>التصنيف</th>
+                            <th>الكمية الحالية</th>
+                            <th>متوسط التكلفة</th>
+                            <th>قيمة المخزون</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            bool isLowStock = item.CurrentQuantity <= item.ReorderLevel;
+                            <tr>
+                                <td>@item.Code</td>
+                                <td class="fw-bold">@item.Name</td>
+                                <td><span class="badge bg-secondary">@(item.ItemCategory?.Name ?? "-")</span></td>
+                                <td>
+                                    @if (isLowStock)
+                                    {
+                                        <span class="text-danger fw-bold">@item.CurrentQuantity <i class="bi bi-exclamation-circle" title="وصل لحد الطلب"></i></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success fw-bold">@item.CurrentQuantity</span>
+                                    }
+                                </td>
+                                <td>@item.AverageCost.ToString("N2")</td>
+                                <td class="fw-bold">@((item.CurrentQuantity * item.AverageCost).ToString("N2"))</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+
+                                        <form action="@Url.Action("Delete", new { id = item.Id })" method="post" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا الصنف؟');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-box-seam fs-1 d-block mb-3 opacity-25"></i>
+                    <h5>لا توجد أصناف معرفة</h5>
+                    <p class="small">قم بإضافة أصناف جديدة للبدء في عمليات الشراء والصرف.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

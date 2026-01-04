@@ -1,0 +1,73 @@
+﻿@model IEnumerable<BarManegment.Models.ExchangeRate>
+@{
+    ViewBag.Title = "إدارة أسعار الصرف";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    var latestRates = ViewBag.LatestRates as List<BarManegment.Models.ExchangeRate>;
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="row mb-4">
+        @if (latestRates != null)
+        {
+            foreach (var rate in latestRates)
+            {
+                <div class="col-md-3 col-sm-6">
+                    <div class="card shadow-sm border-start border-4 border-success">
+                        <div class="card-body">
+                            <h6 class="text-muted">@rate.Currency.Name (@rate.Currency.Symbol)</h6>
+                            <h3 class="fw-bold mb-0">@rate.Rate.ToString("0.00") <small class="fs-6 text-muted">شيكل</small></h3>
+                            <small class="text-muted" style="font-size: 0.75rem;">تحديث: @rate.Date.ToString("yyyy/MM/dd")</small>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        <div class="col-md-3 col-sm-6">
+            <a href="@Url.Action("Create")" class="card h-100 border-2 border-dashed border-primary text-decoration-none d-flex align-items-center justify-content-center bg-light">
+                <div class="text-center text-primary">
+                    <i class="bi bi-plus-circle fs-2"></i>
+                    <div class="fw-bold mt-1">تحديث الأسعار</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 text-primary"><i class="bi bi-clock-history me-2"></i> سجل تغيرات الأسعار</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>العملة</th>
+                            <th>سعر التحويل (شيكل)</th>
+                            <th>تاريخ السريان</th>
+                            <th>المدخل</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold">@item.Currency.Name <span class="badge bg-secondary">@item.Currency.Symbol</span></td>
+                                <td class="text-success fw-bold">@item.Rate.ToString("0.0000")</td>
+                                <td>@item.Date.ToString("yyyy/MM/dd")</td>
+                                <td>@item.CreatedBy</td>
+                                <td>
+                                    @using (Html.BeginForm("Delete", "ExchangeRates", new { id = item.Id }, FormMethod.Post, new { onsubmit = "return confirm('هل أنت متأكد من الحذف؟');", style = "display:inline" }))
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

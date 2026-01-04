@@ -1,0 +1,109 @@
+﻿@model BarManegment.Models.LawyerFinancialAid
+
+@{
+    ViewBag.Title = "تعديل المساعدة المالية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i> تعديل بيانات المساعدة</h5>
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-light border-0">إلغاء</a>
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="alert alert-info d-flex align-items-center mb-4">
+                        <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                        <div>
+                            <strong>تعديل لـ:</strong> @ViewBag.LawyerName
+                            <div class="small">لا يمكن تغيير المحامي المستفيد، فقط تفاصيل المساعدة.</div>
+                        </div>
+                    </div>
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+                        @Html.HiddenFor(model => model.LawyerId)
+                        @Html.HiddenFor(model => model.DecisionDate)
+                        @Html.HiddenFor(model => model.IsPaid)
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">نوع المساعدة</label>
+                                @Html.DropDownList("AidTypeId", null, new { @class = "form-select", required = "required" })
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">المبلغ</label>
+                                @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.01" } })
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">العملة</label>
+                                @Html.DropDownList("CurrencyId", null, new { @class = "form-select" })
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">ملاحظات</label>
+                                @Html.TextAreaFor(model => model.Notes, new { @class = "form-control", rows = 2 })
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+                        <h6 class="text-secondary fw-bold mb-3">بيانات الصرف</h6>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">طريقة التحويل</label>
+                                @Html.DropDownListFor(model => model.DisbursementMethod, new List<SelectListItem>
+                                {
+                                    new SelectListItem{ Text="تحويل بنكي", Value="BankTransfer"},
+                                    new SelectListItem{ Text="محفظة إلكترونية", Value="Wallet"},
+                                    new SelectListItem{ Text="نقد", Value="Cash"}
+                                }, new { @class = "form-select", id = "methodSelect" })
+                            </div>
+
+                            <div class="col-md-8 bank-fields">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small">البنك</label>
+                                        @Html.EditorFor(model => model.TargetBankName, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">الآيبان</label>
+                                        @Html.EditorFor(model => model.TargetIban, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-8 wallet-fields" style="display:none;">
+                                <label class="form-label">رقم المحفظة</label>
+                                @Html.EditorFor(model => model.TargetWalletNumber, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-warning px-4 fw-bold">حفظ التعديلات</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function toggleFields() {
+                var val = $('#methodSelect').val();
+                if (val === 'BankTransfer') { $('.bank-fields').show(); $('.wallet-fields').hide(); }
+                else if (val === 'Wallet') { $('.bank-fields').hide(); $('.wallet-fields').show(); }
+                else { $('.bank-fields').hide(); $('.wallet-fields').hide(); }
+            }
+            $('#methodSelect').change(toggleFields);
+            toggleFields(); // Run on load
+        });
+    </script>
+}

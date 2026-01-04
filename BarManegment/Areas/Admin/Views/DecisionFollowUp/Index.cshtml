@@ -1,0 +1,87 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.DecisionFollowUpViewModel
+@{ ViewBag.Title = "متابعة تنفيذ القرارات"; Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml"; }
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h4 class="m-0 font-weight-bold text-primary">متابعة تنفيذ القرارات - (@ViewBag.SelectedSession)</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>القرار (ID)</th>
+                    <th>تفاصيل القرار</th>
+                    <th>حالة التنفيذ</th>
+                    <th>الموظف المكلف</th>
+                    <th>إجراء السكرتير</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Decisions)
+                {
+                    <tr>
+                        <td>@item.Id (جلسة @item.CouncilSession.SessionNumber)</td>
+                        <td>
+                            <strong>@item.Title</strong>
+                            <p class="small text-muted mb-0">نص القرار: @item.DecisionText</p>
+
+                            @if (item.ExecutionStatus.Contains("أعيد للسكرتير") && !string.IsNullOrEmpty(item.EmployeeExecutionNotes))
+                            {
+                                <div class="alert alert-info mt-2 mb-0 p-2">
+                                    <strong><i class="bi bi-info-circle-fill"></i> ملاحظات الموظف (للمراجعة):</strong>
+                                    <p class="mb-0 small" style="white-space: pre-wrap;">@item.EmployeeExecutionNotes</p>
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (item.ExecutionStatus == "تم التنفيذ")
+                            {<span class="badge bg-success">تم التنفيذ</span> }
+                            else if (item.ExecutionStatus == "بانتظار التنفيذ")
+                            { <span class="badge bg-warning text-dark">بانتظار التنفيذ</span> }
+                            else
+                            { <span class="badge bg-danger">@item.ExecutionStatus</span>}
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.AssignedForExecutionUserId) && Model.EmployeeNameMap.ContainsKey(item.AssignedForExecutionUserId))
+                            {
+                                @Model.EmployeeNameMap[item.AssignedForExecutionUserId]
+                            }
+                            else
+                            {
+                                @item.AssignedForExecutionUserId
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal-@item.Id">
+                                <i class="bi bi-person-check"></i>
+                                @(item.ExecutionStatus.Contains("أعيد للسكرتير") ? "إعادة تعيين" : "تعيين")
+                            </button>
+
+                            <div class="modal fade" id="assignModal-@item.Id" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        @using (Html.BeginForm("AssignForExecution", "DecisionFollowUp", new { area = "Admin" }))
+                                        {
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">تعيين موظف</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <input type="hidden" name="itemId" value="@item.Id" />
+                                                <label>اختر الموظف:</label>
+                                                @Html.DropDownList("employeeUsername", Model.EmployeesList, "---", new { @class = "form-select" })
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-primary">حفظ التعيين</button>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,140 @@
+﻿@model BarManegment.Models.Exam
+@{
+    ViewBag.Title = "تعديل الامتحان";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-warning text-dark py-3">
+            <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i> @ViewBag.Title</h4>
+        </div>
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.Id)
+
+            <div class="card-body p-4">
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                <h5 class="text-primary mb-3 border-bottom pb-2">بيانات الامتحان الأساسية</h5>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="form-floating mb-3">
+                            @Html.EditorFor(model => model.Title, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                            @Html.LabelFor(model => model.Title)
+                            @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating mb-3">
+                            @Html.DropDownList("ExamTypeId", null, "--- اختر نوع الامتحان ---", htmlAttributes: new { @class = "form-select" })
+                            @Html.LabelFor(model => model.ExamTypeId)
+                            @Html.ValidationMessageFor(model => model.ExamTypeId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(model => model.StartTime, new { @class = "form-label fw-bold" })
+                            @Html.TextBoxFor(model => model.StartTime, "{0:yyyy-MM-ddTHH:mm}", new { @class = "form-control", id = "startTime", type = "datetime-local" })
+                            @Html.ValidationMessageFor(model => model.StartTime, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(model => model.EndTime, new { @class = "form-label fw-bold" })
+                            @Html.TextBoxFor(model => model.EndTime, "{0:yyyy-MM-ddTHH:mm}", new { @class = "form-control", id = "endTime", type = "datetime-local" })
+                            @Html.ValidationMessageFor(model => model.EndTime, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            @Html.EditorFor(model => model.DurationInMinutes, new { htmlAttributes = new { @class = "form-control", placeholder = " ", id = "duration", type = "number" } })
+                            @Html.LabelFor(model => model.DurationInMinutes)
+                            @Html.ValidationMessageFor(model => model.DurationInMinutes, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            @Html.EditorFor(model => model.PassingPercentage, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number" } })
+                            @Html.LabelFor(model => model.PassingPercentage)
+                            @Html.ValidationMessageFor(model => model.PassingPercentage, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💡 إضافة: شروط الاختبار الوظيفي -->
+                <h5 class="text-primary mt-4 mb-3 border-bottom pb-2">
+                    <i class="bi bi-briefcase me-2"></i> شروط التقدم (للاختبارات الوظيفية فقط)
+                </h5>
+
+                <div class="row g-3 bg-light p-3 rounded border mb-3">
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            @Html.EditorFor(model => model.MinPracticeYears, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number" } })
+                            @Html.LabelFor(model => model.MinPracticeYears)
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            @Html.DropDownList("RequiredApplicationStatusId", null, "--- (اختياري) الحالة المطلوبة ---", htmlAttributes: new { @class = "form-select" })
+                            @Html.LabelFor(model => model.RequiredApplicationStatusId)
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-floating">
+                            @Html.TextAreaFor(model => model.RequirementsNote, new { @class = "form-control", placeholder = " ", style = "height: 80px;" })
+                            @Html.LabelFor(model => model.RequirementsNote)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3 p-3 border rounded bg-light">
+                            @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input ms-2", role = "switch" })
+                            @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label fw-bold" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3 p-3 border rounded bg-light">
+                            @Html.CheckBoxFor(model => model.ShowResultInstantly, new { @class = "form-check-input ms-2", role = "switch" })
+                            @Html.LabelFor(model => model.ShowResultInstantly, new { @class = "form-check-label fw-bold" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light d-flex justify-content-end gap-2">
+                @Html.ActionLink("إلغاء", "Index", null, new { @class = "btn btn-secondary" })
+                <button type="submit" class="btn btn-warning px-5"><i class="bi bi-save me-1"></i> حفظ التعديلات</button>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            $('#startTime, #endTime').on('change', function () {
+                var start = new Date($('#startTime').val());
+                var end = new Date($('#endTime').val());
+                if (end > start) {
+                    var diffMs = end - start;
+                    var diffMins = Math.round(diffMs / 60000);
+                    // تحديث المدة فقط إذا لم يكن المستخدم قد أدخلها يدوياً أو كانت 0
+                    if ($('#duration').val() == 0 || $('#duration').val() == "") {
+                        $('#duration').val(diffMins);
+                    }
+                }
+            });
+        });
+    </script>
+}

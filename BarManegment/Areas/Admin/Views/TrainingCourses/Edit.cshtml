@@ -1,0 +1,46 @@
+﻿@model BarManegment.Models.TrainingCourse
+@{
+    ViewBag.Title = "تعديل بيانات الدورة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-warning text-dark"><i class="bi bi-pencil-square me-2"></i> @ViewBag.Title</h5>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-right me-1"></i> العودة للقائمة
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="mb-3">
+                            @Html.LabelFor(model => model.CourseName, "اسم الدورة", htmlAttributes: new { @class = "form-label fw-bold" })
+                            @Html.EditorFor(model => model.CourseName, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.CourseName, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.Description, "وصف الدورة", htmlAttributes: new { @class = "form-label fw-bold" })
+                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = "5" })
+                            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="text-end border-top pt-3">
+                            <button type="submit" class="btn btn-warning px-4 fw-bold">
+                                <i class="bi bi-check-lg me-1"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

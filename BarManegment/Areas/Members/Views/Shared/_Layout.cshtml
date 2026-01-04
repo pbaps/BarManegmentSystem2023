@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - نقابة المحامين</title>
+
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            border-bottom: 1px solid #dee2e6;
+            background-color: #fff;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .content-wrapper {
+            flex-grow: 1;
+            padding-bottom: 40px;
+        }
+
+        .footer {
+            background-color: #e9ecef;
+            color: #6c757d;
+            padding: 1.5rem 0;
+            margin-top: auto;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .nav-link.active {
+            font-weight: bold;
+            color: #0d6efd !important;
+        }
+    </style>
+    @RenderSection("styles", required: false)
+</head>
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
+            <div class="container">
+                <a class="navbar-brand" href="@Url.Action("Index", "Dashboard", new { area = "Members" })">
+                    <i class="bi bi-briefcase-fill me-2 text-primary"></i>
+                    بوابة المحامين والمتدربين
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Index", "Dashboard", new { area = "Members" })">
+                                <i class="bi bi-speedometer2"></i> لوحة التحكم
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Index", "CouncilRequests", new { Area = "Members" })">
+                                <i class="bi bi-envelope-paper"></i> طلبات المجلس
+                            </a>
+                        </li>
+
+                        @* 💡💡 الإضافة: رابط بوابة اللجان (للمحامين وأعضاء اللجان فقط) 💡💡 *@
+                        @{
+                            var userType = Session["UserType"] as string;
+                            // التحقق إذا كان المستخدم محامياً (Advocate) أو عضو لجنة (CommitteeMember)
+                            bool canAccessCommittees = !string.IsNullOrEmpty(userType) && (userType == "Advocate" || userType == "CommitteeMember");
+                        }
+
+                        @if (canAccessCommittees)
+                        {
+                            <li class="nav-item ms-lg-2">
+                                <a class="nav-link fw-bold text-success border border-success rounded px-3" href="@Url.Action("Dashboard", "CommitteePortal", new { area = "Members" })">
+                                    <i class="bi bi-gavel me-1"></i> بوابة اللجان
+                                </a>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="ms-auto">
+                        @Html.Partial("_LoginPartial")
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container content-wrapper mt-4">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <span>&copy; @DateTime.Now.Year - نقابة المحامين الفلسطينيين - جميع الحقوق محفوظة.</span>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

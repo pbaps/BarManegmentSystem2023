@@ -1,0 +1,47 @@
+﻿@model BarManegment.Models.TrainingSession
+@{
+    ViewBag.Title = "حذف جلسة تدريبية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-danger mb-4">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-trash3-fill me-2"></i> تأكيد الحذف</h5>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <h4 class="text-danger mb-3">هل أنت متأكد من حذف هذه الجلسة؟</h4>
+                    <p class="text-muted mb-4">
+                        سيتم حذف الجلسة <strong>"@Model.SessionTitle"</strong> وأي سجلات حضور مرتبطة بها.
+                    </p>
+
+                    <div class="bg-light p-3 rounded border mb-4 text-start">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">عنوان الجلسة:</dt>
+                            <dd class="col-sm-8 fw-bold">@Model.SessionTitle</dd>
+
+                            <dt class="col-sm-4">التاريخ:</dt>
+                            <dd class="col-sm-8">@Model.SessionDate.ToString("yyyy-MM-dd hh:mm tt")</dd>
+
+                            <dt class="col-sm-4">المحاضر:</dt>
+                            <dd class="col-sm-8">@Model.InstructorName</dd>
+                        </dl>
+                    </div>
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="@Url.Action("Index", new { courseId = Model.TrainingCourseId })" class="btn btn-secondary px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-danger px-4 fw-bold">
+                                <i class="bi bi-trash-fill me-1"></i> تأكيد الحذف
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,102 @@
+﻿@model IEnumerable<BarManegment.Areas.Admin.ViewModels.CommitteeViewModel>
+@{
+    ViewBag.Title = "إدارة لجان المناقشة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm"><i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm"><i class="bi bi-exclamation-triangle me-2"></i> @TempData["ErrorMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary fw-bold"><i class="bi bi-people-fill me-2"></i> @ViewBag.Title</h4>
+        <a href="@Url.Action("Create")" class="btn btn-success shadow-sm"><i class="bi bi-plus-lg me-2"></i> تشكيل لجنة جديدة</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <ul class="nav nav-pills card-header-pills">
+                <li class="nav-item"><a class="nav-link @(ViewBag.Filter == "Active" ? "active" : "")" href="@Url.Action("Index", new { filter = "Active" })">لجان فعالة</a></li>
+                <li class="nav-item"><a class="nav-link @(ViewBag.Filter == "Inactive" ? "active" : "")" href="@Url.Action("Index", new { filter = "Inactive" })">لجان غير فعالة</a></li>
+                <li class="nav-item"><a class="nav-link @(ViewBag.Filter == "All" ? "active" : "")" href="@Url.Action("Index", new { filter = "All" })">الكل</a></li>
+            </ul>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">اسم اللجنة</th>
+                            <th>تاريخ التشكيل</th>
+                            <th>عدد الأعضاء</th>
+                            <th>الأبحاث (المتدربين)</th>
+                            <th>الحالة</th>
+                            <th class="text-end pe-4">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold">@item.CommitteeName</td>
+                                <td>@item.FormationDate.ToString("yyyy-MM-dd")</td>
+                                <td><span class="badge bg-secondary">@item.MemberCount أعضاء</span></td>
+                                <td>
+                                    @if (item.AssignedResearchesCount > 0)
+                                    {
+                                        <span class="badge bg-info text-dark">@item.AssignedResearchesCount بحث</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">لا يوجد</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> نشطة</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">مؤرشفة</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group shadow-sm">
+                                        @* 💡 هذا الزر يوجه لصفحة التفاصيل حيث يمكن إضافة الأبحاث والمتدربين *@
+                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-primary" title="إدارة الأبحاث وتعيين المتدربين">
+                                            <i class="bi bi-journal-plus me-1"></i> إدارة الأبحاث
+                                        </a>
+
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-secondary" title="تعديل بيانات اللجنة">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        @using (Html.BeginForm("ToggleStatus", "CommitteeManagement", new { id = item.Id }, FormMethod.Post, new { @class = "d-inline" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning text-dark" title="@(item.IsActive ? "أرشفة/إيقاف" : "تفعيل")" onclick="return confirm('هل أنت متأكد من تغيير حالة اللجنة؟')">
+                                                <i class="bi @(item.IsActive ? "bi-archive" : "bi-arrow-clockwise")"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="6" class="text-center py-5 text-muted">لا توجد لجان مناقشة مسجلة حالياً.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

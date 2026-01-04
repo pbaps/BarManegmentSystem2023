@@ -1,0 +1,90 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CommitteeMemberDashboardViewModel
+@{
+    ViewBag.Title = "بوابة عضو اللجنة";
+    Layout = "~/Areas/Members/Views/Shared/_CommitteeLayout.cshtml";
+
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="alert alert-primary border-0 shadow-sm d-flex align-items-center mb-4">
+        <div class="display-6 me-3"><i class="bi bi-person-workspace"></i></div>
+        <div>
+            <h4 class="alert-heading mb-1">مرحباً، الأستاذ/ة @Model.LawyerName</h4>
+            <p class="mb-0">أهلاً بك في بوابة أعضاء اللجان. يمكنك من هنا إدارة ورصد درجات اللجان التي تشارك في عضويتها.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- لجان الاختبار الشفوي -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-success"><i class="bi bi-mic-fill me-2"></i> لجان الاختبار الشفوي</h5>
+                    <span class="badge bg-success rounded-pill">@Model.OralCommittees.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.OralCommittees.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var committee in Model.OralCommittees)
+                            {
+                                <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="fw-bold mb-1">@committee.CommitteeName</h6>
+                                        <small class="text-muted"><i class="bi bi-calendar-event me-1"></i> تاريخ التشكيل: @committee.FormationDate.ToString("yyyy-MM-dd")</small>
+                                    </div>
+                                    <a href="@Url.Action("GradeOralExam", new { committeeId = committee.Id })" class="btn btn-sm btn-outline-success fw-bold">
+                                        رصد الدرجات <i class="bi bi-arrow-left"></i>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-50"></i>
+                            لا توجد لجان اختبار شفوي فعالة مسجلة لك حالياً.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- لجان مناقشة الأبحاث -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-journal-check me-2"></i> لجان الأبحاث</h5>
+                    <span class="badge bg-primary rounded-pill">@Model.ResearchCommittees.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.ResearchCommittees.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var committee in Model.ResearchCommittees)
+                            {
+                                <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="fw-bold mb-1">@committee.CommitteeName</h6>
+                                        <small class="text-muted"><i class="bi bi-files me-1"></i> عدد الأبحاث: @committee.Researches.Count</small>
+                                    </div>
+                                    <a href="@Url.Action("EvaluateResearch", new { committeeId = committee.Id })" class="btn btn-sm btn-outline-primary fw-bold">
+                                        تقييم الأبحاث <i class="bi bi-arrow-left"></i>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x fs-1 d-block mb-2 opacity-50"></i>
+                            لا توجد لجان مناقشة أبحاث فعالة مسجلة لك حالياً.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

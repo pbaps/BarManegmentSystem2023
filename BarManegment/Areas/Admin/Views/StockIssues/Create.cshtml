@@ -1,0 +1,121 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.StockIssueViewModel
+
+@{
+    ViewBag.Title = "إذن صرف مخزني";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-warning bg-opacity-25 text-dark">
+            <h5 class="mb-0"><i class="bi bi-box-arrow-right me-2"></i> صرف مواد (عهدة / استهلاك)</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Create", "StockIssues", FormMethod.Post, new { id = "issueForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">@Html.ValidationSummary()</div>
+                }
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">تاريخ الصرف</label>
+                        @Html.EditorFor(model => model.IssueDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">القسم / الجهة المستفيدة</label>
+                        @Html.EditorFor(model => model.DepartmentName, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: لجنة التدريب، الاستقبال..." } })
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">صرف للموظف (اختياري)</label>
+                        @Html.DropDownList("EmployeeId", null, "اختر الموظف...", new { @class = "form-select select2" })
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">ملاحظات</label>
+                    @Html.TextAreaFor(model => model.Notes, new { @class = "form-control", rows = 2 })
+                </div>
+
+                <hr />
+
+                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-list-task me-2"></i> الأصناف المراد صرفها</h6>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60%">الصنف (الكمية المتوفرة)</th>
+                                <th style="width: 30%">الكمية المصروفة</th>
+                                <th style="width: 10%">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3">
+                                    <button type="button" class="btn btn-sm btn-outline-warning text-dark" id="btnAddRow">
+                                        <i class="bi bi-plus-circle"></i> إضافة صنف للقائمة
+                                    </button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                    <button type="submit" class="btn btn-warning px-5 fw-bold">تأكيد الصرف وخصم المخزون</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var itemsList = @Html.Raw(Json.Encode(ViewBag.ItemsList));
+            var rowIndex = 0;
+
+            function getItemsOptions() {
+                var options = '<option value="">اختر الصنف...</option>';
+                $.each(itemsList, function (i, item) {
+                    options += `<option value="${item.Id}">${item.Name}</option>`;
+                });
+                return options;
+            }
+
+            $('#btnAddRow').click(function () {
+                var rowHtml = `
+                    <tr>
+                        <td>
+                            <select name="Items[${rowIndex}].ItemId" class="form-select item-select" required>
+                                ${getItemsOptions()}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="Items[${rowIndex}].Quantity" class="form-control" min="1" value="1" required />
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger remove-row"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+                $('#itemsBody').append(rowHtml);
+                $('.item-select').last().select2({ theme: "bootstrap-5", dir: "rtl", width: '100%' });
+                rowIndex++;
+            });
+
+            $(document).on('click', '.remove-row', function () {
+                $(this).closest('tr').remove();
+            });
+
+            $('#btnAddRow').click();
+        });
+    </script>
+}

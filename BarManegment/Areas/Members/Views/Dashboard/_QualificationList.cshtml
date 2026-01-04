@@ -1,0 +1,48 @@
+﻿@model IEnumerable<BarManegment.Models.Qualification>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>نوع المؤهل</th>
+                <th>اسم الجامعة / المدرسة</th>
+                <th>سنة التخرج</th>
+                <th>المعدل</th>
+                <th class="text-center" style="width: 50px;">حذف</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.QualificationType.Name</td>
+                        <td>@item.UniversityName</td>
+                        <td>@item.GraduationYear</td>
+                        <td>@(item.GradePercentage.HasValue ? $"{item.GradePercentage.Value}%" : "N/A")</td>
+                        <td class="text-center">
+                            @using (Html.BeginForm("DeleteQualification", "Dashboard", new { area = "Members", qualificationId = item.Id }, FormMethod.Post, new { @class = "d-inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا المؤهل؟');" title="حذف المؤهل">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-3">
+                        <i class="bi bi-info-circle me-2"></i> لم يتم إضافة أي مؤهلات علمية بعد.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+

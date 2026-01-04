@@ -1,0 +1,42 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.MemberShareViewModel>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover mb-0">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.TransactionId)</th>
+                <th>@Html.DisplayNameFor(model => model.ContractTypeName)</th>
+                <th>@Html.DisplayNameFor(model => model.PaymentDate)</th>
+                <th>@Html.DisplayNameFor(model => model.LawyerShareAmount)</th>
+                <th>@Html.DisplayNameFor(model => model.Status)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted p-3">
+                        لا يوجد معاملات تصديقات مسجلة باسمك حتى الآن.
+                    </td>
+                </tr>
+            }
+            @foreach (var item in Model)
+            {
+                string statusClass = "";
+                if (item.Status == "مرسلة للبنك") { statusClass = "table-success"; }
+                if (item.Status == "محجوزة") { statusClass = "table-danger"; }
+                if (item.Status == "جاهزة للدفع") { statusClass = "table-primary"; }
+
+                <tr class="@statusClass">
+                    <td>@Html.DisplayFor(modelItem => item.TransactionId)</td>
+                    <td>@Html.DisplayFor(modelItem => item.ContractTypeName)</td>
+                    <td>@item.PaymentDate.ToString("yyyy-MM-dd")</td>
+                    <td>@item.LawyerShareAmount.ToString("N2")</td>
+                    <td>
+                        <strong>@Html.DisplayFor(modelItem => item.Status)</strong>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

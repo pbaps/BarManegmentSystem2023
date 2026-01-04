@@ -1,0 +1,33 @@
+﻿@{
+    ViewBag.Title = "تأكيد تسجيل الخروج";
+    // ملاحظة: قد تحتاج لتغيير مسار الـ Layout
+    // Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+    // Layout = "~/Areas/ExamPortal/Views/Shared/_ExamLayout.cshtml";
+    // Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h4 class="card-title">@ViewBag.Title</h4>
+    </div>
+    <div class="card-body text-center">
+        <p class="lead">هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+
+        @* هذا النموذج هو أهم جزء *@
+        @using (Html.BeginForm("LogOff", null, FormMethod.Post, new { id = "logoffForm" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <button type_submit" class="btn btn-danger btn-lg">
+                <i class="bi bi-box-arrow-right"></i> نعم، تسجيل الخروج
+            </button>
+
+            @* زر "العودة" يختلف حسب المكان.
+                يمكنك استخدام (history.back) للرجوع للصفحة السابقة
+            *@
+            <a href="javascript:history.back()" class="btn btn-secondary btn-lg">
+                <i class="bi bi-x-circle"></i> إلغاء
+            </a>
+        }
+    </div>
+</div>

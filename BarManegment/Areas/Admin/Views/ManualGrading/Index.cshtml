@@ -1,0 +1,36 @@
+﻿@model IEnumerable<BarManegment.Areas.Admin.ViewModels.ManualGradingIndexViewModel>
+@{
+    ViewBag.Title = "قائمة التصحيح اليدوي";
+    var currentUserId = (int)Session["UserId"];
+    var currentUserType = (int)Session["UserTypeId"];
+    var adminTypeId = 1; // افترض أن ID الخاص بالمسؤول هو 1
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header"><h4>@ViewBag.Title</h4></div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr><th>الامتحان</th><th>اسم المتقدم</th><th>المصحح المعين</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.ExamTitle</td>
+                            <td>@item.ApplicantName</td>
+                            <td><span class="badge bg-secondary">@item.GraderName</span></td>
+                            <td class="text-end">
+                                @if (item.GraderId == currentUserId || currentUserType == adminTypeId)
+                                {
+                                    @Html.ActionLink("بدء التصحيح", "Grade", new { id = item.ManualGradeId }, new { @class = "btn btn-sm btn-primary" })
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,26 @@
+﻿@model BarManegment.Models.ExamEnrollment
+@{
+    ViewBag.Title = "تأكيد الحذف";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">هل أنت متأكد من حذف تسجيل المتقدم؟</p>
+            <h3>@(Model.ExamApplication?.FullName ?? Model.GraduateApplication?.ArabicName)</h3>
+            <hr />
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                <div class="form-actions no-color">
+                    <input type="submit" value="تأكيد الحذف" class="btn btn-danger" />
+                    @Html.ActionLink("العودة إلى القائمة", "ManageResults", new { examId = Model.ExamId }, new { @class = "btn btn-secondary" })
+                </div>
+            }
+        </div>
+    </div>
+</div>
+

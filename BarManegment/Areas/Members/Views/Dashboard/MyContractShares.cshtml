@@ -1,0 +1,37 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.MemberShareViewModel>
+@{
+    ViewBag.Title = "حصص معاملات التصديقات";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<h2><i class="bi bi-cash-stack me-2"></i> @ViewBag.Title</h2>
+<p class="text-muted">
+    عرض تفصيلي لجميع حصصك من معاملات التصديقات التي قمت بها.
+</p>
+
+@* --- نموذج البحث والتصفية --- *@
+@using (Html.BeginForm("MyContractShares", "Dashboard", FormMethod.Get, new { @class = "row g-3 mb-3 p-3 bg-light rounded border" }))
+{
+    <div class="col-md-4">
+        <label for="searchString" class="form-label">بحث (رقم المعاملة/نوع العقد)</label>
+        <input type="text" name="searchString" id="searchString" class="form-control" value="@ViewBag.SearchString" />
+    </div>
+    <div class="col-md-3">
+        <label for="from" class="form-label">من تاريخ (تاريخ الدفع)</label>
+        <input type="date" name="from" id="from" class="form-control" value="@ViewBag.FromDate" />
+    </div>
+    <div class="col-md-3">
+        <label for="to" class="form-label">إلى تاريخ (تاريخ الدفع)</label>
+        <input type="date" name="to" id="to" class="form-control" value="@ViewBag.ToDate" />
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-info w-100">
+            <i class="bi bi-filter"></i> تصفية
+        </button>
+    </div>
+}
+<hr />
+@Html.ActionLink("العودة إلى لوحة التحكم", "Index", null, new { @class = "btn btn-outline-secondary mb-3" })
+
+@* (استخدام نفس الواجهة الجزئية لعرض الجدول) *@
+@Html.Partial("_LawyerContractShares", Model)

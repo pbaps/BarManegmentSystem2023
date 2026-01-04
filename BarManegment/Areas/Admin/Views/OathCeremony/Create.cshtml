@@ -1,0 +1,46 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.OathCeremonyViewModel
+@{
+    ViewBag.Title = "تحديد موعد حلف يمين جديد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-plus me-2"></i> @ViewBag.Title</h5>
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-light text-primary fw-bold">عودة</a>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CeremonyDate, new { @class = "form-label fw-bold" })
+                            @Html.EditorFor(m => m.CeremonyDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                            @Html.ValidationMessageFor(m => m.CeremonyDate, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Location, new { @class = "form-label fw-bold" })
+                            @Html.EditorFor(m => m.Location, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: قاعة المؤتمرات - مقر النقابة" } })
+                            @Html.ValidationMessageFor(m => m.Location, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                            <label class="form-check-label" for="IsActive">تفعيل الموعد (السماح بإضافة متدربين إليه)</label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg shadow-sm fw-bold">حفظ الموعد</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

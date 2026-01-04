@@ -1,0 +1,465 @@
+﻿@model BarManegment.Areas.Members.ViewModels.MemberDashboardViewModel
+@using BarManegment.Models
+@using System.Linq
+@using System.Data.Entity
+
+@{
+    ViewBag.Title = "لوحة التحكم الرئيسية";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+
+    // 1. تحديد حالة العضو
+    string status = Model.GraduateInfo.ApplicationStatus.Name;
+    bool isTrainee = status.Contains("متدرب");
+    bool isLawyer = status.Contains("محامي") || status == "Advocate";
+    bool isApplicant = !isTrainee && !isLawyer; // خريج جديد أو قيد الإجراءات
+
+    // 2. التحقق من عضوية اللجان
+    bool isCommitteeMember = false;
+    try
+    {
+        using (var db = new ApplicationDbContext())
+        {
+            var lawyerId = Model.GraduateInfo.Id;
+            isCommitteeMember = db.OralExamCommitteeMembers.Any(m => m.MemberLawyerId == lawyerId && m.OralExamCommittee.IsActive) ||
+                                db.CommitteeMembers.Any(m => m.MemberLawyerId == lawyerId && m.DiscussionCommittee.IsActive);
+        }
+    }
+    catch { isCommitteeMember = false; }
+}
+
+<style>
+    .dashboard-card {
+        transition: transform 0.2s;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+    .stat-card {
+        border-radius: 10px;
+        border: none;
+        color: white;
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .exam-result-badge {
+        min-width: 80px;
+    }
+
+    .text-purple {
+        color: #6f42c1;
+    }
+</style>
+
+<div class="container-fluid pt-4 px-4 mb-5">
+
+    @* --- التنبيهات --- *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-start border-success border-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-start border-danger border-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Html.Raw(TempData["ErrorMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show shadow-sm border-start border-info border-4" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i> @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* --- بطاقة الترحيب (Hero Section) --- *@
+    <div class="card border-0 shadow-sm mb-4 overflow-hidden" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border-radius: 15px;">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="bi bi-person-circle fs-2"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-1">مرحباً، @Model.GraduateInfo.ArabicName</h2>
+                            <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                                <span class="badge bg-white text-primary rounded-pill px-3"><i class="bi bi-hash me-1"></i> @(Model.GraduateInfo.TraineeSerialNo ?? Model.GraduateInfo.MembershipId ?? "---")</span>
+                                <span class="badge bg-warning text-dark rounded-pill px-3">@status</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                        @if (isCommitteeMember)
+                        {
+                            <a href="@Url.Action("Dashboard", "CommitteePortal", new { area = "Members" })" class="btn btn-light fw-bold shadow-sm">
+                                <i class="bi bi-gavel me-1"></i> بوابة اللجان
+                            </a>
+                        }
+
+                        <a href="@Url.Action("EditFamilyRecord", "Profile", new { area = "Members" })" class="btn btn-outline-light" title="السجل العائلي والصحي">
+                            <i class="bi bi-person-heart me-1"></i> العائلة والصحة
+                        </a>
+                        <a href="@Url.Action("Inbox", "Messaging", new { area = "Members" })" class="btn btn-outline-light position-relative">
+                            <i class="bi bi-envelope-fill"></i>
+                        </a>
+                        <a href="@Url.Action("Edit", "Profile", new { area = "Members" })" class="btn btn-outline-light">
+                            <i class="bi bi-gear-fill me-1"></i> الإعدادات
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ========================================================================================== *@
+    @* 💡 تنبيه الامتحانات النشطة (يظهر للجميع الآن: متدربين ومحامين) *@
+    @* ========================================================================================== *@
+    @if (Model.EnrolledExams != null && Model.EnrolledExams.Any())
+    {
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow-sm bg-danger bg-opacity-10 border-start border-danger border-4">
+                <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <h5 class="text-danger fw-bold mb-1"><i class="bi bi-alarm-fill me-2"></i> امتحان نشط الآن</h5>
+                        <p class="mb-0 text-dark">لديك امتحان متاح: <strong>@Model.EnrolledExams.First().Title</strong></p>
+                    </div>
+                    <a href="@Url.Action("StartTraineeExam", "Dashboard", new { examId = Model.EnrolledExams.First().Id })" class="btn btn-danger px-4 fw-bold shadow-sm">
+                        ابدأ الامتحان الآن <i class="bi bi-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ========================================================================================== *@
+    @* 1. عرض الخريجين / المتقدمين (Applicants) *@
+    @* ========================================================================================== *@
+    @if (isApplicant)
+    {
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm text-center p-5">
+                    <div class="mb-4">
+                        <div class="d-inline-block p-4 rounded-circle bg-light text-primary">
+                            <i class="bi bi-file-earmark-person-fill display-4"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold mb-3">متابعة طلب الانتساب</h3>
+
+                    <div class="alert @(status.Contains("مقبول") ? "alert-success" : "alert-info") d-inline-block px-4 py-2 mb-4">
+                        <strong>الحالة الحالية:</strong> @status
+                    </div>
+
+                    <p class="text-muted lead mb-4 px-lg-5">
+                        @if (status == "طلب جديد" || status == "بانتظار استكمال النواقص")
+                        {
+                            <span>يرجى استكمال كافة البيانات والمرفقات المطلوبة ليتمكن الموظف المختص من تدقيق طلبك.</span>
+                        }
+                        else if (status == "بانتظار الموافقة النهائية")
+                        {
+                            <span>ملفك مكتمل وهو الآن قيد المراجعة النهائية من قبل لجنة التدريب. سيتم إشعارك فور صدور القرار.</span>
+                        }
+                        else if (status == "مقبول (بانتظار الدفع)")
+                        {
+                            <span>تهانينا! تمت الموافقة على طلبك. يرجى مراجعة الدائرة المالية لدفع رسوم التسجيل لبدء فترة التدريب.</span>
+                        }
+                    </p>
+
+                    @if (status == "طلب جديد" || status == "بانتظار استكمال النواقص")
+                    {
+                        <a href="@Url.Action("Edit", "Profile", new { area = "Members" })" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm">
+                            <i class="bi bi-pencil-square me-2"></i> استكمال الملف الشخصي
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ========================================================================================== *@
+    @* 2. عرض المتدربين (Trainees) *@
+    @* ========================================================================================== *@
+    @if (isTrainee)
+    {
+        <div class="row g-4">
+
+            @* --- العمود الأيمن: المسار الأكاديمي والتدريب --- *@
+            <div class="col-lg-8">
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-calendar-week text-primary me-2 fs-5 align-middle"></i> المحاضرات القادمة</span>
+                        <a href="@Url.Action("Index", "Lectures")" class="btn btn-sm btn-light text-primary fw-bold">الأرشيف <i class="bi bi-chevron-left"></i></a>
+                    </div>
+                    <div class="card-body p-0">
+                        @Html.Partial("_TraineeLectures", Model.UpcomingLectures)
+                    </div>
+                </div>
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom-0">
+                        <i class="bi bi-book text-success me-2 fs-5 align-middle"></i> الأبحاث والمتطلبات
+                    </div>
+                    <div class="card-body p-0">
+                        @Html.Partial("_TraineeResearch", Model.ResearchTasks)
+                    </div>
+                </div>
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-journal-check text-info me-2 fs-5 align-middle"></i> سجلات التدريب الشهرية</span>
+                        <a href="@Url.Action("Create", "TrainingLog", new { area = "Members" })" class="btn btn-sm btn-primary shadow-sm">
+                            <i class="bi bi-plus-lg me-1"></i> تقديم سجل
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        @Html.Partial("_TraineeTrainingLogs", Model.MyTrainingLogs)
+                    </div>
+                </div>
+            </div>
+
+            @* --- العمود الأيسر: الخدمات والمالية --- *@
+            <div class="col-lg-4">
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom-0">
+                        <i class="bi bi-grid-fill text-secondary me-2 fs-5 align-middle"></i> خدمات إلكترونية
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="@Url.Action("Create", "ServiceRequests")" class="list-group-item list-group-item-action py-3 d-flex align-items-center">
+                            <div class="icon-box bg-primary bg-opacity-10 text-primary me-3" style="width: 36px; height: 36px; font-size: 1rem;"><i class="bi bi-arrow-left-right"></i></div>
+                            <div>نقل إشراف / استئناف</div>
+                        </a>
+                        <a href="@Url.Action("Create", "CouncilRequests")" class="list-group-item list-group-item-action py-3 d-flex align-items-center">
+                            <div class="icon-box bg-warning bg-opacity-10 text-warning me-3" style="width: 36px; height: 36px; font-size: 1rem;"><i class="bi bi-envelope-paper"></i></div>
+                            <div>تقديم طلب للمجلس</div>
+                        </a>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <small class="text-muted fw-bold">آخر الطلبات:</small>
+                        <div class="mt-2">
+                            @Html.Partial("_TraineeRequests", Model.MyServiceRequests)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom-0">
+                        <i class="bi bi-receipt text-success me-2 fs-5 align-middle"></i> آخر الإيصالات المالية
+                    </div>
+                    <div class="card-body p-0">
+                        @Html.Partial("_TraineeReceipts", Model.MyReceipts)
+                    </div>
+                </div>
+
+                @if (Model.MySuspensions != null && Model.MySuspensions.Any())
+                {
+                    <div class="card dashboard-card mb-4 border-start border-4 border-warning">
+                        <div class="card-header bg-white fw-bold py-3 text-warning">
+                            <i class="bi bi-pause-circle-fill text-warning me-2 fs-5 align-middle"></i> سجل الإيقافات
+                        </div>
+                        <div class="card-body p-0">
+                            @Html.Partial("_TraineeSuspensions", Model.MySuspensions)
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ========================================================================================== *@
+    @* 3. عرض المحامين المزاولين (Lawyers/Advocates) *@
+    @* ========================================================================================== *@
+    @if (isLawyer)
+    {
+        <div class="row g-4">
+
+            @* --- شريط الإحصائيات --- *@
+            <div class="col-md-3">
+                <div class="card stat-card bg-white shadow-sm h-100 border-bottom border-4 border-primary text-dark">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="card-title text-muted mb-0">المتدربون لدي</h6>
+                            <div class="icon-box bg-primary bg-opacity-10 text-primary"><i class="bi bi-people"></i></div>
+                        </div>
+                        <h3 class="fw-bold mb-0">@Model.MyTrainees.Count()</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-white shadow-sm h-100 border-bottom border-4 border-success text-dark">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="card-title text-muted mb-0">رصيد التصديقات</h6>
+                            <div class="icon-box bg-success bg-opacity-10 text-success"><i class="bi bi-cash-stack"></i></div>
+                        </div>
+                        <h3 class="fw-bold mb-0">@Model.MyContractShares.Sum(x => x.LawyerShareAmount).ToString("N0")</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-white shadow-sm h-100 border-bottom border-4 border-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="card-title text-muted mb-0">القروض القائمة</h6>
+                            <div class="icon-box bg-warning bg-opacity-10 text-warning"><i class="bi bi-wallet2"></i></div>
+                        </div>
+                        <h3 class="fw-bold mb-0">@Model.MyLoans.Count(l => l.Status == "نشط (تم الصرف)")</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-white shadow-sm h-100 border-bottom border-4 border-info text-dark">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="card-title text-muted mb-0">تاريخ تجديد المزاولة</h6>
+                            <div class="icon-box bg-info bg-opacity-10 text-info"><i class="bi bi-calendar-check"></i></div>
+                        </div>
+                        <h3 class="fw-bold mb-0">@(Model.PracticingRenewals.OrderByDescending(r=>r.RenewalYear).FirstOrDefault()?.RenewalYear.ToString() ?? "-")</h3>
+                    </div>
+                </div>
+            </div>
+
+            @* ========================================================================================== *@
+            @* قسم الاختبارات الوظيفية المتاحة *@
+            @* ========================================================================================== *@
+
+            @if (Model.AvailableJobTests != null && Model.AvailableJobTests.Any())
+            {
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm border-start border-5 border-info mb-4 bg-info bg-opacity-10">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-briefcase-fill text-info fs-3 me-3"></i>
+                                <h4 class="fw-bold text-dark mb-0">اختبارات وظيفية متاحة للتقدم</h4>
+                            </div>
+
+                            <div class="row g-3">
+                                @foreach (var test in Model.AvailableJobTests)
+                                {
+                                    <div class="col-md-6 col-xl-4">
+                                        <div class="card border shadow-sm h-100 @(test.IsEligible ? "border-success" : "border-secondary")">
+                                            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                                                <h5 class="card-title mb-0 fw-bold text-truncate" title="@test.Title">@test.Title</h5>
+                                                @if (test.IsEligible)
+                                                {
+                                                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> مؤهل</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary"><i class="bi bi-x-circle-fill me-1"></i> غير مؤهل</span>
+                                                }
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="small text-muted mb-3">
+                                                    <i class="bi bi-calendar-event me-1"></i> التاريخ: @test.StartTime.ToString("yyyy-MM-dd") <br>
+                                                    <i class="bi bi-clock me-1"></i> الوقت: @test.StartTime.ToString("hh:mm tt") <br>
+                                                    <i class="bi bi-hourglass-split me-1"></i> المدة: @test.Duration دقيقة
+                                                </p>
+
+                                                @if (!string.IsNullOrEmpty(test.RequirementsNote))
+                                                {
+                                                    <div class="alert alert-light border p-2 small mb-3 text-dark">
+                                                        <strong><i class="bi bi-info-circle-fill text-primary"></i> الشروط:</strong> @test.RequirementsNote
+                                                    </div>
+                                                }
+
+                                                @if (test.IsEligible)
+                                                {
+                                                    using (Html.BeginForm("ApplyForJobTest", "Dashboard", new { area = "Members" }, FormMethod.Post))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="examId" value="@test.ExamId" />
+                                                        <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm" onclick="return confirm('هل أنت متأكد من رغبتك في التقدم لهذا الاختبار؟')">
+                                                            <i class="bi bi-send-check-fill me-2"></i> تسجيل وتقدم
+                                                        </button>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-grid">
+                                                        <button class="btn btn-secondary disabled" disabled>
+                                                            <i class="bi bi-lock-fill me-1"></i> @test.IneligibilityReason
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @* ========================================================================================== *@
+
+            @* --- العمود الأيمن: إدارة التدريب (للمشرف) --- *@
+            <div class="col-lg-6">
+                <h5 class="fw-bold mb-3 text-secondary ps-2 border-start border-4 border-secondary">إدارة التدريب</h5>
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3">المتدربون لدي</div>
+                    <div class="card-body p-0">@Html.Partial("_SupervisorMyTrainees", Model.MyTrainees)</div>
+                </div>
+            </div>
+
+            @* --- العمود الأيسر: الخدمات المهنية والمالية --- *@
+            <div class="col-lg-6">
+                <h5 class="fw-bold mb-3 text-secondary ps-2 border-start border-4 border-secondary">الخدمات المهنية</h5>
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between">
+                        <span><i class="bi bi-cash-coin text-success me-2"></i> القروض المالية</span>
+                        <a href="@Url.Action("Index", "Loans")" class="btn btn-sm btn-outline-success rounded-pill">
+                            <i class="bi bi-plus-lg"></i> عرض / تقديم
+                        </a>
+                    </div>
+                    <div class="card-body p-0">@Html.Partial("_LawyerLoans", Model.MyLoans)</div>
+                </div>
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-pen-fill text-info me-2 fs-5 align-middle"></i> أرشيف التصديقات</span>
+                        <a href="@Url.Action("Index", "Contracts")" class="btn btn-sm btn-outline-info rounded-pill">
+                            <i class="bi bi-search"></i> الأرشيف الكامل
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        @Html.Partial("_LawyerContractShares", Model.MyContractShares)
+                    </div>
+                </div>
+
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white fw-bold py-3">
+                        <i class="bi bi-clock-history text-secondary me-2 fs-5 align-middle"></i> سجل تجديدات المزاولة
+                    </div>
+                    <div class="card-body p-0">
+                        @Html.Partial("_LawyerPracticingRenewals", Model.PracticingRenewals)
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>

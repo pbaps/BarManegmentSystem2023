@@ -1,0 +1,49 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CreateContractorReceiptViewModel
+@{
+    ViewBag.Title = "تسجيل سداد (قسيمة متعهد)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card" style="max-width: 700px; margin: auto;">
+        <div class="card-header"><h4 class="m-0">@ViewBag.Title</h4></div>
+
+        @using (Html.BeginForm("CreateContractorReceipt", "Receipts", new { area = "Admin" }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                @Html.HiddenFor(model => model.VoucherId)
+                @Html.HiddenFor(model => model.ContractorName)
+                @Html.HiddenFor(model => model.TotalAmount)
+                @Html.HiddenFor(model => model.CurrencySymbol)
+
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">القسيمة رقم: @Model.VoucherId</h5>
+                    <p class="mb-1 fs-5"><strong>باسم السيد:</strong> @Model.ContractorName</p>
+                    <hr />
+                    <p class="mb-0 fs-4 fw-bold"><strong>المبلغ الإجمالي:</strong> @Model.TotalAmount.ToString("N2") @Model.CurrencySymbol</p>
+                </div>
+
+                <hr />
+
+                <div class="form-floating mb-3">
+                    @Html.EditorFor(model => model.BankPaymentDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    @Html.LabelFor(model => model.BankPaymentDate)
+                    @Html.ValidationMessageFor(model => model.BankPaymentDate, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-floating mb-3">
+                    @Html.EditorFor(model => model.BankReceiptNumber, new { htmlAttributes = new { @class = "form-control", placeholder = "رقم وصل البنك" } })
+                    @Html.LabelFor(model => model.BankReceiptNumber)
+                    @Html.ValidationMessageFor(model => model.BankReceiptNumber, "", new { @class = "text-danger" })
+                </div>
+
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="إصدار الإيصال وتأكيد الصرف" class="btn btn-primary btn-lg" />
+                @Html.ActionLink("العودة", "ContractorVouchersList", "PaymentVouchers", new { area = "Admin" }, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

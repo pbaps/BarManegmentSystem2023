@@ -1,0 +1,180 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.OralExamDetailsViewModel
+@{
+    ViewBag.Title = "إدارة اللجنة: " + Model.CommitteeName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show"><i class="bi bi-info-circle me-2"></i> @TempData["InfoMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="row g-4">
+        <!-- العمود الأيمن: تفاصيل اللجنة + الطباعة -->
+        <div class="col-md-4">
+            <!-- بطاقة بيانات اللجنة -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-info-circle me-2"></i> بيانات اللجنة
+                </div>
+                <div class="card-body">
+                    <h5 class="fw-bold text-primary mb-3">@Model.CommitteeName</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item d-flex justify-content-between"><span>تاريخ التشكيل:</span> <strong>@Model.FormationDate.ToString("yyyy-MM-dd")</strong></li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>الحالة:</span>
+                            @if (Model.IsActive)
+                            {<span class="badge bg-success">فعالة</span> }
+                            else
+                            { <span class="badge bg-secondary">مغلقة</span>}
+                        </li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-2 border-bottom pb-2">أعضاء اللجنة</h6>
+                    <ul class="list-unstyled">
+                        @foreach (var member in Model.Members)
+                        {
+                            <li class="mb-2">
+                                <i class="bi bi-person-fill text-muted me-2"></i>
+                                <strong>@member.Role:</strong> @(member.MemberLawyer?.ArabicName ?? "---")
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="card-footer bg-white text-center">
+                    <a href="@Url.Action("Edit", new { id = Model.CommitteeId })" class="btn btn-outline-primary btn-sm w-100">تعديل اللجنة</a>
+                </div>
+            </div>
+
+            <!-- 💡 بطاقة الطباعة والنماذج (الجديدة) -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-printer me-2"></i> الطباعة والنماذج
+                </div>
+                <div class="card-body d-grid gap-2">
+                    @* زر طباعة كشف الرصد النهائي *@
+                    <a href="@Url.Action("PrintMasterSheet", new { id = Model.CommitteeId })" target="_blank" class="btn btn-dark">
+                        <i class="bi bi-table me-2"></i> كشف الرصد النهائي
+                    </a>
+
+                    @* زر طباعة أوراق التقييم للأعضاء *@
+                    <a href="@Url.Action("PrintMemberScoreSheets", new { id = Model.CommitteeId })" target="_blank" class="btn btn-outline-secondary">
+                        <i class="bi bi-file-earmark-person me-2"></i> استمارات تقييم الأعضاء
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- العمود الأيسر: قائمة المتدربين -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-people-fill me-2"></i> المتدربين المسجلين</h5>
+
+                    @if (Model.IsActive)
+                    {
+                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#assignTraineesModal">
+                            <i class="bi bi-person-plus-fill me-1"></i> إضافة متدربين
+                        </button>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">المتدرب</th>
+                                    <th>موعد الامتحان</th>
+                                    <th>النتيجة</th>
+                                    <th>الدرجة</th>
+                                    <th class="text-end pe-4">رصد الدرجة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.EnrolledTrainees)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-bold">@item.Trainee.ArabicName</div>
+                                            <small class="text-muted font-monospace">@item.Trainee.TraineeSerialNo</small>
+                                        </td>
+                                        <td>@item.ExamDate.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            @if (item.Result == "ناجح")
+                                            {<span class="badge bg-success">ناجح</span> }
+                                            else if (item.Result == "راسب")
+                                            { <span class="badge bg-danger">راسب</span> }
+                                            else
+                                            { <span class="badge bg-warning text-dark">@item.Result</span>}
+                                        </td>
+                                        <td>@(item.Score?.ToString() ?? "-")</td>
+                                        <td class="text-end pe-4">
+                                            @if (item.Result == "قيد الانتظار" || item.Result == "راسب")
+                                            {
+                                                <a href="@Url.Action("RecordResult", new { id = item.Id })" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-pencil-square"></i> رصد
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-secondary btn-sm" disabled><i class="bi bi-check2-all"></i> تم الرصد</button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!Model.EnrolledTrainees.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center py-5 text-muted">لا يوجد متدربين مسجلين في هذه اللجنة.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: تعيين متدربين (Bulk Assign) -->
+<div class="modal fade" id="assignTraineesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("AssignTrainees", "OralExamCommittee", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.CommitteeId)
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">إضافة متدربين للجنة</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">تاريخ الامتحان المقترح</label>
+                        @Html.EditorFor(m => m.ExamDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اختر المتدربين (المؤهلين فقط)</label>
+                        @if (Model.AvailableTrainees != null && Model.AvailableTrainees.Any())
+                        {
+                            @Html.ListBoxFor(m => m.SelectedTraineeIds, Model.AvailableTrainees, new { @class = "form-select", size = "10", multiple = "multiple" })
+                            <div class="form-text">يمكنك اختيار أكثر من متدرب (اضغط Ctrl). تظهر هنا فقط الأسماء التي اجتازت الامتحان التحريري ولم تسجل في لجنة أخرى.</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">لا يوجد متدربين مؤهلين (ناجحين تحريرياً وغير مسجلين) حالياً.</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success" @(Model.AvailableTrainees == null || !Model.AvailableTrainees.Any() ? "disabled" : "")>حفظ وإضافة</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

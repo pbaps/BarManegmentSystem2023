@@ -1,0 +1,207 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+@{
+    ViewBag.Title = "شهادة قيد متدرب";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml"; // تأكد من وجود هذا الـ Layout
+
+    string photoUrl = !string.IsNullOrEmpty(Model.PersonalPhotoPath)
+        ? Url.Content(Model.PersonalPhotoPath)
+        : Url.Content("~/Content/Images/default-avatar.png");
+}
+
+<style>
+    .cert-container {
+        border: 5px double #003366;
+        padding: 30px;
+        position: relative;
+        min-height: 250mm;
+        background: white;
+        background-image: url('@Url.Content("~/Content/Images/logo_watermark.png")'); /* علامة مائية اختيارية */
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 50%;
+    }
+
+    .cert-header {
+        text-align: center;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #c5a059;
+        padding-bottom: 20px;
+    }
+
+    .cert-header img {
+        height: 100px;
+        margin-bottom: 10px;
+    }
+
+    .cert-header h1 {
+        font-family: 'Amiri', serif;
+        font-weight: bold;
+        font-size: 28px;
+        color: #003366;
+        margin: 0;
+    }
+
+    .cert-header h3 {
+        font-size: 18px;
+        color: #555;
+        margin-top: 5px;
+    }
+
+    .cert-body {
+        font-size: 16px;
+        line-height: 2;
+        text-align: justify;
+        margin-bottom: 40px;
+    }
+
+    .cert-body strong {
+        color: #003366;
+        font-size: 18px;
+        border-bottom: 1px dotted #999;
+        padding: 0 5px;
+    }
+
+    .personal-photo {
+        position: absolute;
+        top: 40px;
+        left: 40px;
+        width: 35mm;
+        height: 45mm;
+        border: 1px solid #ddd;
+        padding: 3px;
+        background: #fff;
+    }
+
+    .personal-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .exams-section {
+        margin-top: 30px;
+        border: 1px solid #eee;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+
+    .exams-section h4 {
+        font-size: 16px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+        color: #003366;
+    }
+
+    .exams-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .exams-table th, .exams-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+
+    .exams-table th {
+        background-color: #003366;
+        color: white;
+    }
+
+    .cert-footer {
+        margin-top: 60px;
+        display: flex;
+        justify-content: space-between;
+        text-align: center;
+    }
+
+    .sig-box p {
+        font-weight: bold;
+        margin-bottom: 40px;
+    }
+</style>
+
+<div class="page">
+    <div class="cert-container">
+
+        <!-- الصورة الشخصية -->
+        <div class="personal-photo">
+            <img src="@photoUrl" alt="صورة المتدرب" />
+        </div>
+
+        <div class="cert-header">
+            <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" />
+            <h1>نقابة المحامين الفلسطينيين</h1>
+            <h3>شهادة قيد محامي متدرب</h3>
+        </div>
+
+        <div class="cert-body">
+            <p>
+                تشهد نقابة المحامين الفلسطينيين بأن السيد/ة <strong>@Model.ArabicName</strong>،
+                حامل هوية رقم <strong>@Model.NationalIdNumber</strong>،
+                مسجل/ة في سجل المحامين المتدربين تحت رقم <strong>@(Model.TraineeSerialNo ?? "---")</strong>.
+            </p>
+            <p>
+                وقد بدأ التدريب بتاريخ <strong>@(Model.TrainingStartDate?.ToString("yyyy/MM/dd") ?? "---")</strong>،
+                وهو حالياً تحت إشراف وتدريب مكتب المحامي الأستاذ <strong>@(Model.Supervisor?.ArabicName ?? "---")</strong>.
+            </p>
+            <p>
+                أعطيت له هذه الشهادة بناءً على طلبه لتقديمها لمن يهمه الأمر، دون تحمل النقابة أدنى مسؤولية تجاه الغير.
+            </p>
+        </div>
+
+        @if (Model.ExamHistory != null && Model.ExamHistory.Any())
+        {
+            <div class="exams-section">
+                <h4>الاختبارات التي تم اجتيازها بنجاح:</h4>
+                <table class="exams-table">
+                    <thead>
+                        <tr>
+                            <th>اسم الامتحان</th>
+                            <th>تاريخ الامتحان</th>
+                            <th>النتيجة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var exam in Model.ExamHistory)
+                        {
+                            <tr>
+                                <td>@exam.Exam.ExamType.Name</td>
+                                <td>@exam.Exam.StartTime.ToString("yyyy/MM/dd")</td>
+                                <td><span style="color:green; font-weight:bold;">@exam.Result</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="exams-section">
+                <p class="text-muted text-center mb-0">لم يقم المتدرب باجتياز أي امتحانات رسمية حتى تاريخه.</p>
+            </div>
+        }
+
+        <div class="cert-footer">
+            <div class="sig-box">
+                <p>مدقق السجل</p>
+                <span>____________________</span>
+            </div>
+            <div class="sig-box">
+                <p>أمين السر</p>
+                <span>____________________</span>
+            </div>
+            <div class="sig-box">
+                <p>النقيب</p>
+                <span>____________________</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; font-size: 10px; color: #777; border-top: 1px solid #eee; padding-top: 5px;">
+            تاريخ الإصدار: @DateTime.Now.ToString("yyyy/MM/dd") | حررت في: غزة
+        </div>
+    </div>
+</div>

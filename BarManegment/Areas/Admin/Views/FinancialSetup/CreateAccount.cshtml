@@ -1,0 +1,28 @@
+﻿@model BarManegment.Models.Account
+@{ ViewBag.Title = "إضافة حساب جديد"; }
+
+<div class="card p-4 col-md-8 mx-auto">
+    <h4>إضافة حساب مالي جديد</h4>
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label>رقم الحساب (Code)</label>
+            @Html.EditorFor(m => m.Code, new { htmlAttributes = new { @class = "form-control" } })
+        </div>
+        <div class="mb-3">
+            <label>اسم الحساب</label>
+            @Html.EditorFor(m => m.Name, new { htmlAttributes = new { @class = "form-control" } })
+        </div>
+        <div class="mb-3">
+            <label>النوع الرئيسي (التابعية)</label>
+            @Html.DropDownList("ParentId", null, "--- حساب رئيسي ---", new { @class = "form-control select2" })
+        </div>
+        <div class="mb-3">
+            <label>نوع الحساب</label>
+            @Html.EnumDropDownListFor(m => m.AccountType, new { @class = "form-control" })
+        </div>
+        <button type="submit" class="btn btn-success">حفظ</button>
+        <a href="@Url.Action("AccountsIndex")" class="btn btn-secondary">إلغاء</a>
+    }
+</div>

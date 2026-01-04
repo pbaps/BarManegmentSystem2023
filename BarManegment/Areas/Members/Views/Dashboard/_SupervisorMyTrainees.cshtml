@@ -1,0 +1,38 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.MyTraineeViewModel>
+
+<div class="card-body p-0">
+    @if (!Model.Any())
+    {
+        <div class="p-3 text-center text-muted">
+            لا يوجد متدربون مسجلون باسمك حالياً.
+        </div>
+    }
+    else
+    {
+        <ul class="list-group list-group-flush">
+            @foreach (var trainee in Model)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">@trainee.Name</h6>
+                        <small class="text-muted">
+                            رقم: @trainee.SerialNo | تاريخ البدء: @trainee.StartDate.ToString("yyyy/MM/dd")
+                        </small>
+                    </div>
+                    <div>
+                        @* ===
+                            ===  بداية التصحيح: تغيير الرابط
+                            === *@
+                        <a href="@Url.Action("ViewTraineeProfile", "Dashboard", new { area = "Members", id = trainee.Id })"
+                           class="btn btn-sm btn-outline-primary"
+                           target="_blank"
+                           title="فتح ملف المتدرب">
+                            <i class="bi bi-person-vcard"></i> عرض الملف
+                        </a>
+                        @* === نهاية التصحيح === *@
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>

@@ -1,0 +1,61 @@
+﻿@model IEnumerable<BarManegment.Models.TraineeAttendance>
+@{
+    ViewBag.Title = "سجل المحاضرات";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-calendar-event me-2"></i> @ViewBag.Title</h4>
+        <p class="mb-0 text-muted">هنا تجد كل المحاضرات المسجل بها، سواء القادمة أو السابقة.</p>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>الدورة</th>
+                    <th>المحاضرة</th>
+                    <th>التاريخ</th>
+                    <th>الساعات</th>
+                    <th>الحالة</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted p-4">لم يتم تسجيلك في أي محاضرات بعد.</td>
+                    </tr>
+                }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Session.TrainingCourse.CourseName</td>
+                        <td>@item.Session.SessionTitle</td>
+                        <td>@item.Session.SessionDate.ToString("yyyy/MM/dd hh:mm tt")</td>
+                        <td>@item.Session.CreditHours</td>
+                        <td>
+                            @if (item.Session.SessionDate > DateTime.Now)
+                            {
+                                <span class="badge bg-success">قادمة</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">منتهية</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.Session.TeamsMeetingUrl))
+                            {
+                                <a href="@item.Session.TeamsMeetingUrl" target="_blank" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-microsoft-teams me-1"></i> رابط
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

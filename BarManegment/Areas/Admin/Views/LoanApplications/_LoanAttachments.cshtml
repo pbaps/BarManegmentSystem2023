@@ -1,0 +1,148 @@
+﻿@model BarManegment.Models.LoanApplication
+
+<table class="table table-bordered align-middle mb-0">
+    <thead class="table-light">
+        <tr>
+            <th>النموذج</th>
+            <th>الحالة</th>
+            <th>الطباعة (تعبئة بيانات)</th>
+            <th>الرفع (بعد التوقيع)</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @* --- 1. طلب القرض --- *@
+        <tr>
+            <td><strong>1. طلب الحصول على قرض</strong></td>
+            <td>
+                @if (!string.IsNullOrEmpty(Model.ApplicationFormPath))
+                {
+                    <a href="@Url.Content(Model.ApplicationFormPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                }
+                else
+                {
+                    <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i> لم يتم الرفع</span>
+                }
+            </td>
+            <td>
+                @Html.ActionLink("طباعة النموذج", "PrintApplicationForm", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
+            </td>
+            <td>
+                @using (Html.BeginForm("UploadApplicationForm", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="file" name="file" class="form-control form-control-sm" required />
+                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
+                }
+            </td>
+        </tr>
+
+        @* --- 2. سند المديونية --- *@
+        <tr>
+            <td><strong>2. سند إقرار ومديونية</strong></td>
+            <td>
+                @if (!string.IsNullOrEmpty(Model.DebtBondScannedPath))
+                {
+                    <a href="@Url.Content(Model.DebtBondScannedPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                }
+                else
+                {
+                    <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i> لم يتم الرفع</span>
+                }
+            </td>
+            <td>
+                @Html.ActionLink("طباعة النموذج", "PrintDebtBond", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
+            </td>
+            <td>
+                @using (Html.BeginForm("UploadDebtBond", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="file" name="file" class="form-control form-control-sm" required />
+                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
+                }
+            </td>
+        </tr>
+
+        @* --- 3. الكمبيالة الكبرى --- *@
+        <tr>
+            <td><strong>3. كمبيالة بالمبلغ الكلي</strong></td>
+            <td>
+                @if (!string.IsNullOrEmpty(Model.MainPromissoryNoteScannedPath))
+                {
+                    <a href="@Url.Content(Model.MainPromissoryNoteScannedPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                }
+                else
+                {
+                    <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i> لم يتم الرفع</span>
+                }
+            </td>
+            <td>
+                @Html.ActionLink("طباعة النموذج", "PrintMainPromissoryNote", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
+            </td>
+            <td>
+                @using (Html.BeginForm("UploadMainPromissoryNote", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="file" name="file" class="form-control form-control-sm" required />
+                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
+                }
+            </td>
+        </tr>
+
+        @* --- 4. الكفلاء --- *@
+        @foreach (var guarantor in Model.Guarantors)
+        {
+            <tr>
+                <td><strong>4. كفالة (@(guarantor.GuarantorType == "Lawyer" ? guarantor.LawyerGuarantor.ArabicName : guarantor.ExternalName))</strong></td>
+                <td>
+                    @if (!string.IsNullOrEmpty(guarantor.GuarantorFormScannedPath))
+                    {
+                        <a href="@Url.Content(guarantor.GuarantorFormScannedPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                    }
+                    else
+                    {
+                        <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i> لم يتم الرفع</span>
+                    }
+                </td>
+                <td>
+                    @Html.ActionLink("طباعة النموذج", "PrintGuarantorForm", new { id = guarantor.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
+                </td>
+                <td>
+                    @using (Html.BeginForm("UploadGuarantorForm", "LoanApplications", new { id = guarantor.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="file" name="file" class="form-control form-control-sm" required />
+                        <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
+                    }
+                </td>
+            </tr>
+        }
+
+        @* --- 5. قرار المجلس (اختياري) --- *@
+        <tr>
+            <td><strong>5. قرار مجلس (اختياري)</strong></td>
+            <td>
+                @if (!string.IsNullOrEmpty(Model.CouncilApprovalScannedPath))
+                {
+                    <a href="@Url.Content(Model.CouncilApprovalScannedPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                }
+                else
+                {
+                    <span class="text-muted"><i class="bi bi-hourglass-split me-1"></i> اختياري</span>
+                }
+            </td>
+            <td>
+                @Html.ActionLink("طباعة النموذج", "PrintCouncilApproval", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
+            </td>
+            <td>
+                @using (Html.BeginForm("UploadCouncilApproval", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="file" name="file" class="form-control form-control-sm" required />
+                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
+                }
+            </td>
+        </tr>
+
+    </tbody>
+</table>

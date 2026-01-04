@@ -1,0 +1,198 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CommitteeDetailsViewModel
+@{
+    ViewBag.Title = "إدارة اللجنة: " + Model.CommitteeName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm"><i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm"><i class="bi bi-exclamation-triangle me-2"></i> @TempData["ErrorMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show shadow-sm"><i class="bi bi-info-circle me-2"></i> @TempData["InfoMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="row g-4">
+        <!-- 1. تفاصيل اللجنة + الطباعة -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-info-circle me-2"></i> بيانات اللجنة
+                </div>
+                <div class="card-body">
+                    <h5 class="fw-bold text-primary mb-3">@Model.CommitteeName</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+                            <span class="text-muted">تاريخ التشكيل:</span>
+                            <strong>@Model.FormationDate.ToString("yyyy-MM-dd")</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+                            <span class="text-muted">الحالة:</span>
+                            @if (Model.IsActive)
+                            {<span class="badge bg-success">فعالة <i class="bi bi-check-circle"></i></span> }
+                            else
+                            { <span class="badge bg-secondary">مغلقة/أرشيف</span>}
+                        </li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-2 border-bottom pb-2 text-secondary">أعضاء اللجنة</h6>
+                    <ul class="list-unstyled small">
+                        @foreach (var member in Model.Members)
+                        {
+                            <li class="mb-2 d-flex align-items-center">
+                                <i class="bi bi-person-fill text-muted me-2 fs-5"></i>
+                                <div>
+                                    <div class="fw-bold">@(member.MemberLawyer?.ArabicName ?? "---")</div>
+                                    <span class="text-muted badge bg-light text-dark border">@member.Role</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="card-footer bg-white text-center border-top-0 pb-3">
+                    <a href="@Url.Action("Edit", new { id = Model.CommitteeId })" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-pencil-square me-1"></i> تعديل اللجنة
+                    </a>
+                </div>
+            </div>
+
+            <!-- 💡 بطاقة الطباعة (الجديدة) -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-printer me-2"></i> الطباعة والنماذج
+                </div>
+                <div class="card-body d-grid gap-2">
+                    <a href="@Url.Action("PrintCommitteeAgenda", new { id = Model.CommitteeId })" target="_blank" class="btn btn-dark">
+                        <i class="bi bi-list-check me-2"></i> جدول أعمال اللجنة
+                    </a>
+                    <a href="@Url.Action("PrintEvaluationSheets", new { id = Model.CommitteeId })" target="_blank" class="btn btn-outline-secondary">
+                        <i class="bi bi-file-earmark-check me-2"></i> نماذج تقييم الأبحاث
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. قائمة الأبحاث المعينة -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4 h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-journal-text me-2"></i> الأبحاث المطروحة للمناقشة</h5>
+
+                    @if (Model.IsActive)
+                    {
+                        <button class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#assignResearchesModal">
+                            <i class="bi bi-plus-lg me-1"></i> إضافة أبحاث
+                        </button>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4" style="width: 40%;">عنوان البحث</th>
+                                    <th>المتدرب</th>
+                                    <th>تاريخ التقديم</th>
+                                    <th>الحالة</th>
+                                    <th class="text-end pe-4">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.AssignedResearches)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-wrap" style="max-width: 250px;">@item.Title</td>
+                                        <td>@(item.Trainee?.ArabicName ?? "---")</td>
+                                        <td>@item.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            @if (item.Status == "مقبول" || item.Status == "مكتمل")
+                                            {<span class="badge bg-success">@item.Status</span> }
+                                        else if (item.Status == "مرفوض")
+                                        { <span class="badge bg-danger">@item.Status</span> }
+                                    else
+                                    { <span class="badge bg-info text-dark">@item.Status</span>}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="btn-group">
+                                                <a href="@Url.Action("Details", "LegalResearch", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تفاصيل ورصد الدرجة" target="_blank">
+                                                    <i class="bi bi-box-arrow-up-right"></i>
+                                                </a>
+
+                                                @if (item.Status == "تم تعيين لجنة" || item.Status == "تعديلات مطلوبة")
+                                                {
+                                                    using (Html.BeginForm("RemoveResearch", "CommitteeManagement", new { researchId = item.Id }, FormMethod.Post, new { @class = "d-inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-0 rounded-end" onclick="return confirm('هل أنت متأكد من إزالة البحث من هذه اللجنة؟')" title="إزالة">
+                                                            <i class="bi bi-x-lg"></i>
+                                                        </button>
+                                                    }
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!Model.AssignedResearches.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center py-5 text-muted">لا توجد أبحاث معينة لهذه اللجنة حالياً.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: إضافة أبحاث (Bulk Assign) -->
+<div class="modal fade" id="assignResearchesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            @using (Html.BeginForm("AssignResearches", "CommitteeManagement", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.CommitteeId)
+
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i> إضافة أبحاث للمناقشة</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    @if (Model.AvailableResearches != null && Model.AvailableResearches.Any())
+                    {
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle me-1"></i> الأبحاث الظاهرة أدناه حالتها <strong>"مُقدم"</strong> ولم يتم تعيين لجنة لها بعد.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">اختر الأبحاث:</label>
+                            @Html.ListBoxFor(m => m.SelectedResearchIds, Model.AvailableResearches, new { @class = "form-select shadow-sm", size = "12", multiple = "multiple" })
+                            <div class="form-text text-muted mt-2"><i class="bi bi-keyboard"></i> يمكنك اختيار أكثر من بحث بالضغط المستمر على مفتاح <strong>Ctrl</strong>.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-journal-x fs-1 text-muted mb-3"></i>
+                            <p class="fw-bold text-muted">لا توجد أبحاث جديدة بانتظار التعيين حالياً.</p>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4" @(Model.AvailableResearches == null || !Model.AvailableResearches.Any() ? "disabled" : "")>
+                        <i class="bi bi-check2-circle me-1"></i> إضافة للجنة
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

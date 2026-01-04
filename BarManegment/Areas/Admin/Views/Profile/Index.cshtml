@@ -1,0 +1,148 @@
+﻿<!-- File Path: BarManegment/Views/Profile/Index.cshtml -->
+@model BarManegment.ViewModels.ProfileViewModel
+@{
+    ViewBag.Title = "الملف الشخصي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@* === بداية الإضافة: تنسيق خاص لحقول كلمة المرور الجديدة === *@
+<style>
+    .new-password-field {
+        border-color: #198754; /* Green border color */
+    }
+
+        .new-password-field:focus {
+            border-color: #198754;
+            box-shadow: 0 0 0 .25rem rgba(25, 135, 84, .25);
+        }
+</style>
+@* === نهاية الإضافة === *@
+
+
+<div class="container-fluid">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @using (Html.BeginForm("Index", "Profile", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+        @Html.HiddenFor(m => m.ProfilePicturePath)
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">البيانات الأساسية</h5>
+                    </div>
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.FullNameArabic, new { @class = "form-label" })
+                            @Html.EditorFor(m => m.FullNameArabic, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                            @Html.ValidationMessageFor(m => m.FullNameArabic, "", new { @class = "text-danger" })
+                            <div class="form-text">لا يمكن تغيير الاسم الكامل من هذه الصفحة.</div>
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.IdentificationNumber, new { @class = "form-label" })
+                            @Html.EditorFor(m => m.IdentificationNumber, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                            @Html.ValidationMessageFor(m => m.IdentificationNumber, "", new { @class = "text-danger" })
+                            <div class="form-text">لا يمكن تغيير رقم الهوية من هذه الصفحة.</div>
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Email, new { @class = "form-label" })
+                            @Html.EditorFor(m => m.Email, new { htmlAttributes = new { @class = "form-control", type = "email" } })
+                            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Username, new { @class = "form-label" })
+                            @Html.EditorFor(m => m.Username, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                            <div class="form-text">لا يمكن تغيير اسم المستخدم.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">تغيير كلمة المرور</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">اترك هذه الحقول فارغة إذا كنت لا تريد تغيير كلمة المرور.</p>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.OldPassword, new { @class = "form-label" })
+                            @Html.EditorFor(m => m.OldPassword, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(m => m.OldPassword, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                @Html.LabelFor(m => m.NewPassword, new { @class = "form-label" })
+                                @* === بداية التعديل: إضافة كلاس التمييز === *@
+                                @Html.EditorFor(m => m.NewPassword, new { htmlAttributes = new { @class = "form-control new-password-field" } })
+                                @* === نهاية التعديل === *@
+                                @Html.ValidationMessageFor(m => m.NewPassword, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                @Html.LabelFor(m => m.ConfirmNewPassword, new { @class = "form-label" })
+                                @* === بداية التعديل: إضافة كلاس التمييز === *@
+                                @Html.EditorFor(m => m.ConfirmNewPassword, new { htmlAttributes = new { @class = "form-control new-password-field" } })
+                                @* === نهاية التعديل === *@
+                                @Html.ValidationMessageFor(m => m.ConfirmNewPassword, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">الصورة الشخصية</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img id="profile-pic-preview" src="@(Model.ProfilePicturePath ?? "/Content/Images/default-avatar.png")"
+                             class="img-thumbnail rounded-circle mb-3" alt="الصورة الشخصية"
+                             style="width: 150px; height: 150px; object-fit: cover;"
+                             onerror="this.src='/Content/Images/default-avatar.png';" />
+
+                        @Html.LabelFor(m => m.ProfilePictureFile, "تغيير الصورة", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.ProfilePictureFile, new { type = "file", @class = "form-control", onchange = "previewImage(event)" })
+                        @Html.ValidationMessageFor(m => m.ProfilePictureFile, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check-circle me-2"></i> حفظ التغييرات</button>
+                    @Html.ActionLink("العودة للرئيسية", "Index", "Home", null, new { @class = "btn btn-outline-secondary" })
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section scripts {
+    <script>
+        var previewImage = function (event) {
+            var output = document.getElementById('profile-pic-preview');
+            output.src = URL.createObjectURL(event.target.files[0]);
+            output.onload = function () {
+                URL.revokeObjectURL(output.src)
+            }
+        };
+    </script>
+}
+

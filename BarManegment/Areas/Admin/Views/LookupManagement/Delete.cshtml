@@ -1,0 +1,31 @@
+﻿@model dynamic
+@{
+    ViewBag.Title = "تأكيد الحذف";
+    string lookupType = ViewBag.LookupType;
+    string lookupTypeName = ViewBag.LookupTypeName;
+    string itemName = ViewBag.ItemName;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h4>@ViewBag.Title</h4>
+        </div>
+        <div class="card-body">
+            <p class="fs-5">هل أنت متأكد من حذف العنصر التالي من جدول "@lookupTypeName"؟</p>
+            <h4 class="text-danger">"@itemName"</h4>
+            <p class="text-muted"><strong>تحذير:</strong> قد يؤدي حذف هذا العنصر إلى مشاكل إذا كان مرتبطاً بسجلات أخرى.</p>
+
+            @using (Html.BeginForm("Delete", "LookupManagement", new { type = lookupType, id = Model.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="type" value="@lookupType" /> @* تأكيد إرسال النوع *@
+
+                <div class="d-flex gap-2 mt-4">
+                    <input type="submit" value="نعم، حذف العنصر" class="btn btn-danger" />
+                    @Html.ActionLink("لا، إلغاء الحذف", "List", new { type = lookupType }, new { @class = "btn btn-secondary" })
+                </div>
+            }
+        </div>
+    </div>
+</div>

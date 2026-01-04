@@ -1,0 +1,247 @@
+﻿@model IEnumerable<BarManegment.Models.UserModel>
+@using BarManegment.Helpers
+
+@{
+    ViewBag.Title = "إدارة المستخدمين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // تحديد المجموعة النشطة حالياً لتلوين التبويب
+    string currentGroup = ViewBag.CurrentUserGroup as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <style>
+        .dataTables_wrapper .dataTables_filter {
+            float: left;
+            text-align: left;
+        }
+
+        .dataTables_wrapper .dataTables_length {
+            float: right;
+        }
+
+        .dataTables_length select {
+            padding-right: 30px !important;
+            background-position: left .75rem center !important;
+        }
+
+        /* تنسيق التبويبات */
+        .nav-pills .nav-link {
+            color: #555;
+            font-weight: 600;
+            border-radius: 50rem;
+            padding: 8px 20px;
+            transition: all 0.2s;
+        }
+
+            .nav-pills .nav-link:hover {
+                background-color: #e9ecef;
+            }
+
+            .nav-pills .nav-link.active {
+                background-color: #0d6efd;
+                color: white;
+                box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+            }
+    </style>
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary fw-bold"><i class="bi bi-people-fill me-2"></i> @ViewBag.Title</h4>
+        @if (PermissionHelper.CheckPermission("Users", "CanAdd"))
+        {
+            @Html.ActionLink("إضافة مستخدم جديد", "Create", null, new { @class = "btn btn-primary shadow-sm" })
+        }
+    </div>
+
+    <!-- شريط التبويبات (Tabs) -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-2 bg-light rounded">
+            <ul class="nav nav-pills nav-fill gap-2">
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { userGroup = "" })" class="nav-link @(string.IsNullOrEmpty(currentGroup) ? "active" : "bg-white")">
+                        الكل <span class="badge bg-light text-dark border ms-1 rounded-pill">@ViewBag.CountAll</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { userGroup = "Staff" })" class="nav-link @(currentGroup == "Staff" ? "active" : "bg-white")">
+                        <i class="bi bi-person-badge me-1"></i> الموظفين
+                        <span class="badge bg-secondary ms-1 rounded-pill">@ViewBag.CountStaff</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { userGroup = "Lawyers" })" class="nav-link @(currentGroup == "Lawyers" ? "active" : "bg-white")">
+                        <i class="bi bi-briefcase me-1"></i> المحامين
+                        <span class="badge bg-success ms-1 rounded-pill">@ViewBag.CountLawyers</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { userGroup = "Trainees" })" class="nav-link @(currentGroup == "Trainees" ? "active" : "bg-white")">
+                        <i class="bi bi-mortarboard me-1"></i> المتدربين
+                        <span class="badge bg-info text-dark ms-1 rounded-pill">@ViewBag.CountTrainees</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { userGroup = "Committees" })" class="nav-link @(currentGroup == "Committees" ? "active" : "bg-white")">
+                        <i class="bi bi-people me-1"></i> اللجان والمصححين
+                        <span class="badge bg-warning text-dark ms-1 rounded-pill">@ViewBag.CountCommittees</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- جدول المستخدمين -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="usersTable" class="table table-striped table-hover align-middle w-100">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 60px;">الصورة</th>
+                            <th>الاسم الكامل</th>
+                            <th>اسم الدخول</th>
+                            <th>الدور الوظيفي</th>
+                            <th>الحالة</th>
+                            <th class="no-sort text-end">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <img src="@(item.ProfilePicturePath ?? "/Content/Images/default-avatar.png")"
+                                         alt="صورة" class="rounded-circle border shadow-sm" width="45" height="45"
+                                         style="object-fit: cover;"
+                                         onerror="this.src='/Content/Images/default-avatar.png';" />
+                                </td>
+                                <td class="fw-bold text-dark">@Html.DisplayFor(modelItem => item.FullNameArabic)</td>
+                                <td class="font-monospace text-muted small">@Html.DisplayFor(modelItem => item.Username)</td>
+                                <td>
+                                    @* تلوين الدور حسب نوعه *@
+                                    @if (item.UserType.NameEnglish == "Administrator")
+                                    {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger"><i class="bi bi-shield-lock-fill me-1"></i> مسؤول عام</span>
+                                    }
+                                    else if (item.UserType.NameEnglish == "Employee")
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">موظف</span>
+                                    }
+                                    else if (item.UserType.NameEnglish == "Advocate")
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success">محامي</span>
+                                    }
+                                    else if (item.UserType.NameEnglish == "Graduate")
+                                    {
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info">متدرب</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark border">@item.UserType.NameArabic</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success rounded-pill"><i class="bi bi-check-circle me-1"></i> فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger rounded-pill"><i class="bi bi-x-circle me-1"></i> معطل</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        @if (PermissionHelper.CheckPermission("Users", "CanEdit"))
+                                        {
+                                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-secondary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                                        }
+
+                                        <a href="@Url.Action("Index", "Permissions", new { userTypeId = item.UserTypeId, area = "Admin" })" class="btn btn-sm btn-outline-info" title="الصلاحيات"><i class="bi bi-key"></i></a>
+
+                                        @if (PermissionHelper.CheckPermission("Users", "CanDelete"))
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                                    data-user-id="@item.Id" data-user-name="@item.FullNameArabic" title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* === نافذة تأكيد الحذف (Modal) === *@
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i> تأكيد الحذف</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                هل أنت متأكد من أنك تريد حذف المستخدم <strong id="userNameToDelete" class="text-danger"></strong>؟
+                <br /><small class="text-muted">لا يمكن التراجع عن هذا الإجراء.</small>
+            </div>
+            <div class="modal-footer">
+                @using (Html.BeginForm("Delete", "Users", new { area = "Admin" }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="userIdToDelete" name="id" />
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-danger">نعم، حذف</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#usersTable').DataTable({
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/ar.json" },
+                "lengthMenu": [[10, 20, 50, 100, -1], [10, 20, 50, 100, "الكل"]],
+                "pageLength": 10,
+                "ordering": true,
+                "columnDefs": [{ "orderable": false, "targets": "no-sort" }]
+            });
+
+            $('.delete-btn').on('click', function () {
+                var userId = $(this).data('user-id');
+                var userName = $(this).data('user-name');
+                $('#userIdToDelete').val(userId);
+                $('#userNameToDelete').text(userName);
+            });
+        });
+    </script>
+}

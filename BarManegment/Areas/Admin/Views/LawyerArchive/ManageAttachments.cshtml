@@ -1,0 +1,193 @@
+﻿@model IEnumerable<BarManegment.Models.Attachment>
+@using System.Linq
+@* تم حل مشكلة Any/First بإضافة System.Linq ويفترض وجوده في Web.config *@
+
+@{
+    ViewBag.Title = "إدارة المرفقات والأرشيف";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // جلب رقم الملف من أول عنصر في القائمة أو من routeId (إذا كانت القائمة فارغة)
+    int routeId = 0;
+    var routeValue = ViewContext.RouteData.Values["id"];
+    if (routeValue != null)
+    {
+        int.TryParse(routeValue.ToString(), out routeId);
+    }
+
+    int applicationId = Model.Any() ? Model.First().GraduateApplicationId : routeId;
+    string traineeName = ViewBag.TraineeName ?? "الملف الشخصي";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow mb-4">
+
+        @* === ⬇️ ⬇️ بداية الكود البارز والمُعدل ⬇️ ⬇️ === *@
+        <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+
+            <div class="d-flex flex-column">
+                <!-- العنوان الرئيسي البارز -->
+                <h4 class="mb-0 text-primary fw-bold">
+                    <i class="bi bi-folder-check me-2"></i> أرشيف المستندات لـ: @traineeName
+                </h4>
+                <p class="text-muted small mb-0 mt-1">
+                    إجمالي المرفقات الحالية: @Model.Count() ملف
+                </p>
+            </div>
+
+            <div class="d-flex gap-2">
+                <!-- زر رفع ملف جديد -->
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAttachmentModal">
+                    <i class="bi bi-upload me-1"></i> رفع مرفق جديد
+                </button>
+                <!-- رابط العودة إلى صفحة التفاصيل -->
+                <a href="@Url.Action("Details", "TraineeProfile", new { id = applicationId })" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left-circle me-1"></i> العودة للملف
+                </a>
+            </div>
+        </div>
+        @* === ⬆️ ⬆️ نهاية الكود البارز والمُعدل ⬆️ ⬆️ === *@
+
+        <div class="card-body">
+
+            @if (TempData["SuccessMessage"] != null)
+            {<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+            @if (TempData["ErrorMessage"] != null)
+            {<div class="alert alert-danger">@TempData["ErrorMessage"]</div>}
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>نوع المرفق</th>
+                            <th>الاسم الأصلي للملف</th>
+                            <th>تاريخ الرفع</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="4" class="text-center text-muted">لا توجد مرفقات في الأرشيف.</td></tr>
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.AttachmentType.Name</td>
+                                <td class="text-break">@item.OriginalFileName</td>
+                                <td>@item.UploadDate.ToString("yyyy/MM/dd")</td>
+                                <td class="text-end text-nowrap">
+
+                                    <!-- زر عرض/تحميل (توجه للمتحكم الجديد) -->
+                                    <a href="@Url.Action("GetAttachmentFile", "LawyerArchive", new { id = item.Id })" target="_blank" class="btn btn-sm btn-outline-primary" title="عرض الملف">
+                                        <i class="bi bi-eye"></i> عرض
+                                    </a>
+
+                                    <!-- زر تعديل (لتغيير النوع فقط) -->
+                                    <button class="btn btn-sm btn-outline-warning edit-attachment-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editAttachmentModal"
+                                            data-id="@item.Id"
+                                            data-type-id="@item.AttachmentTypeId"
+                                            data-name="@item.OriginalFileName">
+                                        <i class="bi bi-pencil"></i> تعديل النوع
+                                    </button>
+
+                                    <!-- زر الحذف -->
+                                    @using (Html.BeginForm("DeleteAttachment", "LawyerArchive", new { area = "Admin" }, FormMethod.Post, new { style = "display:inline;" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="attachmentId" value="@item.Id" />
+                                        <input type="hidden" name="applicationId" value="@item.GraduateApplicationId" />
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذا المرفق؟ هذا الإجراء لا يمكن التراجع عنه.')">
+                                            <i class="bi bi-trash"></i> حذف
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --- مودال رفع مرفق جديد --- *@
+<div class="modal fade" id="addAttachmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddAttachment", "LawyerArchive", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ApplicationId" value="@applicationId" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title">رفع مرفق جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">نوع المرفق</label>
+                        @Html.DropDownList("NewAttachmentTypeId", (SelectList)ViewBag.AttachmentTypes, "--- اختر نوع المرفق ---", new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الملف</label>
+                        <input type="file" name="UploadedFile" class="form-control" required accept=".pdf,image/*,.doc,.docx" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> رفع وحفظ</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* --- مودال تعديل نوع المرفق (الأرشيف) --- *@
+<div class="modal fade" id="editAttachmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("EditAttachmentType", "LawyerArchive", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="edit_id_hidden" />
+                <input type="hidden" name="applicationId" value="@applicationId" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل نوع المرفق: <span id="edit_filename"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">نوع المرفق الجديد</label>
+                        @Html.DropDownList("NewAttachmentTypeId", (SelectList)ViewBag.AttachmentTypes, "--- اختر نوع المرفق الجديد ---", new { @class = "form-select", id = "edit_typeId", required = "required" })
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-warning"><i class="bi bi-save me-1"></i> حفظ التعديل</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // كود تعبئة مودال التعديل
+            $('#editAttachmentModal').on('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var id = button.getAttribute('data-id');
+                var typeId = button.getAttribute('data-type-id');
+                var filename = button.getAttribute('data-name');
+
+                var modal = $(this);
+                modal.find('#edit_id_hidden').val(id);
+                modal.find('#edit_typeId').val(typeId);
+                modal.find('#edit_filename').text(filename);
+            });
+        });
+    </script>
+}

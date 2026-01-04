@@ -1,0 +1,280 @@
+﻿@model IEnumerable<BarManegment.Models.GraduateApplication>
+
+@{
+    ViewBag.Title = "إدارة الإفادات والتقارير";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <!-- مكتبة DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+
+    <style>
+        /* تحسينات عامة للجدول */
+        .table-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            overflow: hidden;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(45deg, #0d6efd, #0a58ca);
+            color: white;
+            padding: 1.5rem;
+            border-bottom: none;
+        }
+
+        /* تخصيص الجدول */
+        #lawyersTable thead th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            border-bottom: 2px solid #e9ecef;
+            padding: 15px;
+        }
+
+        #lawyersTable tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            color: #333;
+        }
+
+        #lawyersTable tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* تحسين شكل الحالات (Badges) */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-practicing {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+
+        .badge-trainee {
+            background-color: #fff3cd;
+            color: #664d03;
+            border: 1px solid #ffecb5;
+        }
+
+        .badge-default {
+            background-color: #e2e3e5;
+            color: #41464b;
+            border: 1px solid #d3d6d8;
+        }
+
+        /* تخصيص حقل البحث والصفحات */
+        .dataTables_filter input {
+            border-radius: 20px;
+            padding: 6px 15px;
+            border: 1px solid #ced4da;
+        }
+
+            .dataTables_filter input:focus {
+                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+                border-color: #86b7fe;
+            }
+
+        .page-item.active .page-link {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 2px;
+        }
+
+        .page-link {
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 2px;
+            color: #6c757d;
+            border: none;
+        }
+
+            .page-link:hover {
+                background-color: #e9ecef;
+                color: #0d6efd;
+            }
+
+        /* زر الإجراءات */
+        .btn-action {
+            border-radius: 50px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+        }
+    </style>
+}
+
+<div class="container-fluid pt-4 px-4 pb-5">
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 border-start border-4 border-danger" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-circle-fill fs-4 me-2"></i>
+                <div>@TempData["ErrorMessage"]</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card table-card">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="m-0 fw-bold"><i class="bi bi-file-earmark-text me-2"></i> مركز الوثائق والتقارير</h4>
+                <p class="mb-0 opacity-75 small mt-1">إصدار الشهادات الرسمية، كتب البنوك، وتقارير الأعضاء</p>
+            </div>
+            <div class="d-none d-md-block">
+                <i class="bi bi-printer display-6 opacity-50"></i>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table id="lawyersTable" class="table align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th>الاسم الرباعي</th>
+                            <th>رقم الهوية</th>
+                            <th>رقم العضوية / المتدرب</th>
+                            <th>الحالة المهنية</th>
+                            <th class="text-center">الإجراءات والنماذج</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-initial rounded-circle bg-light text-primary fw-bold d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            @(item.ArabicName.Length > 0 ? item.ArabicName.Substring(0, 1) : "-")
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@item.ArabicName</div>
+                                            <small class="text-muted">ID: @item.Id</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="font-monospace">@item.NationalIdNumber</span></td>
+                                <td><span class="badge bg-light text-dark border font-monospace">@(item.MembershipId ?? item.TraineeSerialNo ?? "-")</span></td>
+                                <td>
+                                    @if (item.ApplicationStatus.Name.Contains("مزاول"))
+                                    {
+                                        <span class="status-badge badge-practicing">
+                                            <i class="bi bi-check-circle-fill me-1"></i> محامي مزاول
+                                        </span>
+                                    }
+                                    else if (item.ApplicationStatus.Name.Contains("متدرب"))
+                                    {
+                                        <span class="status-badge badge-trainee">
+                                            <i class="bi bi-mortarboard-fill me-1"></i> متدرب
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge badge-default">
+                                            @item.ApplicationStatus.Name
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-primary btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-printer me-1"></i> إصدار نموذج
+                                        </button>
+                                        <ul class="dropdown-menu shadow border-0">
+                                            <li><h6 class="dropdown-header">تقارير عامة</h6></li>
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("PrintComprehensiveProfile", new { id = item.Id })" target="_blank">
+                                                    <i class="bi bi-person-vcard me-2 text-secondary"></i> بطاقة العضو الشاملة
+                                                </a>
+                                            </li>
+
+                                            <li><hr class="dropdown-divider"></li>
+
+                                            @if (item.ApplicationStatus.Name.Contains("مزاول"))
+                                            {
+                                                <li><h6 class="dropdown-header text-success">نماذج المحامي المزاول</h6></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="@Url.Action("PrintStatement", new { id = item.Id, type = "Practicing" })" target="_blank">
+                                                        <i class="bi bi-award me-2 text-success"></i> إفادة مزاولة مهنة
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="@Url.Action("PrintBankLetter", new { id = item.Id })" target="_blank">
+                                                        <i class="bi bi-bank me-2 text-success"></i> كتاب بنك (فتح حساب)
+                                                    </a>
+                                                </li>
+                                            }
+                                            else if (item.ApplicationStatus.Name.Contains("متدرب"))
+                                            {
+                                                <li><h6 class="dropdown-header text-warning">نماذج المتدرب</h6></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="@Url.Action("PrintStatement", new { id = item.Id, type = "Trainee" })" target="_blank">
+                                                        <i class="bi bi-mortarboard me-2 text-warning"></i> إفادة تدريب
+                                                    </a>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li><span class="dropdown-item disabled text-muted small">لا توجد نماذج إضافية لهذه الحالة</span></li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- استدعاء سكربتات DataTables -->
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#lawyersTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.8/i18n/ar.json",
+                    "search": "بحث سريع:",
+                    "lengthMenu": "عرض _MENU_ سجل",
+                    "info": "عرض _START_ إلى _END_ من أصل _TOTAL_ سجل",
+                    "paginate": {
+                        "first": "الأول",
+                        "last": "الأخير",
+                        "next": "التالي",
+                        "previous": "السابق"
+                    }
+                },
+                "order": [[0, 'asc']], // الترتيب الافتراضي حسب الاسم
+                "pageLength": 10,
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "الكل"]],
+                "columnDefs": [
+                    { "orderable": false, "targets": 4 } // تعطيل الترتيب في عمود الإجراءات
+                ]
+            });
+        });
+    </script>
+}

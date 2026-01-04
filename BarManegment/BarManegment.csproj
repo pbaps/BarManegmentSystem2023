@@ -1,0 +1,1123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
+  <Import Project="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{72342D92-91E8-4D69-8A15-E1B856ED6FD6}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BarManegment</RootNamespace>
+    <AssemblyName>BarManegment</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <MvcBuildViews>false</MvcBuildViews>
+    <UseIISExpress>true</UseIISExpress>
+    <Use64BitIISExpress />
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
+    <UseGlobalApplicationHostFile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.5.1\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.5.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="EPPlusFree, Version=4.5.3.8, Culture=neutral, PublicKeyToken=85bfa0499e2db48a, processorArchitecture=MSIL">
+      <HintPath>..\packages\EPPlusFree.4.5.3.8\lib\net40\EPPlusFree.dll</HintPath>
+    </Reference>
+    <Reference Include="Humanizer, Version=2.14.0.0, Culture=neutral, PublicKeyToken=979442b78dfc278e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Humanizer.Core.2.14.1\lib\netstandard2.0\Humanizer.dll</HintPath>
+    </Reference>
+    <Reference Include="IndexRange, Version=1.0.3.0, Culture=neutral, PublicKeyToken=35e6a3c4212514c6, processorArchitecture=MSIL">
+      <HintPath>..\packages\IndexRange.1.0.3\lib\net47\IndexRange.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.Extensions.Configuration.Abstractions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Configuration.Abstractions.8.0.0\lib\net462\Microsoft.Extensions.Configuration.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Configuration.Binder, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Configuration.Binder.8.0.0\lib\net462\Microsoft.Extensions.Configuration.Binder.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.0\lib\net462\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Options.8.0.0\lib\net462\Microsoft.Extensions.Options.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options.ConfigurationExtensions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Options.ConfigurationExtensions.8.0.0\lib\net462\Microsoft.Extensions.Options.ConfigurationExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Primitives, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Primitives.8.0.0\lib\net462\Microsoft.Extensions.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.QualityTools.Testing.Fakes, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="PagedList, Version=1.17.0.0, Culture=neutral, PublicKeyToken=abbb863e9397c5e1, processorArchitecture=MSIL">
+      <HintPath>..\packages\PagedList.1.17.0.0\lib\net40\PagedList.dll</HintPath>
+    </Reference>
+    <Reference Include="PagedList.Mvc, Version=4.5.0.0, Culture=neutral, PublicKeyToken=abbb863e9397c5e1, processorArchitecture=MSIL">
+      <HintPath>..\packages\PagedList.Mvc.4.5.0.0\lib\net40\PagedList.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="Rollbar, Version=2.2.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rollbar.2.2.3\lib\net472\Rollbar.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.CodeDom, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.CodeDom.4.5.0\lib\net461\System.CodeDom.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.Annotations, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ComponentModel.Annotations.5.0.0\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http.Formatting, Version=5.2.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.7\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security" />
+    <Reference Include="System.Security.Principal.Windows, Version=4.1.1.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Principal.Windows.4.5.1\lib\net461\System.Security.Principal.Windows.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Text.Encodings.Web, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.8.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json, Version=8.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.8.0.5\lib\net462\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.DynamicData" />
+    <Reference Include="System.Web.Entity" />
+    <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Web.Http, Version=5.2.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.7\lib\net45\System.Web.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http.WebHost, Version=5.2.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.WebHost.5.2.7\lib\net45\System.Web.Http.WebHost.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Abstractions" />
+    <Reference Include="System.Web.Routing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http">
+    </Reference>
+    <Reference Include="System.Net.Http.WebRequest">
+    </Reference>
+    <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.7\lib\net45\System.Web.Helpers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Mvc, Version=5.2.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.AspNet.Mvc.5.2.7\lib\net45\System.Web.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Optimization">
+      <HintPath>..\packages\Microsoft.AspNet.Web.Optimization.1.1.3\lib\net40\System.Web.Optimization.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.7\lib\net45\System.Web.Razor.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.7\lib\net45\System.Web.WebPages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Deployment, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.7\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.7\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
+    </Reference>
+    <Reference Include="Tafqeet.2.1.1.0.Fakes">
+      <HintPath>FakesAssemblies\Tafqeet.2.1.1.0.Fakes.dll</HintPath>
+    </Reference>
+    <Reference Include="Telegram.Bot, Version=16.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Telegram.Bot.16.0.2\lib\net45\Telegram.Bot.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Abstractions, Version=4.0.3.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
+      <HintPath>..\packages\Unity.Abstractions.4.0.3\lib\net47\Unity.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Container, Version=5.9.5.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
+      <HintPath>..\packages\Unity.Container.5.9.5\lib\net47\Unity.Container.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RegistrationByConvention, Version=5.9.1.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
+      <HintPath>..\packages\Unity.RegistrationByConvention.5.9.1\lib\net47\Unity.RegistrationByConvention.dll</HintPath>
+    </Reference>
+    <Reference Include="WebGrease">
+      <Private>True</Private>
+      <HintPath>..\packages\WebGrease.1.6.0\lib\WebGrease.dll</HintPath>
+    </Reference>
+    <Reference Include="Antlr3.Runtime">
+      <Private>True</Private>
+      <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform">
+      <HintPath>..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\lib\net45\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="App_Start\BundleConfig.cs" />
+    <Compile Include="App_Start\FilterConfig.cs" />
+    <Compile Include="App_Start\HandleAntiForgeryErrorAttribute.cs" />
+    <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
+    <Compile Include="Areas\Admin\Controllers\AccountingReportsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\AdminLoginController.cs" />
+    <Compile Include="Areas\Admin\Controllers\BankAccountsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CentralQueryController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CheckPortfolioController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CommitteeManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CommitteesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ContractExemptionReasonsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ContractTransactionsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ContractTypesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CoordinatorInboxController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CouncilMembersController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CouncilSessionsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CurrenciesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DataExchangeController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DecisionFollowUpController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DepartmentsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\EmployeesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ExamApplicationsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ExamEnrollmentsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ExamsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ExamTypesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ExchangeRatesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\FeeTypesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\FinancialAidController.cs" />
+    <Compile Include="Areas\Admin\Controllers\FinancialReportsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\FinancialSetupController.cs" />
+    <Compile Include="Areas\Admin\Controllers\GeneralExpensesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\GeneralLedgerController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ItemsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\JobTitlesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LawyerFinancialDataController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PayrollController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PurchaseInvoicesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\StockIssuesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\SuppliersController.cs" />
+    <Compile Include="Areas\Admin\ViewModels\BalanceSheetViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\BankTransferReportViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\BatchAidViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CreateGeneralVoucherViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\GeneralLedgerViewModel.cs" />
+    <Compile Include="Areas\Admin\Controllers\HomeController.cs" />
+    <Compile Include="Areas\Admin\Controllers\JournalEntriesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LawyerArchiveController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LawyerFinancialBoxController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LawyerProfileController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LegalResearchController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LoanApplicationsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LoanPaymentsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LoanTypesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\LookupManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ManualGradingController.cs" />
+    <Compile Include="Areas\Admin\Controllers\MessagingController.cs" />
+    <Compile Include="Areas\Admin\Controllers\MinorRelationshipsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\MyExecutionTasksController.cs" />
+    <Compile Include="Areas\Admin\Controllers\OathCeremonyController.cs" />
+    <Compile Include="Areas\Admin\Controllers\OathRequestsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\OfficialReportsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\OpeningBalancesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\OralExamCommitteeController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PartyRolesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PaymentVouchersController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PracticingLawyerRenewalsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ProvincesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\QuestionsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ReceiptsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\RegisteredTraineesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ReportsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ShareManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\StampFinancialsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\StampInventoryController.cs" />
+    <Compile Include="Areas\Admin\Controllers\StampIssuanceController.cs" />
+    <Compile Include="Areas\Admin\Controllers\StampSalesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\StampShareManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\SupervisorChangeRequestsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\SystemSettingsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TraineeProfileController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TraineeQueryController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TraineeRenewalsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TraineeSuspensionsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TrainingCommitteeController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TrainingCoursesController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TrainingReportsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\TrainingSessionsController.cs" />
+    <Compile Include="Areas\Admin\ViewModels\AdminDashboardViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\BankBalanceViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CentralQueryViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CommitteeMemberDisplayViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CommitteePortalViewModels.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CommitteeViewModels.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ContractPrintViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ContractTransactionViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CoordinatorDashboardViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CourseDetailsViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CreateContractorReceiptViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CreateContractorVoucherViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CreateLoanReceiptViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CreatePracticingRenewalViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CreateReceiptViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\CreateSuspensionViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\DecisionFollowUpViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ExamIndexViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ExamResultsViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\GuarantorViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ImportViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\IncomeStatementViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\JournalEntryViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LawyerFinancialBoxViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LawyerFinancialDataViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LawyerProfileViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LawyerShareDetailsViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LawyerShareViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LawyerStampShareViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LegalResearchViewModels.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LoanApplicationViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\LookupItemViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ManualEnrollmentViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ManualGradingViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\NotificationViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\OathCeremonyViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\OathRequestCreateViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\OathRequestReviewViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\PassportMinorViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\PermissionsViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\PrintLoanReceiptViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\PrintReceiptViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\PurchaseInvoiceViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\QuestionViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\RecordOralExamResultViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\RecordStampSaleViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\ReportViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\RequestReviewViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\StampDashboardViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\StampIssuanceReceiptViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\StampIssuanceViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\StampShareManagementViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\StockIssueViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\StopContinueRequestViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\SupervisorRequestViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\SystemSettingsViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TraineeAttendanceReportViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TraineeIdCardViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TraineeProfileViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TraineeQueryViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TraineeReviewViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TrainingCommitteeIndexViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TransactionPartyViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TransferRequestViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\TrialBalanceViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\UploadExamResultsViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\VoucherIndexViewModel.cs" />
+    <Compile Include="Areas\ExamPortal\Controllers\DashboardController.cs" />
+    <Compile Include="Areas\ExamPortal\Controllers\ExamLoginController.cs" />
+    <Compile Include="Areas\ExamPortal\Controllers\TakeExamController.cs" />
+    <Compile Include="Areas\ExamPortal\ExamPortalAreaRegistration.cs" />
+    <Compile Include="Areas\ExamPortal\ViewModels\ExamViewModels.cs" />
+    <Compile Include="Areas\Members\Controllers\AccountController.cs" />
+    <Compile Include="Areas\Admin\Controllers\AuditLogsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\BaseController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ErrorController.cs" />
+    <Compile Include="Areas\Admin\Controllers\GraduateApplicationsController.cs" />
+    <Compile Include="Areas\Members\Controllers\ApplicationController.cs" />
+    <Compile Include="Areas\Members\Controllers\CommitteePortalController.cs" />
+    <Compile Include="Areas\Members\Controllers\ContractsController.cs" />
+    <Compile Include="Areas\Members\Controllers\CouncilRequestsController.cs" />
+    <Compile Include="Areas\Members\Controllers\DashboardController.cs" />
+    <Compile Include="Areas\Members\Controllers\LecturesController.cs" />
+    <Compile Include="Areas\Members\Controllers\LoansController.cs" />
+    <Compile Include="Areas\Members\Controllers\MessagingController.cs" />
+    <Compile Include="Areas\Members\Controllers\ProfileController.cs" />
+    <Compile Include="Areas\Members\Controllers\ResearchController.cs" />
+    <Compile Include="Areas\Members\Controllers\ServiceRequestsController.cs" />
+    <Compile Include="Areas\Members\Controllers\TrainingLogController.cs" />
+    <Compile Include="Areas\Members\ViewModels\AttachmentEditViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\CreateServiceRequestViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberContractViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberDashboardViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberInstallmentViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberLoanViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberLoanViewModels.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberLoginViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberProfileViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MemberShareViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\MessagingViewModels.cs" />
+    <Compile Include="Areas\Members\ViewModels\RegisterViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\SupervisorFormViewModel.cs" />
+    <Compile Include="Areas\Members\ViewModels\TraineeProfileEditViewModel.cs" />
+    <Compile Include="Controllers\AiAssistantController.cs" />
+    <Compile Include="Controllers\ExamRegistrationController.cs" />
+    <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Areas\Admin\Controllers\PermissionsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ProfileController.cs" />
+    <Compile Include="Controllers\TelegramBotController.cs" />
+    <Compile Include="Controllers\UsersApiController.cs" />
+    <Compile Include="Areas\Admin\Controllers\UsersController.cs" />
+    <Compile Include="Areas\Members\MembersAreaRegistration.cs" />
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+    <Compile Include="Helpers\AuditTranslationHelper.cs" />
+    <Compile Include="Helpers\CustomAuthorizeAttribute.cs" />
+    <Compile Include="Helpers\LawyerStatusHelper.cs" />
+    <Compile Include="Helpers\PasswordHelper.cs" />
+    <Compile Include="Helpers\PermissionHelper.cs" />
+    <Compile Include="Helpers\TafqeetHelper.cs" />
+    <Compile Include="Migrations\202601031203451_InitialCreate.cs" />
+    <Compile Include="Migrations\202601031203451_InitialCreate.designer.cs">
+      <DependentUpon>202601031203451_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\Answer.cs" />
+    <Compile Include="Models\ApplicationStatus.cs" />
+    <Compile Include="Models\Attachment.cs" />
+    <Compile Include="Models\AttachmentType.cs" />
+    <Compile Include="Models\BankAccount.cs" />
+    <Compile Include="Models\BarExpense.cs" />
+    <Compile Include="Models\CommitteeDecision.cs" />
+    <Compile Include="Models\CommitteeMember.cs" />
+    <Compile Include="Models\CommitteeModels.cs" />
+    <Compile Include="Models\ContactInfo.cs" />
+    <Compile Include="Models\Contracts\ContractExemptionReason.cs" />
+    <Compile Include="Models\Contracts\ContractTransaction.cs" />
+    <Compile Include="Models\Contracts\ContractType.cs" />
+    <Compile Include="Models\Contracts\FeeDistribution.cs" />
+    <Compile Include="Models\Contracts\PartyRole.cs" />
+    <Compile Include="Models\Contracts\PassportMinor.cs" />
+    <Compile Include="Models\Contracts\Province.cs" />
+    <Compile Include="Models\Contracts\TransactionParty.cs" />
+    <Compile Include="Models\CostCenter.cs" />
+    <Compile Include="Models\CouncilMember.cs" />
+    <Compile Include="Models\Currency.cs" />
+    <Compile Include="Models\DeferredFee.cs" />
+    <Compile Include="Models\Department.cs" />
+    <Compile Include="Models\DiscussionCommittee.cs" />
+    <Compile Include="Models\Employee.cs" />
+    <Compile Include="Models\EmployeeFinancialHistory.cs" />
+    <Compile Include="Models\EmployeePayrollSlip.cs" />
+    <Compile Include="Models\Exam.cs" />
+    <Compile Include="Models\ExamApplication.cs" />
+    <Compile Include="Models\ExamEnrollment.cs" />
+    <Compile Include="Models\ExamQualification.cs" />
+    <Compile Include="Models\ExamType.cs" />
+    <Compile Include="Models\FeeType.cs" />
+    <Compile Include="Models\Finance\CheckPortfolio.cs" />
+    <Compile Include="Models\Finance\ExchangeRate.cs" />
+    <Compile Include="Models\Finance\GeneralExpense.cs" />
+    <Compile Include="Models\FinancialAidType.cs" />
+    <Compile Include="Models\FinancialModels.cs" />
+    <Compile Include="Models\FiscalYear.cs" />
+    <Compile Include="Models\Gender.cs" />
+    <Compile Include="Models\GraduateApplication.cs" />
+    <Compile Include="Models\Guarantor.cs" />
+    <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\InternalMessage.cs" />
+    <Compile Include="Models\Item.cs" />
+    <Compile Include="Models\ItemCategory.cs" />
+    <Compile Include="Models\JobTitle.cs" />
+    <Compile Include="Models\LawyerExtendedData.cs" />
+    <Compile Include="Models\LawyerFinancialAid.cs" />
+    <Compile Include="Models\LeaveRequest.cs" />
+    <Compile Include="Models\LeaveType.cs" />
+    <Compile Include="Models\LegalResearch.cs" />
+    <Compile Include="Models\LoanApplication.cs" />
+    <Compile Include="Models\LoanInstallment.cs" />
+    <Compile Include="Models\LoanType.cs" />
+    <Compile Include="Models\ManualGrade.cs" />
+    <Compile Include="Models\MinorRelationship.cs" />
+    <Compile Include="Models\NationalIdType.cs" />
+    <Compile Include="Models\OathCeremony.cs" />
+    <Compile Include="Models\OathRequest.cs" />
+    <Compile Include="Models\OralExamCommittee.cs" />
+    <Compile Include="Models\OralExamCommitteeMember.cs" />
+    <Compile Include="Models\OralExamEnrollment.cs" />
+    <Compile Include="Models\PaymentVoucher.cs" />
+    <Compile Include="Models\PayrollModels.cs" />
+    <Compile Include="Models\PracticingLawyerRenewal.cs" />
+    <Compile Include="Models\PurchaseInvoice.cs" />
+    <Compile Include="Models\PurchaseInvoiceItem.cs" />
+    <Compile Include="Models\Qualification.cs" />
+    <Compile Include="Models\QualificationType.cs" />
+    <Compile Include="Models\Question.cs" />
+    <Compile Include="Models\QuestionType.cs" />
+    <Compile Include="Models\Receipt.cs" />
+    <Compile Include="Models\StampModels.cs" />
+    <Compile Include="Models\StampSale.cs" />
+    <Compile Include="Models\StockIssue.cs" />
+    <Compile Include="Models\StockIssueItem.cs" />
+    <Compile Include="Models\SupervisorChangeRequest.cs" />
+    <Compile Include="Models\SupervisorHistory.cs" />
+    <Compile Include="Models\Supplier.cs" />
+    <Compile Include="Models\SystemLookup.cs" />
+    <Compile Include="Models\SystemSetting.cs" />
+    <Compile Include="Models\TraineeAnswer.cs" />
+    <Compile Include="Models\TraineeAttendance.cs" />
+    <Compile Include="Models\TraineeRenewal.cs" />
+    <Compile Include="Models\TraineeSuspension.cs" />
+    <Compile Include="Models\TrainingCourse.cs" />
+    <Compile Include="Models\TrainingLog.cs" />
+    <Compile Include="Models\TrainingSession.cs" />
+    <Compile Include="Models\VoucherDetail.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\AccountingService.cs" />
+    <Compile Include="Services\AuditService.cs" />
+    <Compile Include="Services\EmailService.cs" />
+    <Compile Include="Services\SupervisorService.cs" />
+    <Compile Include="Services\TelegramService.cs" />
+    <Compile Include="ViewModels\AccountViewModels.cs" />
+    <Compile Include="ViewModels\BankAccountViewModel.cs" />
+    <Compile Include="ViewModels\CreateVoucherViewModel.cs" />
+    <Compile Include="ViewModels\ExamApplicationViewModel.cs" />
+    <Compile Include="ViewModels\ExamEnrollmentViewModel.cs" />
+    <Compile Include="ViewModels\FeeTypeViewModel.cs" />
+    <Compile Include="ViewModels\GraduateApplicationViewModel.cs" />
+    <Compile Include="ViewModels\LawyerFamilyViewModel.cs" />
+    <Compile Include="ViewModels\LoginViewModel.cs" />
+    <Compile Include="ViewModels\PrintVoucherViewModel.cs" />
+    <Compile Include="ViewModels\ProfileViewModel.cs" />
+    <Compile Include="ViewModels\UserViewModel.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content\bootstrap-theme.css" />
+    <Content Include="Content\bootstrap-theme.min.css" />
+    <Content Include="Content\bootstrap.css" />
+    <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\css\login-style.css" />
+    <Content Include="Content\css\site.css" />
+    <Content Include="Content\font\bootstrap-icons.css" />
+    <Content Include="Content\font\bootstrap-icons.min.css" />
+    <Content Include="Content\Images\default-avatar.png" />
+    <Content Include="Content\Images\Letterhead.jpg" />
+    <Content Include="Content\Images\LetterheadUp.png" />
+    <Content Include="Content\Images\logo.png" />
+    <Content Include="Content\Images\logodown.png" />
+    <Content Include="Content\Images\logoup.png" />
+    <Content Include="Content\PagedList.css" />
+    <Content Include="Content\select2-bootstrap-5-theme.min.css" />
+    <Content Include="Content\select2.min.css" />
+    <Content Include="Content\themes\base\accordion.css" />
+    <Content Include="Content\themes\base\all.css" />
+    <Content Include="Content\themes\base\autocomplete.css" />
+    <Content Include="Content\themes\base\base.css" />
+    <Content Include="Content\themes\base\button.css" />
+    <Content Include="Content\themes\base\core.css" />
+    <Content Include="Content\themes\base\datepicker.css" />
+    <Content Include="Content\themes\base\dialog.css" />
+    <Content Include="Content\themes\base\draggable.css" />
+    <Content Include="Content\themes\base\images\ui-bg_flat_0_aaaaaa_40x100.png" />
+    <Content Include="Content\themes\base\images\ui-bg_flat_75_ffffff_40x100.png" />
+    <Content Include="Content\themes\base\images\ui-bg_glass_55_fbf9ee_1x400.png" />
+    <Content Include="Content\themes\base\images\ui-bg_glass_65_ffffff_1x400.png" />
+    <Content Include="Content\themes\base\images\ui-bg_glass_75_dadada_1x400.png" />
+    <Content Include="Content\themes\base\images\ui-bg_glass_75_e6e6e6_1x400.png" />
+    <Content Include="Content\themes\base\images\ui-bg_glass_95_fef1ec_1x400.png" />
+    <Content Include="Content\themes\base\images\ui-bg_highlight-soft_75_cccccc_1x100.png" />
+    <Content Include="Content\themes\base\images\ui-icons_222222_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_2e83ff_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_444444_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_454545_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_555555_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_777620_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_777777_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_888888_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_cc0000_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_cd0a0a_256x240.png" />
+    <Content Include="Content\themes\base\images\ui-icons_ffffff_256x240.png" />
+    <Content Include="Content\themes\base\jquery-ui.css" />
+    <Content Include="Content\themes\base\jquery-ui.min.css" />
+    <Content Include="Content\themes\base\menu.css" />
+    <Content Include="Content\themes\base\progressbar.css" />
+    <Content Include="Content\themes\base\resizable.css" />
+    <Content Include="Content\themes\base\selectable.css" />
+    <Content Include="Content\themes\base\selectmenu.css" />
+    <Content Include="Content\themes\base\slider.css" />
+    <Content Include="Content\themes\base\sortable.css" />
+    <Content Include="Content\themes\base\spinner.css" />
+    <Content Include="Content\themes\base\tabs.css" />
+    <Content Include="Content\themes\base\theme.css" />
+    <Content Include="Content\themes\base\tooltip.css" />
+    <Content Include="favicon.ico" />
+    <Content Include="fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="Global.asax" />
+    <Content Include="Content\Site.css" />
+    <Content Include="Scripts\bootstrap.bundle.min.js" />
+    <Content Include="Scripts\bootstrap.js" />
+    <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Areas\Members\Views\_ViewStart.cshtml" />
+    <Content Include="Areas\Admin\Views\AdminLogin\Login.cshtml" />
+    <Content Include="Areas\Members\Views\Web.config" />
+    <Content Include="Areas\Admin\Views\Web.config" />
+    <Content Include="Areas\Admin\Views\Shared\_Layout.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\Error.cshtml" />
+    <Content Include="Areas\Members\Views\Shared\_Layout.cshtml" />
+    <Content Include="Areas\Members\Views\Shared\Error.cshtml" />
+    <Content Include="Areas\Admin\Views\_ViewStart.cshtml" />
+    <Content Include="Areas\Admin\Views\AdminLogin\Unauthorized.cshtml" />
+    <Content Include="Areas\Admin\Views\AdminLogin\LogOffConfirmation.cshtml" />
+    <Content Include="Areas\Admin\Views\Home\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Account\Register.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Application\Edit.cshtml" />
+    <Content Include="Areas\Members\Views\Application\_AttachmentList.cshtml" />
+    <Content Include="Areas\Members\Views\Application\_QualificationList.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_AttachmentList.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_QualificationList.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\ChangeStatus.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilMembers\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\PrintApplicationForm.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilMembers\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilMembers\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCommittee\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\FeeTypes\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\FeeTypes\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\FeeTypes\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\BankAccounts\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\BankAccounts\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\BankAccounts\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Currencies\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Currencies\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Currencies\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\PrintVoucher.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PrintLayout.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\SelectTrainee.cshtml" />
+    <Content Include="Areas\Admin\Views\Receipts\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Receipts\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Receipts\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCourses\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCourses\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCourses\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCourses\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingSessions\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingSessions\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeProfile\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingSessions\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingSessions\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\SupervisorChangeRequests\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\SupervisorChangeRequests\SelectTrainee.cshtml" />
+    <Content Include="Areas\Admin\Views\SupervisorChangeRequests\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\SupervisorChangeRequests\CommitteeReview.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeRenewals\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeProfile\PrintIdCard.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamApplications\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamApplications\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\SystemSettings\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamTypes\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamTypes\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamTypes\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Exams\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Exams\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Exams\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Questions\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Questions\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Questions\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Questions\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamEnrollments\Index.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\ExamLogin\Index.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\Dashboard\Index.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\Shared\_ExamLayout.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\TakeExam\Question.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\TakeExam\Result.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\Web.config" />
+    <Content Include="Areas\Admin\Views\Exams\AssignGraders.cshtml" />
+    <Content Include="Areas\Admin\Views\ManualGrading\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ManualGrading\Grade.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamEnrollments\ManageResults.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamEnrollments\Delete.cshtml" />
+    <Content Include="Areas\Members\Views\Profile\Edit.cshtml" />
+    <Content Include="Areas\Members\Views\Shared\_LoginPartial.cshtml" />
+    <Content Include="Areas\Members\Views\Profile\_QualificationList.cshtml" />
+    <Content Include="Areas\Members\Views\Profile\_AttachmentList.cshtml" />
+    <Content Include="Areas\Members\Views\Profile\EditQualification.cshtml" />
+    <Content Include="Areas\Members\Views\Profile\EditAttachment.cshtml" />
+    <Content Include="Areas\Members\Views\Profile\PrintSupervisorForm.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCommittee\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCommittee\PrintTrainingForm.cshtml" />
+    <Content Include="Areas\Admin\Views\SupervisorChangeRequests\RequestDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\SupervisorChangeRequests\TransferRequestForm.cshtml" />
+    <Content Include="Areas\Admin\Views\SupervisorChangeRequests\StopRequestForm.cshtml" />
+    <Content Include="Areas\Admin\Views\LookupManagement\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\LookupManagement\List.cshtml" />
+    <Content Include="Areas\Admin\Views\LookupManagement\_LookupFormFields.cshtml" />
+    <Content Include="Areas\Admin\Views\LookupManagement\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\LookupManagement\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\LookupManagement\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\LegalResearch\SubmitResearch.cshtml" />
+    <Content Include="Areas\Admin\Views\LegalResearch\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\LegalResearch\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\LegalResearch\AssignCommittee.cshtml" />
+    <Content Include="Areas\Admin\Views\LegalResearch\AssignExistingCommittee.cshtml" />
+    <Content Include="Areas\Admin\Views\LegalResearch\RecordDecision.cshtml" />
+    <Content Include="Areas\Admin\Views\CommitteeManagement\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CommitteeManagement\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CommitteeManagement\_CommitteeMemberEditorRow.cshtml" />
+    <Content Include="Areas\Admin\Views\CommitteeManagement\Edit.cshtml" />
+    <Content Include="Areas\Members\Views\Account\LogOff.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\_OralExamMemberEditorRow.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\AssignTrainees.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\RecordResult.cshtml" />
+    <Content Include="Areas\Admin\Views\OathRequests\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\OathRequests\ReviewList.cshtml" />
+    <Content Include="Areas\Admin\Views\OathRequests\ReviewDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\OathCeremony\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\OathCeremony\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\OathCeremony\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\OathCeremony\PrintAttendeesList.cshtml" />
+    <Content Include="Areas\Admin\Views\OathCeremony\PrintLicenseCertificate.cshtml" />
+    <Content Include="Areas\Admin\Views\OathCeremony\PrintPracticingCard.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PrintCaesLayout.cshtml" />
+    <Content Include="Areas\Admin\Views\AdminLogin\SessionExpired.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PrintWaselLayout.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\PrintReport.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCommittee\PrintReport.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeProfile\PrintComprehensiveReport.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\ExamLogin\LogOff.cshtml" />
+    <Content Include="Areas\ExamPortal\Views\ExamLogin\LogOffConfirmation.cshtml" />
+    <Content Include="Areas\Members\Views\Account\LogOffConfirmation.cshtml" />
+    <Content Include="Areas\Members\Views\Lectures\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Research\Details.cshtml" />
+    <Content Include="Areas\Members\Views\ServiceRequests\Create.cshtml" />
+    <Content Include="Areas\Members\Views\ServiceRequests\Details.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\PrintReceipt.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeSuspensions\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeSuspensions\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeQuery\Import.cshtml" />
+    <Content Include="Areas\Admin\Views\Exams\UploadWrittenResults.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_SupervisorPendingRequests.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_SupervisorMyTrainees.cshtml" />
+    <Content Include="Areas\Members\Views\TrainingLog\Create.cshtml" />
+    <Content Include="Areas\Members\Views\TrainingLog\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\ViewTraineeProfile.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_SupervisorPendingLogs.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\ReviewLog.cshtml" />
+    <Content Include="Areas\Admin\Views\TraineeQuery\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_LawyerPracticingRenewals.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_TraineeTrainingLogs.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_TraineeReceipts.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_TraineeLectures.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_TraineeResearch.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_TraineeRequests.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_TraineeSuspensions.cshtml" />
+    <Content Include="Areas\Admin\Views\PracticingLawyerRenewals\SelectLawyer.cshtml" />
+    <Content Include="Areas\Admin\Views\PracticingLawyerRenewals\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\PracticingLawyerRenewals\AnnualStatusReset.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerProfile\Details.cshtml" />
+    <Content Include="Areas\Members\Views\Messaging\Compose.cshtml" />
+    <Content Include="Areas\Members\Views\Messaging\Details.cshtml" />
+    <Content Include="Areas\Members\Views\Messaging\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Messaging\Compose.cshtml" />
+    <Content Include="Areas\Admin\Views\Messaging\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Messaging\Inbox.cshtml" />
+    <Content Include="Areas\Admin\Views\Messaging\Outbox.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTypes\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTypes\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTypes\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Provinces\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Provinces\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Provinces\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\PartyRoles\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\PartyRoles\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\PartyRoles\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractExemptionReasons\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractExemptionReasons\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractExemptionReasons\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTransactions\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTransactions\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTransactions\UploadScan.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialReports\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTransactions\ConfirmCashPayment.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialReports\HeldShares.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialReports\History.cshtml" />
+    <Content Include="Areas\Admin\Views\ShareManagement\Manage.cshtml" />
+    <Content Include="Areas\Admin\Views\ShareManagement\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTransactions\PrintContractVoucher.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTransactions\PrintContractReceipt.cshtml" />
+    <Content Include="Areas\Admin\Views\MinorRelationships\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\MinorRelationships\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\MinorRelationships\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\ContractTransactions\PrintPassportAgency.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_LawyerContractShares.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\MyContractShares.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanTypes\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanTypes\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanTypes\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\_LoanAttachments.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\PrintApplicationForm.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\PrintDebtBond.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\PrintMainPromissoryNote.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\PrintGuarantorForm.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\PrintCouncilApproval.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PrintLOanayout.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanPayments\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanPayments\LawyerInstallments.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanPayments\CreateReceipt.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanPayments\PrintLoanInstallmentReceipt.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\MyLoanDetails.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\_LawyerLoans.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\MyLoans.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilSessions\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilSessions\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilSessions\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilSessions\PrintAgenda.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilSessions\_PendingRequestsNotification.cshtml" />
+    <Content Include="Areas\Admin\Views\Committees\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Committees\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CouncilSessions\PrintDecision.cshtml" />
+    <Content Include="Areas\Admin\Views\Committees\ManageCase.cshtml" />
+    <Content Include="Areas\Admin\Views\DecisionFollowUp\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\MyExecutionTasks\Index.cshtml" />
+    <Content Include="Areas\Members\Views\CouncilRequests\Index.cshtml" />
+    <Content Include="Areas\Members\Views\CouncilRequests\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\CoordinatorInbox\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\StampInventory\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\StampIssuance\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\StampSales\RecordSale.cshtml" />
+    <Content Include="Areas\Admin\Views\StampIssuance\PrintIssuanceReceipt.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\CreateContractorVoucher.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\PrintContractorVoucher.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\ContractorVouchersList.cshtml" />
+    <Content Include="Areas\Admin\Views\Receipts\CreateContractorReceipt.cshtml" />
+    <Content Include="Areas\Admin\Views\Receipts\PrintContractorReceipt.cshtml" />
+    <Content Include="Areas\Admin\Views\StampFinancials\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\StampShareManagement\Manage.cshtml" />
+    <Content Include="Areas\Admin\Views\StampFinancials\History.cshtml" />
+    <Content Include="Areas\Admin\Views\StampFinancials\HeldShares.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerFinancialBox\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerFinancialBox\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerArchive\ManageAttachments.cshtml" />
+    <Content Include="Areas\Admin\Views\OfficialReports\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\OfficialReports\PrintBankLetter.cshtml" />
+    <Content Include="Areas\Admin\Views\CentralQuery\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Users\DeleteConfirmed.cshtml" />
+    <Content Include="Areas\Admin\Views\Users\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\Exams\_ExamActionsDropdown.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\PrintStampContractorVoucher.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PrintDocumentsLayout.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\PrintIdCard.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\PrintComprehensiveReport.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\PrintRegistrationCertificate.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingCourses\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingSessions\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingReports\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\TrainingReports\TraineeReport.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\_CommitteeMemberEditorRow.cshtml" />
+    <Content Include="Areas\Admin\Views\CommitteeManagement\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\PrintMasterSheet.cshtml" />
+    <Content Include="Areas\Admin\Views\OralExamCommittee\PrintMemberScoreSheets.cshtml" />
+    <Content Include="Areas\Admin\Views\CommitteeManagement\PrintCommitteeAgenda.cshtml" />
+    <Content Include="Areas\Admin\Views\CommitteeManagement\PrintEvaluationSheets.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\_AttachmentList.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\_QualificationList.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\PrintTrainingForm.cshtml" />
+    <Content Include="Areas\Admin\Views\RegisteredTrainees\PrintApplicationForm.cshtml" />
+    <Content Include="Areas\Members\Views\CommitteePortal\Dashboard.cshtml" />
+    <Content Include="Areas\Members\Views\CommitteePortal\GradeOralExam.cshtml" />
+    <Content Include="Areas\Members\Views\CommitteePortal\EvaluateResearch.cshtml" />
+    <Content Include="Areas\Members\Views\Shared\_CommitteeLayout.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerProfile\Edit.cshtml" />
+    <Content Include="Areas\Members\Views\Loans\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Loans\Create.cshtml" />
+    <Content Include="Areas\Members\Views\Loans\Details.cshtml" />
+    <Content Include="Areas\Members\Views\Contracts\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Shared\_Sidebar.cshtml" />
+    <Content Include="Areas\Admin\Views\OfficialReports\PrintStatement_Practicing.cshtml" />
+    <Content Include="Areas\Admin\Views\OfficialReports\PrintStatement_Trainee.cshtml" />
+    <Content Include="Areas\Admin\Views\OfficialReports\PrintComprehensiveProfile.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\Result.cshtml" />
+    <Content Include="Areas\Admin\Views\ExamEnrollments\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\DataExchange\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Reports\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Profile\EditFamilyRecord.cshtml" />
+    <Content Include="Areas\Admin\Views\JournalEntries\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\GeneralExpenses\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\GeneralExpenses\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\GeneralExpenses\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\JournalEntries\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\JournalEntries\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialSetup\AccountsIndex.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialSetup\CreateAccount.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialSetup\EditAccount.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialSetup\CreateCostCenter.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialSetup\CostCentersIndex.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialSetup\EditCostCenter.cshtml" />
+    <Content Include="Areas\Admin\Views\AccountingReports\TrialBalance.cshtml" />
+    <Content Include="Areas\Admin\Views\AccountingReports\PrintTrialBalance.cshtml" />
+    <Content Include="Areas\Admin\Views\ExchangeRates\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ExchangeRates\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialReports\BankBalances.cshtml" />
+    <Content Include="Areas\Admin\Views\OpeningBalances\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\GeneralLedger\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\GeneralLedger\Print.cshtml" />
+    <Content Include="Areas\Admin\Views\CheckPortfolio\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CheckPortfolio\_CollectModal.cshtml" />
+    <Content Include="Areas\Admin\Views\CheckPortfolio\_BounceModal.cshtml" />
+    <Content Include="Areas\Admin\Views\AccountingReports\IncomeStatement.cshtml" />
+    <Content Include="Areas\Admin\Views\AccountingReports\PrintIncomeStatement.cshtml" />
+    <Content Include="Areas\Admin\Views\AccountingReports\BalanceSheet.cshtml" />
+    <Content Include="Areas\Admin\Views\AccountingReports\PrintBalanceSheet.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\CreateGeneralVoucher.cshtml" />
+    <Content Include="Areas\Admin\Views\PurchaseInvoices\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\StockIssues\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Items\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Items\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Suppliers\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Suppliers\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\PurchaseInvoices\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\StockIssues\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\PurchaseInvoices\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\StockIssues\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Items\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Suppliers\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PrintLayoutPurcher.cshtml" />
+    <Content Include="Areas\Admin\Views\Employees\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Employees\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Employees\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Employees\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Departments\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Departments\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\JobTitles\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\JobTitles\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Departments\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\JobTitles\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Employees\Print.cshtml" />
+    <Content Include="Areas\Admin\Views\Payroll\Create.cshtml" />
+    <Content Include="Scripts\chart.js" />
+    <Content Include="Scripts\jquery-3.7.1.min.js" />
+    <Content Include="Scripts\jquery-ui-1-14.1.js" />
+    <Content Include="Scripts\jquery-ui-1.14.1.js" />
+    <Content Include="Scripts\jquery-ui-1.14.1.min.js" />
+    <Content Include="Areas\Admin\Views\Payroll\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Payroll\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Payroll\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\Payroll\Print.cshtml" />
+    <Content Include="Areas\Admin\Views\PaymentVouchers\GeneralVouchers.cshtml" />
+    <Content Include="Areas\Admin\Views\JournalEntries\Print.cshtml" />
+    <Content Include="Content\font\bootstrap-icons.json" />
+    <Content Include="Content\font\bootstrap-icons.scss" />
+    <Content Include="Content\font\fonts\bootstrap-icons.woff" />
+    <Content Include="Content\font\fonts\bootstrap-icons.woff2" />
+    <Content Include="Areas\Admin\Views\FinancialAid\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialAid\BatchCreate.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialAid\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialAid\PayAid.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialAid\BatchDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialAid\PrintBankTransfer.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerFinancialData\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerFinancialData\_LawyerSearchResult.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerFinancialData\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialAid\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\FinancialAid\EditBatch.cshtml" />
+    <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
+    <None Include="Scripts\jquery.validate-vsdoc.js" />
+    <Content Include="Scripts\jquery.validate.js" />
+    <Content Include="Scripts\jquery.validate.min.js" />
+    <Content Include="Scripts\jquery.validate.unobtrusive.js" />
+    <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
+    <Content Include="Scripts\modernizr-2.8.3.js" />
+    <Content Include="Scripts\qrious.min.js" />
+    <Content Include="Scripts\select2.min.js" />
+    <Content Include="Web.config" />
+    <Content Include="Web.Debug.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </Content>
+    <Content Include="Web.Release.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </Content>
+    <Content Include="Views\Web.config" />
+    <Content Include="Views\_ViewStart.cshtml" />
+    <Content Include="Views\Shared\Error.cshtml" />
+    <Content Include="Views\Home\About.cshtml" />
+    <Content Include="Views\Home\Contact.cshtml" />
+    <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Account\Login.cshtml" />
+    <Content Include="Areas\Admin\Views\Users\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Users\_UserForm.cshtml" />
+    <Content Include="Areas\Admin\Views\Users\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Users\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Permissions\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Account\LoggedOut.cshtml" />
+    <Content Include="Areas\Members\Views\Account\SessionExpired.cshtml" />
+    <Content Include="Areas\Admin\Views\Error\Unauthorized.cshtml" />
+    <Content Include="Areas\Admin\Views\AuditLogs\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Profile\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Account\ForgotPassword.cshtml" />
+    <Content Include="Areas\Members\Views\Account\ForgotPasswordConfirmation.cshtml" />
+    <Content Include="Areas\Members\Views\Account\ResetPassword.cshtml" />
+    <Content Include="Areas\Members\Views\Account\ResetPasswordConfirmation.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\_QualificationList.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\_AttachmentList.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\AttachmentDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\GraduateApplications\Details.cshtml" />
+    <Content Include="Views\Shared\_PublicLayout.cshtml" />
+    <Content Include="Views\ExamRegistration\Create.cshtml" />
+    <Content Include="Views\ExamRegistration\Success.cshtml" />
+    <Content Include="Views\ExamRegistration\RegistrationClosed.cshtml" />
+    <Content Include="Views\Shared\_RegisterLayout.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="App_Data\" />
+    <Folder Include="Areas\Admin\Models\" />
+    <Folder Include="Areas\Admin\Views\AiAssistant\" />
+    <Folder Include="Areas\Admin\Views\Base\" />
+    <Folder Include="Areas\Admin\Views\CommitteePortal\" />
+    <Folder Include="Areas\Admin\Views\UsersApi\" />
+    <Folder Include="Areas\Members\Models\" />
+    <Folder Include="Fakes\" />
+    <Folder Include="Models\LookupTables\" />
+    <Folder Include="Uploads\ProfilePictures\" />
+    <Folder Include="Views\AiAssistant\" />
+    <Folder Include="Views\TelegramBot\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\bootstrap.min.css.map" />
+    <Content Include="Content\bootstrap.css.map" />
+    <Content Include="Content\bootstrap-theme.min.css.map" />
+    <Content Include="Content\bootstrap-theme.css.map" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\202601031203451_InitialCreate.resx">
+      <DependentUpon>202601031203451_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <Target Name="MvcBuildViews" AfterTargets="AfterBuild" Condition="'$(MvcBuildViews)'=='true'">
+    <AspNetCompiler VirtualPath="temp" PhysicalPath="$(WebProjectOutputDir)" />
+  </Target>
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>True</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>4788</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:5500/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>False</UseCustomServer>
+          <CustomServerUrl>
+          </CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
+    <Error Condition="!Exists('..\packages\EntityFramework.6.5.1\build\EntityFramework.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.5.1\build\EntityFramework.props'))" />
+    <Error Condition="!Exists('..\packages\EntityFramework.6.5.1\build\EntityFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.5.1\build\EntityFramework.targets'))" />
+  </Target>
+  <Import Project="..\packages\EntityFramework.6.5.1\build\EntityFramework.targets" Condition="Exists('..\packages\EntityFramework.6.5.1\build\EntityFramework.targets')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target> -->
+</Project>

@@ -1,0 +1,110 @@
+﻿@model IEnumerable<BarManegment.Models.PurchaseInvoice>
+
+@{
+    ViewBag.Title = "أرشيف فواتير الشراء";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="text-primary fw-bold"><i class="bi bi-cart-check me-2"></i> سجل التوريد المخزني (المشتريات)</h4>
+            <p class="text-muted small mb-0">متابعة الفواتير الموردة وحالة المخزون</p>
+        </div>
+        <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> توريد جديد
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>المورد</th>
+                            <th>رقم الفاتورة (مورد)</th>
+                            <th>تاريخ التوريد</th>
+                            <th>طريقة الدفع</th>
+                            <th>قيمة الفاتورة</th>
+                            <th>القيد المالي</th>
+                            <th class="text-end" style="width: 120px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="font-monospace">@item.Id</td>
+                                <td class="fw-bold text-primary">@item.Supplier.Name</td>
+                                <td>@item.SupplierInvoiceNumber</td>
+                                <td>@item.InvoiceDate.ToString("yyyy/MM/dd")</td>
+                                <td>
+                                    @if (item.PaymentMethod == "نقدي")
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success">نقدي</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning bg-opacity-10 text-dark border border-warning">آجل (ذمم)</span>
+                                    }
+                                </td>
+                                <td class="fw-bold">@item.TotalAmount.ToString("N2")</td>
+                                <td>
+                                    @if (item.JournalEntryId.HasValue)
+                                    {
+                                        <a href="@Url.Action("Details", "JournalEntries", new { id = item.JournalEntryId })" class="badge bg-secondary text-decoration-none" target="_blank">
+                                            قيد #@item.JournalEntryId
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-secondary" title="تفاصيل وطباعة">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+
+                                        <form action="@Url.Action("Delete", new { id = item.Id })" method="post" style="display:inline;" onsubmit="return confirm('تحذير هام:\nسيتم حذف الفاتورة، وعكس (إنقاص) الكميات من المخزون، وإلغاء القيد المالي.\n\nهل أنت متأكد تماماً؟');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="إلغاء التوريد">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-cart-x fs-1 d-block mb-3 opacity-25"></i>
+                    <h5>لا توجد فواتير توريد مسجلة</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>

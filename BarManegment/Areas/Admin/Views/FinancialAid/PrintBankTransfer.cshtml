@@ -1,0 +1,90 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.BankTransferReportViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <title>كشف تحويل بنكي</title>
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { font-family: 'Cairo', sans-serif; padding: 40px; }
+        .header { text-align: center; margin-bottom: 50px; }
+        .letter-body { font-size: 1.1rem; line-height: 1.8; margin-bottom: 30px; }
+        .signature { margin-top: 80px; display: flex; justify-content: space-between; }
+        @@media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="text-start no-print mb-3">
+        <button onclick="window.print()" class="btn btn-primary">طباعة</button>
+    </div>
+
+    <div class="header">
+        <img src="~/Content/images/logo.png" style="height: 100px;" alt="Logo" />
+        <h3>نقابة المحامين الفلسطينيين</h3>
+        <h5>كشف تحويلات بنكية</h5>
+        <div>التاريخ: @Model.Date.ToString("yyyy/MM/dd")</div>
+    </div>
+
+    <div class="letter-body">
+        <strong>السيد / مدير عام @Model.SourceBankName المحترم،</strong><br />
+        <strong>تحية طيبة وبعد،،،</strong><br /><br />
+
+        <p>
+            نرجو من سيادتكم التكرم بتحويل مبلغ وقدره (<strong>@Model.TotalAmount @Model.CurrencySymbol</strong>)
+            من حسابنا رقم (<strong>@Model.SourceAccountNumber</strong>) / آيبان (<strong>@Model.SourceIBAN</strong>)
+            لدى طرفكم، إلى حسابات الزملاء المحامين المدرجة أسماؤهم وتفاصيلهم في الكشف أدناه.
+        </p>
+    </div>
+
+    <table class="table table-bordered border-dark text-center">
+        <thead>
+            <tr class="table-active">
+                <th style="width: 5%">#</th>
+                <th>اسم المستفيد</th>
+                <th>رقم الهوية</th>
+                <th>البنك المستفيد</th>
+                <th>رقم الحساب / IBAN</th>
+                <th>المبلغ (@Model.CurrencySymbol)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int i = 1; }
+            @foreach (var item in Model.Beneficiaries)
+            {
+                <tr>
+                    <td>@(i++)</td>
+                    <td>@item.Lawyer.ArabicName</td>
+                    <td>@item.Lawyer.NationalIdNumber</td>
+                    <td>@item.TargetBankName</td>
+                    <td style="direction: ltr;">@item.TargetIban</td>
+                    <td>@item.Amount</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot class="fw-bold">
+            <tr>
+                <td colspan="5" class="text-end">الإجمالي:</td>
+                <td>@Model.TotalAmount</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="signature">
+        <div class="text-center">
+            <strong>أمين الصندوق</strong><br /><br />
+            __________________
+        </div>
+        <div class="text-center">
+            <strong>نقيب المحامين</strong><br /><br />
+            __________________
+        </div>
+        <div class="text-center">
+            <strong>ختم النقابة</strong><br /><br />
+            <div style="width: 100px; height: 100px; border: 1px dashed #ccc; border-radius: 50%; margin: auto;"></div>
+        </div>
+    </div>
+</body>
+</html>

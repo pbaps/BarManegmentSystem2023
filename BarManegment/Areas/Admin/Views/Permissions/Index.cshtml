@@ -1,0 +1,347 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.PermissionsViewModel
+@using BarManegment.Helpers
+@{
+    ViewBag.Title = "إدارة الصلاحيات والأدوار";
+    var canEditPermissions = PermissionHelper.CheckPermission("Permissions", "CanEdit");
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* تحسينات الجدول */
+    .permissions-table th {
+        vertical-align: middle;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .permissions-table td {
+        vertical-align: middle;
+    }
+
+    /* تكبير مربعات الاختيار قليلاً */
+    .permission-check {
+        width: 1.4em;
+        height: 1.4em;
+        cursor: pointer;
+        border-color: #adb5bd;
+    }
+
+        .permission-check:checked {
+            border-color: #0d6efd;
+        }
+
+    /* تثبيت رأس الجدول */
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* تنسيق الصفوف */
+    .module-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .module-name-cell {
+        font-weight: 600;
+        color: #2c3e50;
+        border-left: 3px solid transparent;
+    }
+
+    .module-row:hover .module-name-cell {
+        border-left-color: #0d6efd; /* مؤشر بصري عند المرور */
+    }
+
+    /* تمييز الأعمدة */
+    .bg-col-basic {
+        background-color: #ffffff;
+    }
+
+    .bg-col-extra {
+        background-color: #f8fcfd;
+    }
+    /* لون مختلف قليلاً للصلاحيات الإضافية */
+
+    /* شريط الحفظ العائم */
+    .floating-save-bar {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid #dee2e6;
+        padding: 1rem;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+        z-index: 1000;
+    }
+
+    /* زر تحديد الكل المصغر */
+    .btn-check-all-mini {
+        padding: 0;
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 4px;
+        cursor: pointer;
+    }
+
+        .btn-check-all-mini:hover {
+            color: #0d6efd;
+        }
+</style>
+
+<div class="container-fluid pt-4 px-4 mb-5">
+
+    @* --- العنوان والوصف --- *@
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+            <h4 class="text-primary fw-bold mb-1">
+                <i class="bi bi-shield-lock-fill me-2"></i> @ViewBag.Title
+            </h4>
+            <p class="text-muted small mb-0">لوحة التحكم المركزية لتعيين صلاحيات الوصول والعمليات لكل دور وظيفي.</p>
+        </div>
+    </div>
+
+    @* --- بطاقة اختيار الدور --- *@
+    <div class="card shadow-sm border-0 mb-4" style="border-right: 5px solid #0d6efd !important;">
+        <div class="card-body bg-light rounded">
+            <div class="row align-items-end g-3">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold text-dark mb-2">
+                        <i class="bi bi-person-badge me-1 text-primary"></i> اختر الدور الوظيفي:
+                    </label>
+                    <div class="input-group shadow-sm">
+                        @Html.DropDownListFor(m => m.SelectedUserTypeId, Model.UserTypes, "--- اختر الدور لعرض الصلاحيات ---", new { @class = "form-select border-0 py-2", id = "userTypeDropdown" })
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button id="viewPermissionsBtn" class="btn btn-primary w-100 shadow-sm py-2 fw-bold">
+                        <i class="bi bi-eye me-1"></i> عرض
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.SelectedUserTypeId.HasValue)
+    {
+        using (Html.BeginForm("Update", "Permissions", new { area = "Admin" }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.SelectedUserTypeId)
+
+            <div class="card shadow border-0 overflow-hidden">
+                @* --- رأس البطاقة وأدوات الفلترة --- *@
+                <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div class="d-flex align-items-center">
+                        <h5 class="mb-0 text-dark fw-bold me-3">
+                            صلاحيات: <span class="badge bg-primary px-3 py-2 rounded-pill">@Model.UserTypeName</span>
+                        </h5>
+                    </div>
+
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchModule" class="form-control border-start-0 bg-light" placeholder="بحث سريع عن وحدة..." />
+                    </div>
+                </div>
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success m-3 alert-dismissible fade show border-0 shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill fs-4 me-2 text-success"></i>
+                            <strong>@TempData["SuccessMessage"]</strong>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @* --- جدول الصلاحيات --- *@
+                <div class="card-body p-0">
+                    <!-- إضافة overflow-y: auto لتفعيل السكرول -->
+                    <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0 permissions-table" id="permissionsTable">
+                            <thead class="bg-light text-secondary sticky-header">
+                                <tr>
+                                    <th class="ps-4 py-3" style="width: 30%;">الوحدة / الشاشة</th>
+
+                                    @* العمليات الأساسية *@
+                                    <th class="text-center bg-col-basic" style="width: 10%;">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="fw-bold text-primary"><i class="bi bi-eye me-1"></i> عرض</span>
+                                            @if (canEditPermissions)
+                                            {
+                                                <div class="form-check form-switch mt-1" title="تحديد/إلغاء تحديد الكل">
+                                                    <input type="checkbox" class="form-check-input select-col" data-col="view" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </th>
+                                    <th class="text-center bg-col-basic" style="width: 10%;">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="fw-bold text-success"><i class="bi bi-plus-lg me-1"></i> إضافة</span>
+                                            @if (canEditPermissions)
+                                            {
+                                                <div class="form-check form-switch mt-1">
+                                                    <input type="checkbox" class="form-check-input select-col" data-col="add" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </th>
+                                    <th class="text-center bg-col-basic" style="width: 10%;">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="fw-bold text-warning"><i class="bi bi-pencil-fill me-1"></i> تعديل</span>
+                                            @if (canEditPermissions)
+                                            {
+                                                <div class="form-check form-switch mt-1">
+                                                    <input type="checkbox" class="form-check-input select-col" data-col="edit" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </th>
+                                    <th class="text-center bg-col-basic" style="width: 10%;">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="fw-bold text-danger"><i class="bi bi-trash-fill me-1"></i> حذف</span>
+                                            @if (canEditPermissions)
+                                            {
+                                                <div class="form-check form-switch mt-1">
+                                                    <input type="checkbox" class="form-check-input select-col" data-col="delete" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </th>
+
+                                    @* العمليات الإضافية *@
+                                    <th class="text-center bg-col-extra" style="width: 10%;">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="fw-bold text-secondary"><i class="bi bi-printer me-1"></i> طباعة</span>
+                                            @if (canEditPermissions)
+                                            {
+                                                <div class="form-check form-switch mt-1">
+                                                    <input type="checkbox" class="form-check-input select-col" data-col="export" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </th>
+                                    <th class="text-center bg-col-extra" style="width: 10%;">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="fw-bold text-info"><i class="bi bi-upload me-1"></i> استيراد</span>
+                                            @if (canEditPermissions)
+                                            {
+                                                <div class="form-check form-switch mt-1">
+                                                    <input type="checkbox" class="form-check-input select-col" data-col="import" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </th>
+                                    <th class="text-center" style="width: 10%;">
+                                        @if (canEditPermissions)
+                                        {<span class="badge bg-secondary">صف كامل</span>}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Modules.Count; i++)
+                                {
+                                    <tr class="module-row">
+                                        <td class="ps-4 module-name-cell">
+                                            @Html.HiddenFor(m => m.Modules[i].ModuleId)
+                                            @Html.HiddenFor(m => m.Modules[i].ModuleName)
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-light rounded p-1 me-2 text-primary d-none d-md-block">
+                                                    <i class="bi bi-grid"></i>
+                                                </div>
+                                                <span>@Model.Modules[i].ModuleName</span>
+                                            </div>
+                                        </td>
+
+                                        <td class="text-center bg-col-basic">
+                                            @Html.CheckBoxFor(m => m.Modules[i].CanView, canEditPermissions ? new { @class = "form-check-input permission-check check-view" } : (object)new { @class = "form-check-input permission-check", @disabled = "disabled" })
+                                        </td>
+                                        <td class="text-center bg-col-basic">
+                                            @Html.CheckBoxFor(m => m.Modules[i].CanAdd, canEditPermissions ? new { @class = "form-check-input permission-check check-add" } : (object)new { @class = "form-check-input permission-check", @disabled = "disabled" })
+                                        </td>
+                                        <td class="text-center bg-col-basic">
+                                            @Html.CheckBoxFor(m => m.Modules[i].CanEdit, canEditPermissions ? new { @class = "form-check-input permission-check check-edit" } : (object)new { @class = "form-check-input permission-check", @disabled = "disabled" })
+                                        </td>
+                                        <td class="text-center bg-col-basic">
+                                            @Html.CheckBoxFor(m => m.Modules[i].CanDelete, canEditPermissions ? new { @class = "form-check-input permission-check check-delete" } : (object)new { @class = "form-check-input permission-check", @disabled = "disabled" })
+                                        </td>
+                                        <td class="text-center bg-col-extra">
+                                            @Html.CheckBoxFor(m => m.Modules[i].CanExport, canEditPermissions ? new { @class = "form-check-input permission-check check-export" } : (object)new { @class = "form-check-input permission-check", @disabled = "disabled" })
+                                        </td>
+                                        <td class="text-center bg-col-extra">
+                                            @Html.CheckBoxFor(m => m.Modules[i].CanImport, canEditPermissions ? new { @class = "form-check-input permission-check check-import" } : (object)new { @class = "form-check-input permission-check", @disabled = "disabled" })
+                                        </td>
+
+                                        <td class="text-center">
+                                            @if (canEditPermissions)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-dark rounded-circle select-row-btn" title="تبديل اختيار الصف بالكامل" style="width: 30px; height: 30px; padding: 0;">
+                                                    <i class="bi bi-check2-all"></i>
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @if (canEditPermissions)
+                {
+                    <div class="floating-save-bar d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            <i class="bi bi-info-circle me-1"></i> تذكر حفظ التعديلات قبل مغادرة الصفحة.
+                        </div>
+                        <button type="submit" class="btn btn-success px-5 py-2 fw-bold shadow">
+                            <i class="bi bi-save me-2"></i> حفظ كافة الصلاحيات
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            // 1. زر عرض الصلاحيات
+            $('#viewPermissionsBtn').on('click', function () {
+                var selectedId = $('#userTypeDropdown').val();
+                if (selectedId) {
+                    var url = '@Url.Action("Index", "Permissions", new { area = "Admin" })' + '?userTypeId=' + selectedId;
+                    window.location.href = url;
+                } else {
+                    alert('الرجاء اختيار دور من القائمة أولاً.');
+                }
+            });
+
+            // 2. فلترة الجدول (البحث السريع)
+            $("#searchModule").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#permissionsTable tbody tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+
+            // 3. تحديد عمود كامل (Select All Column)
+            $('.select-col').on('change', function() {
+                var type = $(this).data('col'); // view, add, edit...
+                var isChecked = $(this).is(':checked');
+                // نستخدم visible للتأكد من تحديد الصفوف الظاهرة فقط في حال البحث
+                $('.check-' + type + ':visible').prop('checked', isChecked);
+            });
+
+            // 4. تحديد صف كامل (Select Row)
+            $('.select-row-btn').on('click', function() {
+                var row = $(this).closest('tr');
+                var checkboxes = row.find('input[type="checkbox"]');
+
+                // منطق ذكي: إذا كان الكل محدد -> الغاء، وإلا -> تحديد الكل
+                var allChecked = checkboxes.length === checkboxes.filter(':checked').length;
+                checkboxes.prop('checked', !allChecked);
+            });
+        });
+    </script>
+}

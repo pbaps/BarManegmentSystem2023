@@ -1,0 +1,497 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeIdCardViewModel
+@{
+    Layout = null;
+    string photoUrl = !string.IsNullOrEmpty(Model.PersonalPhotoPath)
+                      ? Url.Content(Model.PersonalPhotoPath)
+                      : Url.Content("~/Content/Images/default-avatar.png");
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>بطاقة متدرب: @Model.TraineeName</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+
+    <style>
+        :root {
+            --card-width: 85.6mm;
+            --card-height: 53.98mm;
+            /* ألوان الشعار */
+            --primary-color: #002b5c; /* كحلي غامق */
+            --secondary-color: #c5a059; /* ذهبي */
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .cards-wrapper {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card-box {
+            width: var(--card-width);
+            height: var(--card-height);
+            position: relative;
+            background: white;
+            border-radius: 3mm;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            page-break-inside: avoid;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            box-sizing: border-box;
+        }
+
+        /* ==========================
+           تصميم الوجه الأمامي
+           ========================== */
+        .id-card-front {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            overflow: hidden;
+        }
+
+        /* الهيدر الأزرق */
+        .front-header-shape {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 28%; /* تقليل الارتفاع قليلاً لتوفير مساحة */
+            background-color: var(--primary-color);
+            border-bottom-left-radius: 30% 15%;
+            z-index: 1;
+        }
+
+            .front-header-shape::after {
+                content: '';
+                position: absolute;
+                bottom: -1.5mm;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border-bottom-left-radius: 30% 15%;
+                border-bottom: 1.5mm solid var(--secondary-color);
+                z-index: -1;
+            }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1.5mm 4mm 0 4mm;
+            height: 30%;
+        }
+
+        .org-logo {
+            width: 9mm;
+            height: 9mm;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+            background: white;
+            border-radius: 50%;
+            padding: 0.5px;
+            margin-top: 1mm;
+        }
+
+        .org-title {
+            color: white;
+            text-align: right;
+            flex-grow: 1;
+            margin-right: 2.5mm;
+            margin-top: 1mm;
+        }
+
+            .org-title h1 {
+                font-size: 8pt;
+                font-weight: 800;
+                margin: 0;
+                line-height: 1;
+            }
+
+            .org-title h2 {
+                font-size: 6pt;
+                font-weight: 600;
+                margin: 0;
+                opacity: 0.85;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                padding-top:1mm;
+            }
+
+        .card-type-label {
+            font-size: 8pt;
+            color: var(--secondary-color);
+            font-weight: bold;
+            background: rgba(0,0,0,0.2);
+            padding: 0 4px;
+            border-radius: 2px;
+            display: inline-block;
+           
+        }
+
+        .front-body {
+            position: absolute;
+            top: 12mm;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 12mm);
+            display: flex;
+            padding: 0 4mm;
+            z-index: 3;
+        }
+
+        /* الصورة الشخصية */
+        .photo-container {
+            width: 21mm; /* تصغير بسيط */
+            height: 27mm;
+            background: #f5f5f5;
+            border-radius: 2mm;
+            border: 1px solid #ddd;
+            overflow: hidden;
+            margin-left: 3mm;
+            margin-top: 4mm;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            z-index: 4;
+            position: relative;
+        }
+
+            .photo-container img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .photo-container::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background-color: var(--secondary-color);
+            }
+
+        .details-container {
+            flex-grow: 1;
+            padding-top: 4mm;
+            padding-right: 1mm;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .trainee-name {
+            font-size: 9pt;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 1mm;
+            line-height: 1.1;
+            border-bottom: 0.5px solid #ccc;
+            padding-bottom: 1mm;
+            display: inline-block;
+            width: 100%;
+            padding-top:2mm;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.6mm 2mm; /* تقليل المسافات */
+            font-size: 5.8pt; /* تصغير الخط قليلاً لاستيعاب البيانات */
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .info-value {
+            color: #000;
+            font-weight: 700;
+            font-family: sans-serif;
+        }
+
+        .governorate-badge {
+            position: absolute;
+            bottom: 2mm;
+            right: 4mm;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 5pt;
+            font-weight: bold;
+            padding: 0.8mm 3mm;
+            border-radius: 2mm;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* التوقيع في الواجهة الأمامية */
+        .front-signature {
+            position: absolute;
+            bottom: 2mm;
+            left: 4mm; /* تحت الصورة */
+            text-align: center;
+            width: 25mm;
+        }
+
+            .front-signature .sig-title {
+                font-size: 4.5pt;
+                font-weight: bold;
+                color: var(--primary-color);
+                border-top: 0.5px solid #999;
+                padding-top: 0.5mm;
+                display: block;
+            }
+
+            .front-signature .sig-space {
+                height: 6mm;
+            }
+
+        .expiry-date {
+            color: #c00 !important;
+            font-weight: 800;
+        }
+
+        /* ==========================
+           تصميم الوجه الخلفي
+           ========================== */
+        .id-card-back {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+        }
+
+        .back-strip {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 5mm;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            color: rgba(255,255,255,0.3);
+            font-size: 4pt;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        .back-content {
+            margin-left: 4mm;
+            margin-right: 7mm;
+            padding: 3mm;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: center; /* توسيط المحتوى لأن التواقيع أزيلت */
+        }
+
+        .instructions-text {
+            font-size: 5.5pt;
+            color: #444;
+            line-height: 1.4;
+            text-align: center;
+            background: #f9f9f9;
+            padding: 2mm;
+            border-radius: 2mm;
+            border: 1px solid #eee;
+            margin-bottom: 3mm;
+        }
+
+            .instructions-text strong {
+                color: var(--primary-color);
+            }
+
+        .qr-box {
+            width: 22mm;
+            height: 22mm;
+            margin: 2mm auto;
+        }
+
+            .qr-box canvas {
+                width: 100% !important;
+                height: 100% !important;
+            }
+
+        /* أزرار التحكم */
+        .print-controls {
+            position: fixed;
+            top: 20px;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* الطباعة */
+        @@media print {
+            body {
+                background: none;
+                padding: 0;
+                margin: 0;
+                display: block;
+            }
+
+            .print-controls {
+                display: none;
+            }
+
+            .cards-wrapper {
+                display: block;
+            }
+
+            .card-box {
+                margin: 0 auto;
+                page-break-after: always;
+                box-shadow: none;
+                border-radius: 0;
+                border: 1px solid #ddd;
+            }
+
+            @@page {
+                size: 85.6mm 53.98mm;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="print-controls">
+        <button class="btn btn-sm btn-primary fw-bold px-3 rounded-pill" onclick="window.print()">
+            <i class="bi bi-printer-fill me-1"></i> طباعة البطاقة
+        </button>
+        <button class="btn btn-sm btn-secondary rounded-pill" onclick="window.close()">إغلاق</button>
+    </div>
+
+    <div class="cards-wrapper">
+
+        <!-- الوجه الأمامي -->
+        <div class="card-box">
+            <div class="front-header-shape"></div>
+
+            <div class="header-content">
+                <div class="org-title">
+                    <h1>نقابة المحامين الفلسطينيين</h1>
+                    <h2 >PALESTINIAN BAR ASSOCIATION</h2>
+                    <div class="card-type-label">محامي متدرب</div>
+                </div>
+                <img src="@Url.Content("~/Content/Images/logo.png")" class="org-logo" alt="Logo">
+            </div>
+
+            <div class="front-body">
+                <div class="photo-container">
+                    <img src="@photoUrl" alt="صورة">
+                </div>
+
+                <div class="details-container">
+                    <div class="trainee-name ">@Model.TraineeName</div>
+
+                    <div class="info-grid">
+                        <div class="info-label">رقم العضوية:</div>
+                        <div class="info-value" style="color: var(--primary-color);">@Model.TraineeSerialNo</div>
+
+                        <div class="info-label">رقم الهوية:</div>
+                        <div class="info-value">@Model.NationalIdNumber</div>
+
+                        <!-- الحقل الجديد -->
+                        <div class="info-label">الأستاذ الممرن:</div>
+                        <div class="info-value">@Model.SupervisorName</div>
+
+                        <!-- الحقل الجديد -->
+                        <div class="info-label">بداية التدريب:</div>
+                        <div class="info-value">@(Model.TrainingStartDate?.ToString("yyyy/MM/dd"))</div>
+
+                        <div class="info-label">المهنة:</div>
+                        <div class="info-value">@Model.ProfessionalStatus</div>
+
+                        <div class="info-label">تاريخ الانتهاء:</div>
+                        <div class="info-value expiry-date">@Model.CardExpiryDate.ToString("yyyy/MM/dd")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="governorate-badge">محافظة @Model.Governorate</div>
+
+            <!-- التوقيع في الواجهة الأمامية -->
+            <div class="front-signature">
+                <div class="sig-space"></div> <!-- مساحة للتوقيع -->
+                <span class="sig-title">نائب نقيب المحامين</span>
+            </div>
+        </div>
+
+        <!-- الوجه الخلفي -->
+        <div class="card-box">
+            <div class="id-card-back">
+                <div class="back-strip">
+                    <span class="vertical-text">PBA TRAINEE</span>
+                </div>
+
+                <div class="back-content">
+                    <div class="instructions-text">
+                        تطلب <strong>نقابة المحامين</strong> من كافة الجهات الرسمية والمدنية والأمنية
+                        تسهيل مهمة حامل هذه البطاقة وتقديم العون له وفقاً للقانون.
+                        <br><br>
+                        <span style="color: #777; font-size: 5pt;">
+                            * هذه البطاقة شخصية وهي ملك للنقابة.<br>
+                            * إذا عثرت عليها يرجى تسليمها لأقرب مركز شرطة.
+                        </span>
+                    </div>
+
+                    <div class="qr-box">
+                        <canvas id="qrcodeCanvas"></canvas>
+                    </div>
+
+                    <div style="font-size: 4.5pt; color: #999; margin-top: 3mm;">www.pba.ps</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var qr = new QRious({
+                element: document.getElementById('qrcodeCanvas'),
+                value: '@Html.Raw(Model.QRCodeData)',
+                size: 85,
+                level: 'M'
+            });
+        });
+    </script>
+</body>
+</html>

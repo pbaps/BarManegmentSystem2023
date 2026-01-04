@@ -1,0 +1,61 @@
+﻿@model IEnumerable<BarManegment.Models.GraduateApplication>
+@{
+    ViewBag.Title = "اختيار متدرب لإصدار قسيمة دفع";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+            <p>سيظهر هنا المتدربون الذين تمت الموافقة عليهم من لجنة التدريب وينتظرون الدفع.</p>
+        </div>
+        <div class="card-body">
+
+            <div class="bg-light rounded p-3 mb-4">
+                @using (Html.BeginForm("SelectTrainee", "PaymentVouchers", FormMethod.Get, new { @class = "d-flex gap-2" }))
+                {
+                    <input class="form-control" type="search" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="ابحث بالاسم أو الرقم الوطني...">
+                    <button class="btn btn-primary" type="submit">بحث</button>
+                    if (ViewBag.SearchTerm != null)
+                    {
+                        <a href="@Url.Action("SelectTrainee", "PaymentVouchers")" class="btn btn-outline-secondary">إلغاء</a>
+                    }
+                }
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الرقم الوطني</th>
+                            <th>المشرف المعين</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.ArabicName</td>
+                                <td>@item.NationalIdNumber</td>
+                                <td>@(item.Supervisor != null ? item.Supervisor.ArabicName : "N/A")</td>
+                                <td class="text-end">
+                                    <a href="@Url.Action("Create", "PaymentVouchers", new { id = item.Id })" class="btn btn-success">
+                                        <i class="bi bi-receipt-cutoff me-1"></i> إصدار قسيمة
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center">لا يوجد متدربون بانتظار الدفع حاليًا.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

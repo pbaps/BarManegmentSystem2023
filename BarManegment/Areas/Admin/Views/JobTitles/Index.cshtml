@@ -1,0 +1,60 @@
+﻿@model IEnumerable<BarManegment.Models.JobTitle>
+
+@{
+    ViewBag.Title = "المسميات الوظيفية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary fw-bold"><i class="bi bi-briefcase-fill me-2"></i> المسميات الوظيفية</h4>
+        <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> إضافة مسمى
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>المسمى الوظيفي</th>
+                            <th class="text-end">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td class="fw-bold">@item.Name</td>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <form action="@Url.Action("Delete", new { id = item.Id })" method="post" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا المسمى الوظيفي؟');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <small>لا توجد مسميات مسجلة</small>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,87 @@
+﻿@model IEnumerable<BarManegment.Models.Supplier>
+
+@{
+    ViewBag.Title = "الموردين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary fw-bold"><i class="bi bi-truck me-2"></i> سجل الموردين</h4>
+        <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> إضافة مورد جديد
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الهاتف</th>
+                            <th>العنوان</th>
+                            <th>الحساب المالي المرتبط</th>
+                            <th>الحالة</th>
+                            <th class="text-end" style="width: 150px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold">@item.Name</td>
+                                <td>@item.Phone</td>
+                                <td>@item.Address</td>
+                                <td><span class="badge bg-info text-dark">@item.Account.Name (@item.Account.Code)</span></td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {<span class="badge bg-success">نشط</span> }
+                                    else
+                                    { <span class="badge bg-danger">غير نشط</span>}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <form action="@Url.Action("Delete", new { id = item.Id })" method="post" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا المورد؟\nتنبيه: لا يمكن حذف المورد إذا كان لديه فواتير مسجلة.');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
+                    <h5>لا يوجد موردين مسجلين</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>

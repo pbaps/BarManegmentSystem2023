@@ -1,0 +1,76 @@
+﻿@model BarManegment.Models.UserModel
+
+@{
+    ViewBag.Title = "حذف مستخدم";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="card-title mb-0">حذف المستخدم</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>تحذير:</strong> هل أنت متأكد من رغبتك في حذف هذا المستخدم؟ هذه العملية لا يمكن التراجع عنها.
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-3">الاسم الكامل</dt>
+                        <dd class="col-sm-9">@Html.DisplayFor(model => model.FullNameArabic)</dd>
+
+                        <dt class="col-sm-3">اسم المستخدم</dt>
+                        <dd class="col-sm-9">@Html.DisplayFor(model => model.Username)</dd>
+
+                        <dt class="col-sm-3">رقم الهوية</dt>
+                        <dd class="col-sm-9">@Html.DisplayFor(model => model.IdentificationNumber)</dd>
+
+                        <dt class="col-sm-3">البريد الإلكتروني</dt>
+                        <dd class="col-sm-9">@Html.DisplayFor(model => model.Email)</dd>
+
+                        <dt class="col-sm-3">نوع المستخدم</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.UserType != null)
+                            {
+                                @Html.DisplayFor(model => model.UserType.NameArabic)
+                            }
+                            else
+                            {
+                                <span class="text-muted">غير محدد</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-3">الحالة</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">نشط</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">غير نشط</span>
+                            }
+                        </dd>
+                    </dl>
+
+                    @* === التصحيح هنا: التأكد من أن اسم الأكشن هو "Delete" وليس "DeleteConfirmed" === *@
+                    @using (Html.BeginForm("Delete", "Users", new { area = "Admin", id = Model.Id }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash-fill me-1"></i> تأكيد الحذف
+                            </button>
+                            @Html.ActionLink("إلغاء والعودة", "Index", null, new { @class = "btn btn-secondary" })
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

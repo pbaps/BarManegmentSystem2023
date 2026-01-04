@@ -1,0 +1,339 @@
+﻿@model BarManegment.ViewModels.GraduateApplicationViewModel
+
+@{
+    ViewBag.Title = "استكمال بيانات طلب الانتساب";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+
+        <div class="text-center mb-4">
+            <h2 class="display-6">@ViewBag.Title</h2>
+            <p class="lead">الرجاء تعبئة جميع الحقول المطلوبة ورفع المستندات اللازمة لتقديم طلبك للمراجعة.</p>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @using (Html.BeginForm("Edit", "Application", new { area = "Members" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.Id)
+            @Html.HiddenFor(model => model.ArabicName)
+            @Html.HiddenFor(model => model.NationalIdNumber)
+
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-person-lines-fill me-2"></i> البيانات الأساسية</h5>
+                </div>
+                <div class="card-body">
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">الاسم بالعربية</label>
+                                    <p class="form-control-plaintext">@Model.ArabicName</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">الرقم الوطني</label>
+                                    <p class="form-control-plaintext">@Model.NationalIdNumber</p>
+                                </div>
+                            </div>
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.EnglishName, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.EnglishName)
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        @Html.EditorFor(model => model.BirthDate, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "date" } })
+                                        @Html.LabelFor(model => model.BirthDate)
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        @Html.EditorFor(model => model.BirthPlace, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                        @Html.LabelFor(model => model.BirthPlace)
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        @Html.DropDownListFor(model => model.Nationality, Model.Countries, "--- اختر الجنسية ---", new { @class = "form-select" })
+                                        @Html.LabelFor(model => model.Nationality)
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        @Html.DropDownListFor(model => model.GenderId, Model.Genders, "--- اختر الجنس ---", new { @class = "form-select" })
+                                        @Html.LabelFor(model => model.GenderId)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-center">الصورة الشخصية</h5>
+                            <div class="form-group mb-3 text-center">
+                                @{
+                                    var photoPath = !string.IsNullOrEmpty(Model.PersonalPhotoPath) ? Url.Content(Model.PersonalPhotoPath) : "[https://placehold.co/150x150/6c757d/ffffff?text=صورة](https://placehold.co/150x150/6c757d/ffffff?text=صورة)";
+                                }
+                                <img id="photoPreview" src="@photoPath" class="img-thumbnail rounded-circle mb-3" alt="الصورة الشخصية" style="width: 150px; height: 150px; object-fit: cover;">
+                                @Html.LabelFor(model => model.PersonalPhotoFile, "تغيير الصورة الشخصية", htmlAttributes: new { @class = "control-label" })
+                                <input type="file" name="PersonalPhotoFile" id="PersonalPhotoFile" class="form-control" accept="image/*" onchange="document.getElementById('photoPreview').src = window.URL.createObjectURL(this.files[0])" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-telephone-fill me-2"></i> بيانات الاتصال</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.DropDownListFor(model => model.ContactInfo.Governorate, Model.Governorates, "--- اختر المحافظة ---", new { @class = "form-select" })
+                                @Html.LabelFor(model => model.ContactInfo.Governorate)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.ContactInfo.City, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.ContactInfo.City)
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.ContactInfo.Street, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.ContactInfo.Street)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.ContactInfo.MobileNumber, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.ContactInfo.MobileNumber)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.ContactInfo.WhatsAppNumber, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.ContactInfo.WhatsAppNumber)
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.ContactInfo.Email, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.ContactInfo.Email)
+                            </div>
+                        </div>
+                        <hr class="my-3" />
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.ContactInfo.EmergencyContactPerson, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.ContactInfo.EmergencyContactPerson)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.ContactInfo.EmergencyContactNumber, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                @Html.LabelFor(model => model.ContactInfo.EmergencyContactNumber)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-person-check-fill me-2"></i> المحامي المشرف</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">ابحث عن اسم المحامي المشرف الذي تود التدرب لديه.</p>
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.SupervisorId, htmlAttributes: new { @class = "control-label" })
+                        <input type="text" id="supervisorSearch" class="form-control" placeholder="ابدأ بكتابة اسم المحامي..." />
+                        @Html.HiddenFor(model => model.SupervisorId, new { id = "supervisorId" })
+                        <div id="selectedSupervisor" class="mt-2">
+                            @if (Model.SupervisorId.HasValue)
+                            {
+                                <span class="badge bg-success fs-6">المشرف المختار حاليًا: @Model.SupervisorName</span>
+                            }
+                        </div>
+                        @Html.ValidationMessageFor(model => model.SupervisorId, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="text-end mb-4">
+                <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-save me-1"></i> حفظ وتقديم الطلب</button>
+                @Html.ActionLink("العودة إلى لوحة التحكم", "Index", "Dashboard", new { area = "Members" }, new { @class = "btn btn-secondary btn-lg" })
+            </div>
+        }
+
+        <!-- قسم المؤهلات العلمية -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="bi bi-mortarboard-fill me-2"></i> المؤهلات العلمية</h5>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addQualificationModal">
+                    <i class="bi bi-plus-lg me-1"></i> إضافة مؤهل
+                </button>
+            </div>
+            <div class="card-body">
+                @Html.Partial("~/Areas/Members/Views/Application/_QualificationList.cshtml", Model.Qualifications)
+            </div>
+        </div>
+
+        <!-- قسم المرفقات -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="bi bi-paperclip me-2"></i> المرفقات</h5>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAttachmentModal">
+                    <i class="bi bi-upload me-1"></i> رفع مرفق
+                </button>
+            </div>
+            <div class="card-body">
+                @Html.Partial("~/Areas/Members/Views/Application/_AttachmentList.cshtml", Model.Attachments)
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal: Add Qualification -->
+<div class="modal fade" id="addQualificationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddQualification", "Application", new { area = "Members" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(model => model.Id)
+
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مؤهل علمي جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-floating mb-3">
+                        @Html.DropDownListFor(model => model.NewQualification.QualificationTypeId, Model.QualificationTypes, "--- اختر نوع المؤهل ---", new { @class = "form-select" })
+                        <label>نوع المؤهل</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        @Html.EditorFor(model => model.NewQualification.UniversityName, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                        <label>اسم الجامعة / المدرسة</label>
+                    </div>
+                    @* === بداية التعديل === *@
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.NewQualification.Faculty, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                <label>الكلية</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.NewQualification.Specialization, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                                <label>التخصص</label>
+                            </div>
+                        </div>
+                    </div>
+                    @* === نهاية التعديل === *@
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.NewQualification.GraduationYear, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number" } })
+                                <label>سنة التخرج</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.EditorFor(model => model.NewQualification.GradePercentage, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number", step = "0.01" } })
+                                <label>المعدل (%)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-primary">حفظ المؤهل</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Attachment -->
+<div class="modal fade" id="addAttachmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddAttachment", "Application", new { area = "Members" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(model => model.Id)
+
+                <div class="modal-header">
+                    <h5 class="modal-title">رفع مرفق جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-floating mb-3">
+                        @Html.DropDownListFor(model => model.NewAttachmentTypeId, Model.AttachmentTypes, "--- اختر نوع المرفق ---", new { @class = "form-select" })
+                        <label>نوع المرفق</label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">اختر الملف</label>
+                        @Html.TextBoxFor(model => model.NewAttachmentFile, new { type = "file", @class = "form-control" })
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-primary">رفع وحفظ</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#supervisorSearch").autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: "@Url.Action("SearchSupervisors", "Application", new { area = "Members" })",
+                        dataType: "json",
+                        data: { term: request.term },
+                        success: function (data) { response(data); }
+                    });
+                },
+                minLength: 2,
+                select: function (event, ui) {
+                    $("#supervisorId").val(ui.item.id);
+                    $("#selectedSupervisor").html('<span class="badge bg-success fs-6">المشرف المختار: ' + ui.item.value + '</span>');
+                    $(this).val('');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

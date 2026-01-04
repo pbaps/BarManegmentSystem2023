@@ -1,0 +1,45 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.AssignCommitteeViewModel
+@{
+    ViewBag.Title = "تعيين لجنة مناقشة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="mb-0 fw-bold">تعيين لجنة للبحث</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted mb-1">عنوان البحث:</p>
+                    <h6 class="fw-bold mb-3">@Model.ResearchTitle</h6>
+                    <p class="text-muted mb-1">المتدرب:</p>
+                    <h6 class="fw-bold mb-4">@Model.TraineeName</h6>
+
+                    <hr />
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.ResearchId)
+                        @Html.HiddenFor(m => m.ResearchTitle)
+                        @Html.HiddenFor(m => m.TraineeName)
+
+                        <div class="mb-4">
+                            @Html.LabelFor(m => m.SelectedCommitteeId, new { @class = "form-label fw-bold" })
+                            @Html.DropDownListFor(m => m.SelectedCommitteeId, Model.AvailableCommittees, "--- اختر لجنة ---", new { @class = "form-select" })
+                            @Html.ValidationMessageFor(m => m.SelectedCommitteeId, "", new { @class = "text-danger" })
+                            <div class="form-text">يتم عرض اللجان الفعالة فقط.</div>
+                        </div>
+
+                        <div class="text-end">
+                            <a href="@Url.Action("Details", new { id = Model.ResearchId })" class="btn btn-secondary me-2">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">تعيين</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

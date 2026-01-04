@@ -1,0 +1,60 @@
+﻿**المسار:** `~/Areas/Admin/Views/LoanPayments/CreateReceipt.cshtml`
+```html
+@model BarManegment.Areas.Admin.ViewModels.CreateLoanReceiptViewModel
+@{
+    ViewBag.Title = "تسجيل سداد قسط قرض";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2><i class="bi bi-receipt me-2"></i> @ViewBag.Title</h2>
+<hr />
+
+@using (Html.BeginForm("CreateReceipt", "LoanPayments", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.InstallmentId)
+    @Html.HiddenFor(model => model.VoucherId)
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+    <div class="form-horizontal">
+        <div class="alert alert-info">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">اسم المحامي:</dt>
+                <dd class="col-sm-9">@Model.LawyerName</dd>
+
+                <dt class="col-sm-3">رقم القسيمة:</dt>
+                <dd class="col-sm-9">@Model.VoucherId</dd>
+
+                <dt class="col-sm-3">المبلغ المستحق:</dt>
+                <dd class="col-sm-9">@Model.Amount.ToString("N2")</dd>
+            </dl>
+        </div>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(model => model.BankReceiptNumber, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.BankReceiptNumber, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.BankReceiptNumber, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(model => model.BankPaymentDate, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.BankPaymentDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                @Html.ValidationMessageFor(model => model.BankPaymentDate, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group mt-4">
+            <div class="col-md-offset-3 col-md-9">
+                <input type="submit" value="حفظ وإنشاء إيصال القبض" class="btn btn-primary" />
+                @Html.ActionLink("إلغاء", "LawyerInstallments", new { id = Model.InstallmentId }, new { @class = "btn btn-outline-secondary" })
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

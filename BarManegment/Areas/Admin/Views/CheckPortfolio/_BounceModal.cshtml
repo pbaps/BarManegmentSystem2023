@@ -1,0 +1,35 @@
+﻿@model BarManegment.Models.CheckPortfolio
+
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i> تسجيل شيك مرتجع</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+@using (Html.BeginForm("ConfirmBounce", "CheckPortfolio", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    <div class="modal-body">
+        <p class="text-danger fw-bold">هل أنت متأكد من تسجيل هذا الشيك كمرتجع؟</p>
+        <ul class="list-group mb-3">
+            <li class="list-group-item">رقم الشيك: <strong>@Model.CheckNumber</strong></li>
+            <li class="list-group-item">المبلغ: <strong>@Model.Amount</strong></li>
+            <li class="list-group-item">الساحب: @Model.DrawerName</li>
+        </ul>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">سبب الارتجاع <span class="text-danger">*</span></label>
+            <textarea name="reason" class="form-control" rows="2" required placeholder="مثال: لعدم كفاية الرصيد، اختلاف التوقيع..."></textarea>
+        </div>
+
+        <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-triangle"></i> سيتم إنشاء قيد محاسبي يعيد المبلغ كذمة مالية على الساحب.
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="submit" class="btn btn-danger fw-bold">تأكيد الارتجاع</button>
+    </div>
+}

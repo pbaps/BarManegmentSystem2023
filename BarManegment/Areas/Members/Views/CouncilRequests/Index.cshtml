@@ -1,0 +1,69 @@
+﻿@model IEnumerable<BarManegment.Models.AgendaItem>
+
+@{
+    ViewBag.Title = "متابعة طلبات المجلس";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml"; // تأكد من المسار الصحيح
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>طلباتي المقدمة لمجلس النقابة</h4>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> تقديم طلب جديد
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>رقم الطلب</th>
+                    <th>العنوان</th>
+                    <th>النوع</th>
+                    <th>حالة الطلب</th>
+                    <th>القرار النهائي (إن وجد)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>@item.Title</td>
+                        <td>@item.RequestType</td>
+                        <td>
+                            @if (item.ExecutionStatus == "قيد مراجعة المنسق")
+                            {
+                                <span class="badge bg-secondary">قيد مراجعة المنسق</span>
+                            }
+                            else if (item.CouncilDecisionType == "Pending")
+                            {
+                                <span class="badge bg-info text-dark">تم إدراجه في جدول الأعمال</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">تم البت في الطلب</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsVisibleToRequester && !string.IsNullOrEmpty(item.DecisionText))
+                            {
+                                <strong>@item.CouncilDecisionType:</strong>
+                                <span class="text-muted">@item.DecisionText</span>
+                            }
+                            else if (item.IsVisibleToRequester && item.CouncilDecisionType != "Pending")
+                            {
+                                <span>@item.CouncilDecisionType</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

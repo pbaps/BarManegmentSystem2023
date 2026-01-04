@@ -1,0 +1,197 @@
+﻿**المسار:** `~/Areas/Admin/Views/LoanApplications/PrintMainPromissoryNote.cshtml`
+```html
+@model BarManegment.Models.LoanApplication
+@{
+    ViewBag.Title = "طباعة كمبيالة";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLOanayout.cshtml"; // 💡 تصحيح المسار
+    string amountInWords = ViewBag.AmountInWords ?? "خطأ في التفقيط";
+}
+@section styles {
+    <style>
+        .print-container {
+            direction: rtl;
+            background: #fff;
+            padding: 20mm;
+            margin: 20px auto;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 16pt;
+            line-height: 2.5; /* (مسافة كبيرة جداً) */
+            position: relative;
+        }
+
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #dc3545;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+            .print-header .logo-container {
+                display: flex;
+                align-items: center;
+            }
+
+            .print-header img {
+                max-height: 80px;
+                margin-left: 15px;
+            }
+
+            .print-header .title-text {
+                font-family: 'Cairo', sans-serif;
+                font-size: 1.5rem;
+                font-weight: bold;
+                margin: 0;
+                color: #000;
+            }
+
+            .print-header .subtitle-text {
+                font-size: 1rem;
+                font-weight: bold;
+                margin: 0;
+                color: #333;
+            }
+
+            .print-header .loan-id {
+                border: 1px solid #000;
+                padding: 5px 10px;
+                font-weight: bold;
+            }
+
+        .print-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24pt;
+            text-decoration: underline;
+            margin: 30px 0;
+        }
+
+        .print-body p {
+            margin-bottom: 25px;
+            text-align: right;
+        }
+
+        .form-field {
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            text-decoration: underline;
+            padding: 0 5px;
+        }
+
+        .signature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px 15px;
+            margin-top: 50px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .sig-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 80px;
+        }
+
+            .sig-box .sig-line {
+                border-bottom: 1px dotted #000;
+                margin-bottom: 5px;
+            }
+
+        .amount-box {
+            border: 1px solid #000;
+            padding: 10px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 150px;
+            display: inline-block;
+        }
+
+        @@media print {
+            body {
+                background: #fff;
+            }
+
+            .print-container {
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .print-header, .print-footer {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="print-container">
+
+    @* --- رأس الصفحة (كما في الصورة) --- *@
+    <div class="print-header">
+        <div class="logo-container">
+            <img src="@Url.Content("~/Content/Images/logo.png")" alt="شعار نقابة المحامين" />
+            <div>
+                <h2 class="title-text">نقابة المحامين الفلسطينيين</h2>
+                <p class="subtitle-text">PALESTINIAN BAR ASSOCIATION</p>
+            </div>
+        </div>
+        <div class="loan-id">
+            رقم الكمبيالة/ @Model.Id-L
+        </div>
+    </div>
+
+    <div class="print-title">
+        كمبيالة والدفع بها
+    </div>
+
+    @* --- جسم النموذج (معبأ بالبيانات) --- *@
+    <div class="print-body">
+        <p>
+            <strong>المبلغ/</strong> <span class="amount-box">@Model.Amount.ToString("N2") @Model.LoanType.BankAccount.Currency.Symbol</span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <strong>تستحق في /</strong> <span class="form-field">@Model.StartDate.AddMonths(Model.InstallmentCount).ToString("yyyy/MM/dd")</span>
+        </p>
+
+        <p>
+            <strong>أنا المقر/</strong> <span class="form-field">@Model.Lawyer.ArabicName</span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <strong>هوية رقم/</strong> <span class="form-field">@Model.Lawyer.User.IdentificationNumber</span>
+        </p>
+
+        <p>
+            والتزم بموجب هذه الكمبيالة أن أدفع إلى/ <span class="form-field">نقابة المحامين الفلسطينيين</span>
+        </p>
+
+        <p>
+            المبلغ المرقوم اعلاه وقدره/ <span class="form-field">@amountInWords</span>
+        </p>
+        <p>
+            والقيمة وصلتني منه عداً ونقداً قرضاً حسناً.
+        </p>
+
+    </div>
+
+    @* (تواقيع) *@
+    <div class="signature-grid">
+        <div class="sig-box">المقر بما جاء فيه <div class="sig-line"></div></div>
+        <div class="sig-box">كفيل <div class="sig-line"></div></div>
+        <div class="sig-box">كفيل <div class="sig-line"></div></div>
+        <div class="sig-box">كفيل <div class="sig-line"></div></div>
+        <div class="sig-box">شاهد <div class="sig-line"></div></div>
+        <div class="sig-box">شاهد <div class="sig-line"></div></div>
+        <div class="sig-box">الموظف المختص <div class="sig-line"></div></div>
+    </div>
+
+</div>
+
+@section scripts {
+    <script>
+        window.addEventListener("load", function () {
+            window.print();
+        });
+    </script>
+}

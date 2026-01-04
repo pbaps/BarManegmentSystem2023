@@ -1,0 +1,73 @@
+﻿@{
+    ViewBag.Title = "الترسيت السنوي لحالات المحامين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // معالجة القيمة الفارغة لتجنب الأخطاء
+    int count = ViewBag.PracticingCount ?? 0;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger shadow-lg">
+                <div class="card-header bg-danger text-white py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i> @ViewBag.Title</h4>
+                </div>
+                <div class="card-body p-4">
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success shadow-sm">
+                            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger shadow-sm">
+                            <i class="bi bi-x-circle-fill me-2"></i> @TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <div class="alert alert-warning border-warning">
+                        <h5 class="alert-heading fw-bold text-dark">⚠️ تحذير: إجراء حساس!</h5>
+                        <p class="mb-2 text-dark">
+                            سيقوم هذا الإجراء بتحويل حالة <strong>جميع</strong> المحامين المسجلين كـ "محامي مزاول" إلى حالة "محامي غير مزاول".
+                        </p>
+                        <hr>
+                        <p class="mb-0 text-dark">
+                            يجب تنفيذ هذا الإجراء مرة واحدة فقط في بداية كل سنة ميلادية لإجبار المحامين على تجديد اشتراكهم.
+                        </p>
+                    </div>
+
+                    <div class="text-center my-4">
+                        <h5 class="text-muted">عدد المحامين المزاولين حالياً</h5>
+                        <h1 class="display-4 fw-bold text-primary">@count</h1>
+                    </div>
+
+                    @if (count > 0)
+                    {
+                        // 💡 إضافة Area لضمان المسار الصحيح
+                        using (Html.BeginForm("PerformReset", "PracticingLawyerRenewals", new { area = "Admin" }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger btn-lg w-100 py-3 fw-bold shadow-sm"
+                                    onclick="return confirm('⚠️ تأكيد نهائي:\n\nأنت على وشك تحويل حالة (@count) محامي إلى (غير مزاول).\n\nهل أنت متأكد تماماً من المتابعة؟')">
+                                <i class="bi bi-arrow-repeat me-2"></i> تنفيذ الترسيت السنوي الآن
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-secondary text-center mb-0">
+                            <i class="bi bi-info-circle me-1"></i> لا يوجد محامون مزاولون حالياً لترسيت حالتهم.
+                        </div>
+                    }
+
+                </div>
+                <div class="card-footer bg-light text-center text-muted small">
+                    تستخدم هذه الشاشة لبدء السنة المالية الجديدة للنقابة.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

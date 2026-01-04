@@ -1,0 +1,102 @@
+﻿@model IEnumerable<BarManegment.Models.CheckPortfolio>
+@using BarManegment.Models
+
+@{
+    ViewBag.Title = "حافظة الشيكات";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    string status = ViewBag.CurrentStatus;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="m-0 fw-bold text-primary"><i class="bi bi-wallet2 me-2"></i> حافظة الشيكات</h5>
+
+            <div class="btn-group">
+                <a href="@Url.Action("Index", new { status = "UnderCollection" })" class="btn btn-sm @(status == "UnderCollection" ? "btn-primary" : "btn-outline-primary")">برسم التحصيل</a>
+                <a href="@Url.Action("Index", new { status = "Collected" })" class="btn btn-sm @(status == "Collected" ? "btn-success" : "btn-outline-success")">المحصلة</a>
+                <a href="@Url.Action("Index", new { status = "Bounced" })" class="btn btn-sm @(status == "Bounced" ? "btn-danger" : "btn-outline-danger")">المرتجعة</a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم الشيك</th>
+                        <th>الساحب</th>
+                        <th>تاريخ الاستحقاق</th>
+                        <th>المبلغ</th>
+                        <th>البنك</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="font-monospace fw-bold">@item.CheckNumber</td>
+                            <td>@item.DrawerName</td>
+                            <td>
+                                @item.DueDate.ToString("yyyy/MM/dd")
+                                @if (item.Status == CheckStatus.UnderCollection && item.DueDate <= DateTime.Now)
+                                {
+                                    <span class="badge bg-danger ms-1">مستحق!</span>
+                                }
+                            </td>
+                            <td class="fw-bold text-primary">
+                                @item.Amount.ToString("N2")
+                                <small>@item.Currency?.Symbol</small>
+                            </td>
+                            <td>@item.BankName</td>
+                            <td>
+                                @if (item.Status == CheckStatus.UnderCollection)
+                                {<span class="badge bg-warning text-dark">في الحوزة</span> }
+                                else if (item.Status == CheckStatus.Collected)
+                                { <span class="badge bg-success">محصل</span> }
+                                else
+                                { <span class="badge bg-danger">مرتجع</span>}
+                            </td>
+                            <td>
+                                @if (item.Status == CheckStatus.UnderCollection)
+                                {
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-success" onclick="openCollectModal(@item.Id)" title="إيداع في البنك">
+                                            <i class="bi bi-bank"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="openBounceModal(@item.Id)" title="تسجيل كمرتجع">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" id="modalContent">
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCollectModal(id) {
+            $('#modalContent').load('@Url.Action("Collect")/' + id, function () {
+                $('#actionModal').modal('show');
+            });
+        }
+
+        function openBounceModal(id) {
+        $('#modalContent').load('@Url.Action("Bounce")/' + id, function () {
+            $('#actionModal').modal('show');
+        });
+    }
+    </script>
+}

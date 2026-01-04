@@ -1,0 +1,53 @@
+﻿@{
+    ViewBag.Title = "وصول غير مصرح به";
+    // ملاحظة: هذا التخطيط (Layout) صحيح إذا كان المستخدم لا يزال مسجلاً دخوله
+    // ولكنه يحاول الوصول إلى صفحة لا يملك صلاحيتها.
+    // إذا انتهت الجلسة تماماً، قد ترغب في استخدام تخطيط خارجي (Layout = null)
+    // أو تخطيط صفحة الدخول.
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@* استخدام الحاوية القياسية للوحة التحكم (container-fluid)
+    لضمان ظهور المحتوى داخل إطار لوحة التحكم (مع القائمة الجانبية والعلوية).
+*@
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+        <div class="col-lg-7 col-xl-6">
+
+            @* بطاقة احترافية بتصميم نظيف (بدون حدود حمراء) *@
+            <div class="card shadow-sm border-0 rounded-3">
+
+                @* رأس البطاقة بلون رمادي فاتح ومحايد *@
+                <div class="card-header bg-light border-bottom-0 text-center py-4">
+                    <h4 class="mb-0 text-dark fw-bold">
+                        @* أيقونة "ممنوع" بدلاً من "الدرع" *@
+                        <i class="bi bi-slash-circle text-danger me-2" style="font-size: 1.2em;"></i>
+                        خطأ في الوصول
+                    </h4>
+                </div>
+
+                <div class="card-body p-5 text-center">
+
+                    <h2 class="card-title mb-3">وصول غير مصرح به</h2>
+
+                    <p class="card-text text-muted mb-4 fs-5" style="line-height: 1.8;">
+                        عذراً، أنت لا تملك الصلاحيات اللازمة للوصول إلى هذه الصفحة.
+                        <br />
+                        <strong>أو قد انتهت جلسة الدخول الخاصة بك بسبب عدم النشاط.</strong>
+                    </p>
+
+                    <p class="mb-4">
+                        يرجى تسجيل الدخول مرة أخرى للمتابعة.
+                    </p>
+
+                    <a class="btn btn-primary btn-lg rounded-pill py-2 px-4"
+                       href="@Url.Action("Login", "AdminLogin", new { area = "Admin" })">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        الذهاب إلى صفحة تسجيل الدخول
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

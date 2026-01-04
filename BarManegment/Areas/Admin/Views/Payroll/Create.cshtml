@@ -1,0 +1,53 @@
+﻿@{
+    ViewBag.Title = "إصدار رواتب جديدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-cash-coin me-2"></i> إصدار مسير رواتب جديد</h5>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm("Generate", "Payroll", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">الشهر</label>
+                                <select name="month" class="form-select">
+                                    @for (int i = 1; i <= 12; i++)
+                                    {
+                                        <option value="@i" @(i == DateTime.Now.Month ? "selected" : "")>@i</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">السنة</label>
+                                <input type="number" name="year" class="form-control" value="@DateTime.Now.Year" />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">ملاحظات (اختياري)</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="مثال: رواتب شهر رمضان، شامل المكافآت..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info small">
+                            <i class="bi bi-info-circle-fill me-2"></i> عند الضغط على "إصدار"، سيقوم النظام باحتساب الرواتب لجميع الموظفين النشطين بناءً على بياناتهم الحالية.
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success fw-bold py-2">
+                                <i class="bi bi-gear-wide-connected me-2"></i> معالجة وإصدار الرواتب
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

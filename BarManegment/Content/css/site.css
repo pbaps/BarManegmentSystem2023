@@ -1,0 +1,225 @@
+﻿/* ===================================================================
+   Base Styles
+   =================================================================*/
+body {
+    font-family: 'Cairo', sans-serif;
+    direction: rtl;
+    background-color: #f8f9fa;
+}
+
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+/* ===================================================================
+   Sidebar Navigation (Dark Theme)
+   =================================================================*/
+#sidebar {
+    min-width: 260px;
+    max-width: 260px;
+    background: #2c3e50;
+    color: #fff;
+    transition: all 0.3s;
+    position: fixed;
+    height: 100vh;
+    z-index: 999;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+    #sidebar.active {
+        margin-right: -260px;
+    }
+
+    /* رأس القائمة */
+    #sidebar .sidebar-header {
+        padding: 20px;
+        background: #212529;
+        text-align: center;
+        border-bottom: 1px solid #4a5a6a;
+        min-height: 90px;
+    }
+
+        #sidebar .sidebar-header h3 {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        #sidebar .sidebar-header small {
+            color: #adb5bd;
+        }
+
+    /* حاوية الروابط */
+    #sidebar ul.components {
+        padding: 0;
+        /* ✅ هذا هو الحل لمشكلة شريط التمرير */
+        max-height: calc(100vh - 90px);
+        overflow-y: auto;
+    }
+
+    #sidebar ul li a {
+        padding: 10px 20px;
+        font-size: 1em;
+        display: block;
+        color: #adb5bd;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        border-right: 4px solid transparent;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+        /* أيقونات القائمة */
+        #sidebar ul li a i {
+            margin-left: 10px;
+            font-size: 1.2em;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* تأثير الـ Hover */
+        #sidebar ul li a:hover {
+            color: #fff;
+            background: #34495e;
+            border-right-color: #0d6efd;
+        }
+
+    /* الرابط النشط أو المفتوح */
+    #sidebar ul li.active > a, a[aria-expanded="true"] {
+        color: #fff;
+        background: #0d6efd;
+    }
+
+    /* الأسهم المنسدلة */
+    #sidebar a[data-bs-toggle="collapse"] {
+        position: relative;
+    }
+
+    #sidebar a[aria-expanded="true"]::after {
+        content: '\F282';
+        font-family: bootstrap-icons !important;
+        display: block;
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    #sidebar a[aria-expanded="false"]::after {
+        content: '\F285';
+        font-family: bootstrap-icons !important;
+        display: block;
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* الروابط الفرعية */
+    #sidebar ul ul a {
+        font-size: 0.95em !important;
+        padding-right: 54px !important;
+        background: #233140;
+        border-right: none;
+    }
+
+        #sidebar ul ul a:hover {
+            background: #34495e;
+        }
+
+    /* الفواصل (الخطوط الأفقية) */
+    #sidebar hr {
+        border-top: 1px solid #4a5a6a;
+        margin: 10px 20px;
+    }
+
+/* ===================================================================
+   Main Content Area
+   =================================================================*/
+#content {
+    width: 100%;
+    padding: 20px;
+    min-height: 100vh;
+    transition: all 0.3s;
+    margin-right: 260px; /* نفس عرض القائمة */
+}
+
+    #content.active {
+        margin-right: 0;
+        width: 100%;
+    }
+
+/* Top Navbar (الشريط العلوي) */
+.navbar {
+    padding: 10px 15px;
+    background: #fff;
+    border-radius: 0.5rem;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.05);
+}
+
+#sidebarCollapse {
+    background: #0d6efd;
+    border: none;
+    transition: all 0.2s;
+}
+
+    #sidebarCollapse:hover {
+        background: #0b5ed7;
+    }
+
+/* تنسيقات عامة للبطاقات والجداول */
+.card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,.05);
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    font-weight: 700;
+    background-color: #fff;
+    border-bottom: 1px solid #e7e9eb;
+    padding: 1rem 1.25rem;
+}
+
+.table-responsive {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: none;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+    .table thead {
+        background-color: #f1f5f9;
+        color: #334155;
+        font-weight: 600;
+    }
+
+/* أزرار احترافية */
+.btn {
+    border-radius: 0.375rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+}
+
+/* ألوان خاصة للروابط (مثل التقارير) */
+.link-success {
+    color: #198754 !important;
+}
+
+.link-warning {
+    color: #ffc107 !important;
+}
+
+.link-info {
+    color: #0dcaf0 !important;
+}
+
+    .link-success:hover, .link-warning:hover, .link-info:hover {
+        filter: brightness(90%);
+    }

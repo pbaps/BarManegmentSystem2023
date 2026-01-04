@@ -1,0 +1,346 @@
+﻿@model BarManegment.Models.CouncilSession
+
+@{
+    ViewBag.Title = "إدارة الجلسة " + Model.SessionNumber;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    bool isLocked = Model.IsFinalized;
+}
+
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <style>
+        .select2-container--bootstrap-5 .select2-selection--single {
+            min-height: 38px;
+        }
+
+        .modal {
+            z-index: 1055;
+        }
+        /* تصحيح الطبقات */
+        .select2-container {
+            z-index: 1060;
+        }
+    </style>
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">جلسة رقم (@Model.SessionNumber) لسنة @Model.Year</h1>
+    <div>
+        <a href="@Url.Action("PrintAgenda", new { id = Model.Id })" target="_blank" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="bi bi-printer"></i> طباعة المحضر
+        </a>
+        @if (!isLocked)
+        {
+            using (Html.BeginForm("CloseSession", "CouncilSessions", new { area = "Admin" }, FormMethod.Post, new { style = "display:inline;" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="d-none d-sm-inline-block btn btn-sm btn-warning shadow-sm"
+                        onclick="return confirm('هل أنت متأكد من إغلاق الجلسة؟\n\nتحذير: بعد الإغلاق لن تتمكن من تعديل القرارات.');">
+                    <i class="bi bi-lock-fill"></i> إغلاق الجلسة
+                </button>
+            }
+        }
+        else
+        {
+            <button class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm" disabled>
+                <i class="bi bi-lock-fill"></i> الجلسة مغلقة
+            </button>
+        }
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">التاريخ والمكان</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.SessionDate.ToShortDateString()</div>
+                        <small>@Model.Location</small>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-calendar-date fs-2 text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">البنود المدرجة</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.AgendaItems.Count</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-list-task fs-2 text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isLocked)
+{
+    <div class="card shadow mb-4 border-left-success">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-success"><i class="bi bi-patch-check-fill"></i> المحضر المعتمد</h6>
+        </div>
+        <div class="card-body">
+            @if (string.IsNullOrEmpty(Model.SignedMinutesPath))
+            {
+                using (Html.BeginForm("UploadSignedMinutes", "CouncilSessions", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sessionId" value="@Model.Id" />
+                    <div class="row">
+                        <div class="col-md-8"><input type="file" name="file" class="form-control" required /></div>
+                        <div class="col-md-4"><button type="submit" class="btn btn-success w-100"><i class="bi bi-upload"></i> رفع المحضر</button></div>
+                    </div>
+                }
+            }
+            else
+            {
+                <a href="@Url.Content(Model.SignedMinutesPath)" target="_blank" class="btn btn-lg btn-success"><i class="bi bi-file-earmark-pdf"></i> عرض المحضر</a>
+            }
+        </div>
+    </div>
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <ul class="nav nav-tabs card-header-tabs" id="sessionTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="agenda-tab" data-bs-toggle="tab" data-bs-target="#agenda" type="button" role="tab">جدول الأعمال</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="attendees-tab" data-bs-toggle="tab" data-bs-target="#attendees" type="button" role="tab">سجل الحضور</button>
+            </li>
+            @if (!isLocked)
+            {
+                <li class="nav-item">
+                    <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button" role="tab"><i class="bi bi-plus-lg"></i> إضافة بند</button>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="card-body text-dark">
+        <div class="tab-content">
+
+            <div class="tab-pane fade show active" id="agenda" role="tabpanel">
+                @if (Model.AgendaItems.Count == 0)
+                {
+                    <div class="alert alert-info text-center">لا يوجد بنود مدرجة.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" style="color: black;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">#</th>
+                                    <th width="40%">الموضوع</th>
+                                    <th width="15%">المصدر</th>
+                                    <th width="15%">القرار</th>
+                                    <th width="25%">الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.AgendaItems)
+                                {
+                                    <tr>
+                                        <td>@item.Id</td>
+                                        <td>
+                                            <h6 class="fw-bold text-primary">@item.Title</h6>
+                                            <p class="mb-1 text-muted small">@item.Description</p>
+                                            @if (!string.IsNullOrEmpty(item.DecisionText))
+                                            {
+                                                <div class="alert alert-secondary p-2 small mt-2 mb-0"><strong>القرار:</strong> @item.DecisionText</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">@item.RequestType</span>
+                                            <div class="small text-muted mt-1">@item.Source</div>
+                                        </td>
+                                        <td>
+                                            @* ✅ هنا التصحيح لعرض جميع الحالات *@
+                                            @if (item.CouncilDecisionType == "Approved")
+                                            {<span class="badge bg-success"><i class="bi bi-check-lg"></i> موافقة</span> }
+                                            else if (item.CouncilDecisionType == "Rejected")
+                                            { <span class="badge bg-danger"><i class="bi bi-x-lg"></i> رفض</span> }
+                                            else if (item.CouncilDecisionType == "Postponed")
+                                            { <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> مؤجل</span> }
+                                            else if (item.CouncilDecisionType == "Modified")
+                                            { <span class="badge bg-info text-dark"><i class="bi bi-pencil"></i> معدل</span> }
+                                            else if (item.CouncilDecisionType == "Study")
+                                            { <span class="badge bg-primary"><i class="bi bi-search"></i> للدراسة</span> }
+                                            else
+                                            { <span class="badge bg-secondary">لم يبت فيه</span>}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group w-100">
+                                                @if (item.CouncilDecisionType == "Pending" && !isLocked)
+                                                {
+                                                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#decisionModal-@item.Id">
+                                                        <i class="bi bi-pencil-square"></i> بت
+                                                    </button>
+                                                    <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-@item.Id">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    using (Html.BeginForm("DeleteAgendaItem", "CouncilSessions", new { area = "Admin" }, FormMethod.Post))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="itemId" value="@item.Id" />
+                                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('حذف؟')"><i class="bi bi-trash"></i></button>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <a href="@Url.Action("PrintDecision", new { id = item.Id })" target="_blank" class="btn btn-secondary btn-sm"><i class="bi bi-printer"></i></a>
+                                                }
+                                            </div>
+
+                                            <div class="modal fade" id="decisionModal-@item.Id" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        @using (Html.BeginForm("SaveDecision", "CouncilSessions", new { area = "Admin" }, FormMethod.Post))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="itemId" value="@item.Id" />
+                                                            <div class="modal-header"><h5 class="modal-title">البت في: @item.Title</h5></div>
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label>نوع القرار</label>
+                                                                    <select name="decisionType" class="form-select">
+                                                                        <option value="Approved">موافقة</option>
+                                                                        <option value="Rejected">رفض</option>
+                                                                        <option value="Postponed">تأجيل</option>
+                                                                        <option value="Study">تحويل للدراسة</option>
+                                                                        <option value="Modified">معدل</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label>نص القرار</label>
+                                                                    <textarea name="decisionText" class="form-control" rows="4">@item.DecisionText</textarea>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input type="checkbox" class="form-check-input" name="isVisibleToRequester" value="true" checked>
+                                                                    <label class="form-check-label">عرض لصاحب الطلب</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                                <button type="submit" class="btn btn-primary">حفظ</button>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="modal fade" id="editModal-@item.Id" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        @using (Html.BeginForm("EditAgendaItem", "CouncilSessions", new { area = "Admin" }, FormMethod.Post))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="Id" value="@item.Id" />
+                                                            <div class="modal-header"><h5 class="modal-title">تعديل البند</h5></div>
+                                                            <div class="modal-body">
+                                                                <div class="mb-3"><label>العنوان</label><input name="Title" class="form-control" value="@item.Title" required /></div>
+                                                                <div class="mb-3"><label>التفاصيل</label><textarea name="Description" class="form-control">@item.Description</textarea></div>
+                                                                <div class="mb-3"><label>ID المحامي</label><input type="number" name="RequesterLawyerId" class="form-control" value="@item.RequesterLawyerId" /></div>
+                                                                <div class="mb-3">
+                                                                    <label>التصنيف</label>
+                                                                    @Html.DropDownList("RequestType", new SelectList(new[] { "عام", "مالي", "إداري", "مهنة", "شكوى" }, item.RequestType), new { @class = "form-select" })
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                                <button type="submit" class="btn btn-warning">تعديل</button>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <div class="tab-pane fade" id="attendees" role="tabpanel">
+                @if (!isLocked)
+                {
+                    <div class="card bg-light mb-3 border-0">
+                        <div class="card-body py-3">
+                            @using (Html.BeginForm("AddAttendee", "CouncilSessions", new { area = "Admin" }, FormMethod.Post, new { @class = "row g-3" }))
+                            {
+                                <input type="hidden" name="sessionId" value="@Model.Id" />
+                                <div class="col-md-4">@Html.DropDownList("memberName", ViewBag.CouncilMembersList as SelectList, "-- اختر عضو --", new { @class = "form-select", required = "required" })</div>
+                                <div class="col-md-3"><select name="isPresent" class="form-select"><option value="true">حاضر</option><option value="false">غائب</option></select></div>
+                                <div class="col-md-3"><input type="text" name="notes" class="form-control" placeholder="ملاحظات"></div>
+                                <div class="col-md-2"><button type="submit" class="btn btn-success w-100">إضافة</button></div>
+                            }
+                        </div>
+                    </div>
+                }
+                <table class="table table-striped">
+                    <thead><tr><th>الاسم</th><th>الحالة</th><th>ملاحظات</th></tr></thead>
+                    <tbody>
+                        @foreach (var att in Model.Attendees)
+                        {
+                            <tr>
+                                <td>@att.MemberName</td>
+                                <td>@(att.IsPresent ? "حاضر" : "غائب")</td>
+                                <td>@att.Notes</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-pane fade" id="add" role="tabpanel">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        @using (Html.BeginForm("AddManualItem", "CouncilSessions", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="sessionId" value="@Model.Id" />
+                            <div class="mb-3"><label>العنوان</label><input type="text" name="title" class="form-control" required></div>
+                            <div class="mb-3"><label>ربط بملف محامي</label><select id="lawyerSearchSelect" name="RequesterLawyerId" class="form-select"></select></div>
+                            <div class="mb-3"><label>التصنيف</label><select name="requestType" class="form-select"><option value="عام">عام</option><option value="مالي">مالي</option><option value="إداري">إداري</option></select></div>
+                            <div class="mb-3"><label>التفاصيل</label><textarea name="description" class="form-control" rows="4"></textarea></div>
+                            <div class="mb-3"><label>مرفقات</label><input type="file" name="attachments" class="form-control" multiple /></div>
+                            <button type="submit" class="btn btn-primary">إضافة</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#lawyerSearchSelect').select2({
+                theme: "bootstrap-5",
+                placeholder: "-- بحث --",
+                allowClear: true,
+                dropdownParent: $('#add .card-body'),
+                ajax: {
+                    url: "@Url.Action("SearchLawyers", "CouncilSessions", new { area = "Admin" })",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) { return { term: params.term }; },
+                    processResults: function (data) { return { results: data.results }; }
+                }
+            });
+        });
+    </script>
+}

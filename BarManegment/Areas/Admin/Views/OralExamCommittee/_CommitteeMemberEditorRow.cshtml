@@ -1,0 +1,71 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CommitteeMemberSelection
+
+@{
+    // Fix: Explicitly cast ViewBag.Index to int to avoid dynamic dispatch errors (CS1973)
+    int i = (ViewBag.Index as int?) ?? Guid.NewGuid().GetHashCode();
+
+    // استلام القوائم من ViewBag (تم تمريرها من الفيو الرئيسي)
+    var membersList = ViewBag.AvailableMembers as SelectList;
+    var rolesList = ViewBag.AvailableRoles as List<string>;
+
+    // إنشاء قائمة للدور (إذا كانت متوفرة) مع تحديد القيمة المختارة
+    var rolesSelect = rolesList != null ? new SelectList(rolesList, Model.Role) : null;
+}
+
+<div class="row g-2 mb-2 align-items-end member-row" data-index="@i">
+    <div class="col-md-6">
+        <label class="form-label small text-muted">اسم العضو (المحامي) <i class="bi bi-search ms-1"></i></label>
+        <!-- القائمة المنسدلة للأعضاء مع تفعيل البحث -->
+        @Html.DropDownList("Members[" + i + "].MemberLawyerId", membersList, "--- ابحث واختر المحامي ---", new { @class = "form-select member-select select2-searchable" })
+        @Html.ValidationMessage("Members[" + i + "].MemberLawyerId", "", new { @class = "text-danger small" })
+    </div>
+
+    <div class="col-md-5">
+        <label class="form-label small text-muted">الدور في اللجنة</label>
+        <!-- القائمة المنسدلة للأدوار -->
+        @if (rolesSelect != null)
+        {
+            @Html.DropDownList("Members[" + i + "].Role", rolesSelect, "--- اختر الدور ---", new { @class = "form-select role-select" })
+        }
+        else
+        {
+            // في حال عدم وجود قائمة أدوار محددة، نستخدم مربع نص
+            @Html.TextBox("Members[" + i + "].Role", Model.Role, new { @class = "form-control role-input", placeholder = "أدخل الدور" })
+        }
+        @Html.ValidationMessage("Members[" + i + "].Role", "", new { @class = "text-danger small" })
+    </div>
+
+    <div class="col-md-1">
+        <!-- زر الحذف -->
+        <button type="button" class="btn btn-outline-danger w-100 remove-member-btn" tabindex="-1" title="حذف العضو">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+
+    <!-- حقل مخفي لضمان ربط النموذج (Model Binding) بشكل صحيح في ASP.NET MVC -->
+    <!-- هذا يسمح بربط القوائم حتى لو كانت الفهارس غير متسلسلة (مثلاً بعد الحذف) -->
+    <input type="hidden" name="Members.Index" value="@i" />
+
+    <!-- حقل مخفي للاحتفاظ بالـ ID إذا كنا في وضع التعديل -->
+    @if (Model.MemberLawyerId > 0)
+    {
+        <input type="hidden" name="Members[@i].MemberLawyerId" value="@Model.MemberLawyerId" disabled class="original-value" />
+        @* ملاحظة: الـ disabled لمنع تكرار الإرسال، يتم تفعيله فقط للمقارنة في JS إذا لزم الأمر *@
+    }
+
+    <!-- سكريبت لتفعيل Select2 لهذا الصف المحدد -->
+    <script>
+        $(function() {
+            // التحقق من وجود مكتبة Select2
+            if ($.fn.select2) {
+                $('.member-row[data-index="@i"] .select2-searchable').select2({
+                    dir: "rtl",
+                    width: '100%', // لضبط العرض مع البوتستراب
+                    placeholder: "--- ابحث واختر المحامي ---",
+                    allowClear: true,
+                    language: "ar"
+                });
+            }
+        });
+    </script>
+</div>

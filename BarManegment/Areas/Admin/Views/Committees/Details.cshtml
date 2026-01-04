@@ -1,0 +1,300 @@
+﻿@model BarManegment.Models.Committee
+
+@{
+    ViewBag.Title = Model.Name;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <style>
+        .select2-container--bootstrap-5 .select2-selection--single {
+            min-height: 38px;
+        }
+        /* ✅ تصحيح Z-Index للمودال */
+        .modal {
+            z-index: 1055;
+        }
+
+        .select2-container {
+            z-index: 1060;
+        }
+    </style>
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">@Model.Name</h1>
+    @if (Model.IsActive)
+    {
+        <span class="badge bg-success px-3 py-2 fs-6">لجنة فعالة</span>
+    }
+    else
+    {
+        <span class="badge bg-danger px-3 py-2 fs-6">لجنة مجمدة</span>
+    }
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <ul class="nav nav-tabs card-header-tabs" id="committeeTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="cases-tab" data-bs-toggle="tab" data-bs-target="#cases" type="button" role="tab">
+                    <i class="bi bi-folder2-open"></i> القضايا والملفات
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab">
+                    <i class="bi bi-people-fill"></i> أعضاء اللجنة
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body text-dark">
+        <div class="tab-content" id="committeeTabContent">
+
+            <div class="tab-pane fade show active" id="cases" role="tabpanel">
+
+                <button class="btn btn-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddCase">
+                    <i class="bi bi-plus-lg"></i> فتح ملف جديد
+                </button>
+
+                <div class="collapse mb-4" id="collapseAddCase">
+                    <div class="card card-body bg-light border-0">
+                        <h6 class="fw-bold text-primary mb-3">بيانات الملف الجديد</h6>
+                        @using (Html.BeginForm("CreateCase", "Committees", new { area = "Admin" }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="committeeId" value="@Model.Id" />
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <input type="text" name="caseNumber" class="form-control" placeholder="رقم الملف" required />
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" name="subject" class="form-control" placeholder="موضوع القضية" required />
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="complainantName" class="form-control" placeholder="اسم صاحب العلاقة" />
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> حفظ الملف</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" style="color: black;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم الملف</th>
+                                <th>الموضوع / المصدر</th>
+                                <th>الحالة</th>
+                                <th width="30%">التوصية الحالية</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Cases.Count == 0)
+                            {
+                                <tr><td colspan="5" class="text-center text-muted">لا توجد قضايا مسجلة.</td></tr>
+                            }
+                            @foreach (var item in Model.Cases.OrderByDescending(c => c.CreatedDate))
+                            {
+                                <tr>
+                                    <td class="fw-bold">@item.CaseNumber</td>
+                                    <td>
+                                        <strong>@item.Subject</strong><br />
+                                        <small class="text-muted">صاحب العلاقة: @item.ComplainantName</small><br />
+                                        <span class="badge bg-secondary text-light mt-1">
+                                            @if (item.SourceType == "Committee")
+                                            {<span>لجنة داخلية</span> }
+                                            else if (item.SourceType == "LawyerPortal")
+                                            { <span>بوابة المحامين</span> }
+                                            else
+                                            { <span>@item.SourceType</span>}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (item.Status == "تم الرفع للمجلس")
+                                        {<span class="badge bg-success">تم الرفع للمجلس</span> }
+                                        else
+                                        { <span class="badge bg-warning text-dark">@item.Status</span>}
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.FinalRecommendation))
+                                        {
+                                            <div class="p-2 bg-light border rounded small text-dark">
+                                                <i class="bi bi-quote text-muted me-1"></i>@item.FinalRecommendation
+                                            </div>
+                                        }
+                                        else
+                                        { <span class="text-muted small fst-italic">- لا يوجد -</span>}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="@Url.Action("ManageCase", "Committees", new { id = item.Id })" class="btn btn-primary btn-sm text-white" title="إدارة الجلسات والمرفقات">
+                                                <i class="bi bi-gear-fill"></i> متابعة
+                                            </a>
+
+                                            @if (item.Status != "تم الرفع للمجلس")
+                                            {
+                                                <button class="btn btn-info btn-sm text-white" data-bs-toggle="modal" data-bs-target="#recModal-@item.Id">
+                                                    <i class="bi bi-send"></i> رفع
+                                                </button>
+
+                                                <div class="modal fade" id="recModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            @using (Html.BeginForm("SendRecommendation", "Committees", new { area = "Admin" }, FormMethod.Post))
+                                                            {
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="members" role="tabpanel">
+                <div class="mb-3 text-start">
+                    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                        <i class="bi bi-person-plus"></i> إضافة عضو جديد
+                    </button>
+                </div>
+
+                <div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            @using (Html.BeginForm("AddMember", "Committees", new { area = "Admin" }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="committeeId" value="@Model.Id" />
+                                <div class="modal-header bg-success text-white">
+                                    <h5 class="modal-title">تعيين عضو جديد</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-dark">
+                                    <div class="mb-3">
+                                        <label class="form-label">المنصب</label>
+                                        <select name="role" class="form-select">
+                                            <option value="رئيس اللجنة">رئيس اللجنة</option>
+                                            <option value="مقرر اللجنة">مقرر اللجنة</option>
+                                            <option value="عضو">عضو</option>
+                                            <option value="سكرتير">سكرتير (إداري)</option>
+                                        </select>
+                                    </div>
+                                    <hr />
+                                    <div class="mb-3">
+                                        <label class="form-label">ابحث عن العضو (بالاسم أو الرقم)</label>
+                                        <select id="memberSearchSelect" name="selectedMemberId" class="form-select" style="width: 100%;" required>
+                                            <option value="">-- ابحث عن محامي أو موظف --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                    <button type="submit" class="btn btn-success">حفظ وإضافة</button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" style="color: black;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الاسم</th>
+                                <th>الصفة</th>
+                                <th>تاريخ الانضمام</th>
+                                <th>الحالة</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var member in (ViewBag.DisplayMembers as List<BarManegment.Areas.Admin.ViewModels.CommitteeMemberDisplayViewModel>))
+                            {
+                                <tr>
+                                    <td>
+                                        <i class="@member.TypeIcon text-secondary me-1"></i>
+                                        <strong>@member.DisplayName</strong>
+                                    </td>
+                                    <td>@member.Role</td>
+                                    <td>@member.JoinDate.ToShortDateString()</td>
+                                    <td>
+                                        @if (member.IsActive)
+                                        {<span class="text-success fw-bold"><i class="bi bi-check-circle"></i> فعال</span> }
+                                        else
+                                        { <span class="text-danger fw-bold"><i class="bi bi-x-circle"></i> غير فعال</span>}
+                                    </td>
+                                    <td>
+                                        @using (Html.BeginForm("DeleteMember", "Committees", new { area = "Admin" }, FormMethod.Post, new { onsubmit = "return confirm('حذف هذا العضو؟');" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@member.PanelMemberId" />
+                                            <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // تفعيل البحث
+            $('#memberSearchSelect').select2({
+                theme: "bootstrap-5",
+                placeholder: "-- ابحث بالاسم أو الرقم --",
+                allowClear: true,
+                // ✅ هام جداً: تحديد الحاوية الأب للـ Select2 ليعمل داخل المودال
+                dropdownParent: $('#addMemberModal .modal-body'),
+                ajax: {
+                    url: "@Url.Action("SearchMembers", "Committees", new { area = "Admin" })", // <-- الرابط الجديد
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { term: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data.results };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 2
+            });
+        });
+    </script>
+}

@@ -1,0 +1,42 @@
+﻿ 
+@model IEnumerable<BarManegment.Areas.Members.ViewModels.MemberLoanViewModel>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover mb-0">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.LoanId)</th>
+                <th>@Html.DisplayNameFor(model => model.LoanTypeName)</th>
+                <th>@Html.DisplayNameFor(model => model.Amount)</th>
+                <th>@Html.DisplayNameFor(model => model.Status)</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted p-3">
+                        لا يوجد أي قروض مسجلة باسمك.
+                    </td>
+                </tr>
+            }
+            @foreach (var item in Model)
+            {
+                string statusClass = (item.Status == "مكتمل") ? "table-success" : "";
+
+                <tr class="@statusClass">
+                    <td>@Html.DisplayFor(modelItem => item.LoanId)</td>
+                    <td>@Html.DisplayFor(modelItem => item.LoanTypeName)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Amount)</td>
+                    <td>
+                        <strong>@Html.DisplayFor(modelItem => item.Status)</strong>
+                    </td>
+                    <td>
+                        @Html.ActionLink("عرض التفاصيل والأقساط", "MyLoanDetails", new { id = item.LoanId }, new { @class = "btn btn-sm btn-outline-info" })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

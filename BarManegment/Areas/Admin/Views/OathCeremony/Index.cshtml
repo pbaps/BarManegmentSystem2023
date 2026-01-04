@@ -1,0 +1,71 @@
+﻿@model IEnumerable<BarManegment.Areas.Admin.ViewModels.OathCeremonyViewModel>
+@{
+    ViewBag.Title = "إدارة مواعيد حلف اليمين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm"><i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary fw-bold"><i class="bi bi-calendar-event-fill me-2"></i> @ViewBag.Title</h4>
+        <a href="@Url.Action("Create")" class="btn btn-success shadow-sm"><i class="bi bi-plus-lg me-2"></i> تحديد موعد جديد</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <ul class="nav nav-pills card-header-pills">
+                <li class="nav-item"><a class="nav-link @(ViewBag.Filter == "Active" ? "active" : "")" href="@Url.Action("Index", new { filter = "Active" })">مواعيد قادمة/فعالة</a></li>
+                <li class="nav-item"><a class="nav-link @(ViewBag.Filter == "Inactive" ? "active" : "")" href="@Url.Action("Index", new { filter = "Inactive" })">الأرشيف</a></li>
+            </ul>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">تاريخ الحفل</th>
+                            <th>المكان/القاعة</th>
+                            <th>عدد المسجلين</th>
+                            <th>الحالة</th>
+                            <th class="text-end pe-4">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">@item.CeremonyDate.ToString("dddd, yyyy/MM/dd")</td>
+                                <td>@item.Location</td>
+                                <td><span class="badge bg-info text-dark">@item.AttendeesCount خريج</span></td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">متاح للتسجيل</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">مغلق/تم</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-primary shadow-sm fw-bold">
+                                        <i class="bi bi-people-fill me-1"></i> إدارة الحفل
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="5" class="text-center py-5 text-muted">لا توجد مواعيد مجدولة حالياً.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

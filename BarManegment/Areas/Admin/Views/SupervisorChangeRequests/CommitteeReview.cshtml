@@ -1,0 +1,107 @@
+﻿@model IEnumerable<BarManegment.Models.SupervisorChangeRequest>
+@{
+    ViewBag.Title = "مراجعة طلبات لجنة التدريب";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+            <p class="text-muted">قائمة بالطلبات التي تنتظر قرار اللجنة.</p>
+        </div>
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+            @if (TempData["ErrorMessage"] != null)
+            {<div class="alert alert-danger">@TempData["ErrorMessage"]</div>}
+
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم الطلب</th>
+                            <th>اسم المتدرب</th>
+                            <th>نوع الطلب</th>
+                            <th>تاريخ الطلب</th>
+
+                            <th>الحالة</th>
+
+                            <th>المشرف الجديد</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model)
+                        {
+                        <tr>
+                            <td>@request.Id</td>
+                            <td>@request.Trainee.ArabicName</td>
+                            <td>@request.RequestType</td>
+                            <td>@request.RequestDate.ToString("yyyy-MM-dd")</td>
+
+                            <td>
+                                @if (request.Status == "قيد المراجعة")
+                                {
+                                    <span class="badge bg-primary">@request.Status</span>
+                                }
+                                else if (request.Status == "بانتظار دفع الرسوم")
+                                {
+                                    <span class="badge bg-warning text-dark">@request.Status</span>
+                                }
+                            </td>
+
+                            <td>@(request.NewSupervisor?.ArabicName ?? "N/A")</td>
+
+                            @* ===
+        === بداية التعديل: تمييز الأزرار حسب الحالة
+        === *@
+                            @* (داخل @foreach) *@
+
+                            <td class="text-end">
+                                @if (request.Status == "قيد المراجعة" || request.Status == "قيد المراجعة (دفع مؤجل)")
+                                {
+                                    // 1. إذا كان "قيد المراجعة" (تم الدفع أو مؤجل)، أظهر زر اتخاذ القرار
+                                    <a href="@Url.Action("RequestDetails", "SupervisorChangeRequests", new { id = request.Id })" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-eye-fill me-1"></i> مراجعة واتخاذ قرار
+                                    </a>
+                                }
+                                else if (request.Status == "بانتظار دفع الرسوم")
+                                {
+                                    // ===
+                                    // === بداية التعديل: البحث المباشر بالـ ID
+                                    // ===
+                                    if (request.PaymentVoucherId.HasValue)
+                                    {
+                                        <a href="@Url.Action("PrintVoucher", "PaymentVouchers", new { id = request.PaymentVoucherId.Value })" target="_blank" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-printer"></i> طباعة القسيمة (رقم @request.PaymentVoucherId.Value)
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">خطأ: القسيمة غير مرتبطة.</span>
+                                    }
+                                    // === نهاية التعديل ===
+                                }
+                            </td>
+                            @* === نهاية التعديل === *@
+
+                        </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">لا توجد طلبات قيد المراجعة حاليًا.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* (ملاحظة: هذا الكود يفترض أن db موجودة، نحتاج لإضافتها) *@
+@functions {
+    // إضافة تعريف لقاعدة البيانات لاستخدامه في الواجهة (لجلب القسيمة)
+    BarManegment.Models.ApplicationDbContext db = new BarManegment.Models.ApplicationDbContext();
+}

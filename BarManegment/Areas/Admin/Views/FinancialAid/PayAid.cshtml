@@ -1,0 +1,50 @@
+﻿@model BarManegment.Models.LawyerFinancialAid
+
+@{
+    ViewBag.Title = "تنفيذ صرف المساعدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white py-3 text-center">
+                    <h5 class="mb-0"><i class="bi bi-cash-coin me-2"></i> تأكيد عملية الصرف</h5>
+                </div>
+                <div class="card-body p-5 text-center">
+
+                    <h1 class="display-4 fw-bold text-success mb-2">@Model.Amount <small class="fs-4 text-muted">@Model.Currency.Symbol</small></h1>
+                    <span class="badge bg-light text-dark border px-3 py-2 mb-4">@Model.AidType.Name</span>
+
+                    <div class="card bg-light border-0 mb-4 text-start">
+                        <div class="card-body">
+                            <p class="mb-1"><strong>المستفيد:</strong> @Model.Lawyer.ArabicName</p>
+                            <p class="mb-1"><strong>الطريقة:</strong> @Model.DisbursementMethod</p>
+                            @if (Model.DisbursementMethod == "BankTransfer")
+                            {
+                                <p class="mb-0"><strong>البنك:</strong> @Model.TargetBankName <span class="text-muted small">(@Model.TargetIban)</span></p>
+                            }
+                        </div>
+                    </div>
+
+                    @using (Html.BeginForm("ConfirmPayment", "FinancialAid", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("id", Model.Id)
+
+                        <div class="form-floating mb-4 text-start">
+                            @Html.DropDownList("SourceBankAccountId", null, new { @class = "form-select border-success", required = "required" })
+                            <label>خصم المبلغ من حساب (المصدر):</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 py-3 fw-bold shadow" onclick="return confirm('تأكيد الصرف؟')">
+                            <i class="bi bi-check-lg me-2"></i> اعتماد وإنشاء القيد
+                        </button>
+                        <a href="@Url.Action("Index")" class="btn btn-link text-muted mt-3">إلغاء</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

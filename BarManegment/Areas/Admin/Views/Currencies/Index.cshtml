@@ -1,0 +1,22 @@
+﻿@model IEnumerable<BarManegment.Models.Currency>
+@{ ViewBag.Title = "إدارة العملات"; }
+
+<div class="container-fluid pt-4 px-4">
+    <p>@Html.ActionLink("إضافة عملة جديدة", "Create", null, new { @class = "btn btn-primary" })</p>
+    <div class="card">
+        <div class="card-header"><h5 class="card-title mb-0">@ViewBag.Title</h5></div>
+        <div class="card-body">
+            <table class="table">
+                <tr><th>@Html.DisplayNameFor(model => model.Name)</th><th>@Html.DisplayNameFor(model => model.Symbol)</th><th></th></tr>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Symbol)</td>
+                        <td>@Html.ActionLink("تعديل", "Edit", new { id = item.Id })</td>
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,134 @@
+﻿@model BarManegment.Models.LegalResearch
+@{
+    ViewBag.Title = "تفاصيل البحث القانوني";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    bool hasCommittee = Model.Committee != null;
+    var lastDecision = Model.Decisions.OrderByDescending(d => d.DecisionDate).FirstOrDefault();
+    bool hasDecision = lastDecision != null;
+    bool canAssign = Model.Status == "مُقدم" && !hasCommittee;
+    bool canRecord = hasCommittee && (Model.Status == "تم تعيين لجنة" || Model.Status == "تعديلات مطلوبة");
+    bool canUpload = (hasDecision && lastDecision.Result == "ناجح") || Model.Status == "مقبول";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {<div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>}
+    @if (TempData["ErrorMessage"] != null)
+    {<div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-2"></i> @TempData["ErrorMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>}
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary fw-bold">بيانات البحث: @Model.Title</h5>
+            <span class="badge bg-info fs-6">@Model.Status</span>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted">المتدرب:</p>
+                    <h6 class="fw-bold">
+                        <a href="@Url.Action("Details", "RegisteredTrainees", new { id = Model.GraduateApplicationId })" class="text-decoration-none">
+                            @Model.Trainee.ArabicName <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                        </a>
+                    </h6>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted">تاريخ التقديم:</p>
+                    <h6 class="fw-bold">@Model.SubmissionDate.ToString("yyyy-MM-dd")</h6>
+                </div>
+            </div>
+
+            <hr class="opacity-25" />
+
+            <!-- قسم اللجنة -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">لجنة المناقشة</h6>
+                    @if (hasCommittee)
+                    {
+                        <div class="alert alert-light border">
+                            <strong>@Model.Committee.CommitteeName</strong>
+                            <br />
+                            <small>تاريخ التشكيل: @Model.Committee.FormationDate.ToString("yyyy-MM-dd")</small>
+                        </div>
+                    }
+                    else if (canAssign)
+                    {
+                        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                            <span>لم يتم تعيين لجنة بعد.</span>
+                            <a href="@Url.Action("AssignCommittee", new { id = Model.Id })" class="btn btn-sm btn-warning">تعيين لجنة</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">لا توجد لجنة معينة.</p>
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">الإجراءات</h6>
+                    @if (canRecord)
+                    {
+                        <a href="@Url.Action("RecordDecision", new { id = Model.Id })" class="btn btn-primary mb-2">
+                            <i class="bi bi-pencil-square me-2"></i> تسجيل قرار اللجنة
+                        </a>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.FinalDocumentPath))
+                    {
+                        <a href="@Url.Action("GetResearchFile", new { id = Model.Id })" target="_blank" class="btn btn-success mb-2">
+                            <i class="bi bi-file-earmark-pdf me-2"></i> عرض البحث النهائي
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <!-- جدول القرارات -->
+            @if (Model.Decisions.Any())
+            {
+                <h6 class="fw-bold mt-4 mb-3">سجل القرارات</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr><th>التاريخ</th><th>النتيجة</th><th>الملاحظات</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model.Decisions.OrderBy(x => x.DecisionDate))
+                            {
+                                <tr>
+                                    <td>@d.DecisionDate.ToString("yyyy-MM-dd")</td>
+                                    <td><span class="badge bg-secondary">@d.Result</span></td>
+                                    <td>@d.Notes</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- رفع الملف النهائي -->
+            @if (canUpload && string.IsNullOrEmpty(Model.FinalDocumentPath))
+            {
+                <div class="card bg-light border-success mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title text-success fw-bold">رفع النسخة النهائية المعتمدة</h6>
+                        @using (Html.BeginForm("UploadFinalDocument", "LegalResearch", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="researchId" value="@Model.Id" />
+                            <div class="input-group">
+                                <input type="file" class="form-control" name="finalDocument" required accept=".pdf,.doc,.docx">
+                                <button class="btn btn-success" type="submit">رفع وحفظ</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="text-end">
+        @Html.ActionLink("العودة للقائمة", "Index", null, new { @class = "btn btn-secondary" })
+    </div>
+</div>

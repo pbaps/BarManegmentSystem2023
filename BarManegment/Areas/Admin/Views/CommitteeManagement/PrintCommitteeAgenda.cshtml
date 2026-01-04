@@ -1,0 +1,119 @@
+﻿@model BarManegment.Models.DiscussionCommittee
+@{
+    ViewBag.Title = "جدول أعمال لجنة المناقشة";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml";
+}
+
+<style>
+    .header-box {
+        text-align: center;
+        border-bottom: 2px solid #000;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .info-table {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+        .info-table td {
+            padding: 5px;
+        }
+
+    .agenda-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+        .agenda-table th, .agenda-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .agenda-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+    .notes-col {
+        width: 30%;
+    }
+
+    .decision-col {
+        width: 15%;
+    }
+
+    .signatures {
+        margin-top: 60px;
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+    }
+</style>
+
+<div class="page">
+    <div class="header-box">
+        <h2>نقابة المحامين الفلسطينيين</h2>
+        <h3>جدول أعمال لجنة مناقشة الأبحاث القانونية</h3>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td style="width: 15%; font-weight: bold;">اسم اللجنة:</td>
+            <td style="width: 35%;">@Model.CommitteeName</td>
+            <td style="width: 15%; font-weight: bold;">تاريخ الانعقاد:</td>
+            <td style="width: 35%;">@DateTime.Now.ToString("yyyy/MM/dd")</td>
+        </tr>
+    </table>
+
+    <h5 style="margin-bottom: 10px; font-weight: bold;">الأبحاث المدرجة للمناقشة:</h5>
+
+    <table class="agenda-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">م</th>
+                <th style="width: 35%;">عنوان البحث</th>
+                <th style="width: 15%;">المتدرب</th>
+                <th class="notes-col">ملاحظات اللجنة</th>
+                <th class="decision-col">القرار<br><small>(ناجح/راسب/تعديل)</small></th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int i = 1; }
+            @foreach (var research in Model.Researches.OrderBy(r => r.Trainee.ArabicName))
+            {
+                <tr>
+                    <td>@(i++)</td>
+                    <td style="text-align: right; font-weight: bold;">@research.Title</td>
+                    <td>@research.Trainee.ArabicName<br><span style="font-size:11px;">(@research.Trainee.TraineeSerialNo)</span></td>
+                    <td></td> <!-- ملاحظات فارغة للتعبئة -->
+                    <td></td> <!-- قرار فارغ -->
+                </tr>
+            }
+            @if (!Model.Researches.Any())
+            {
+                <tr><td colspan="5" style="padding: 20px;">لا توجد أبحاث مدرجة في جدول الأعمال.</td></tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="signatures">
+        @foreach (var member in Model.Members)
+        {
+            <div>
+                <strong>@member.Role</strong>
+                <br>@member.MemberLawyer.ArabicName
+                <br><br>__________________
+            </div>
+        }
+    </div>
+</div>
+
+<div class="no-print text-center mt-4">
+    <button onclick="window.print()" class="btn btn-primary"><i class="bi bi-printer"></i> طباعة الجدول</button>
+    <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary">عودة</a>
+</div>

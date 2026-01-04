@@ -1,0 +1,232 @@
+﻿@model BarManegment.Areas.ExamPortal.ViewModels.TakeExamViewModel
+@{
+    ViewBag.Title = Model.ExamTitle;
+    Layout = "~/Areas/ExamPortal/Views/Shared/_ExamLayout.cshtml";
+
+    // 💡 حل جذري: استخراج القيمة في متغير منفصل لتجنب مشاكل العرض داخل النص
+    string savedEssayAnswer = "";
+    if (Model.SavedAnswer != null && !string.IsNullOrEmpty(Model.SavedAnswer.EssayAnswerText))
+    {
+        savedEssayAnswer = Model.SavedAnswer.EssayAnswerText;
+    }
+}
+
+<style>
+    .question-text {
+        font-size: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .option-label {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .option-label:hover {
+            background-color: #f8f9fa;
+        }
+
+    .option-input:checked + .option-content {
+        font-weight: bold;
+        color: #0d6efd;
+    }
+
+    .q-nav-btn {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border-radius: 8px;
+    }
+
+        .q-nav-btn.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+</style>
+
+<div class="container-fluid mt-4" style="max-width: 1400px;">
+    <div class="row g-4">
+
+        <!-- القائمة الجانبية: التنقل -->
+        <div class="col-lg-3 order-lg-last">
+            <div class="card shadow-sm mb-3 border-0">
+                <div class="card-header bg-white fw-bold text-center py-3">
+                    <div id="timer" class="badge bg-danger fs-5 shadow-sm w-100 py-2">
+                        <i class="bi bi-stopwatch me-2"></i> جاري التحميل...
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h6 class="fw-bold text-muted mb-3">خريطة الأسئلة</h6>
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        @for (int i = 1; i <= Model.TotalQuestions; i++)
+                        {
+                            <a href="@Url.Action("Question", new { q = i })"
+                               onclick="saveAnswer()"
+                               class="btn btn-outline-secondary q-nav-btn @(i == Model.CurrentQuestionIndex ? "active" : "")">
+                                @i
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="card-footer bg-white p-3">
+                    <button onclick="finishExam()" class="btn btn-success w-100 fw-bold py-2">
+                        <i class="bi bi-check2-circle me-2"></i> إنهاء وتسليم الامتحان
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- منطقة السؤال -->
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0" style="min-height: 600px;">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary">@Model.ExamTitle</h5>
+                    <span class="badge bg-light text-dark border">السؤال @Model.CurrentQuestionIndex من @Model.TotalQuestions</span>
+                </div>
+
+                <div class="card-body p-5">
+                    <!-- نص السؤال -->
+                    <div class="mb-5">
+                        <h4 class="question-text fw-bold mb-3">
+                            @Html.Raw(Model.CurrentQuestion.QuestionText)
+                        </h4>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border">@Model.CurrentQuestion.QuestionType.Name</span>
+                            <span class="badge bg-info bg-opacity-10 text-info border">@Model.CurrentQuestion.Points درجات</span>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="enrollmentId" value="@Model.EnrollmentId" />
+                    <input type="hidden" id="questionId" value="@Model.CurrentQuestion.Id" />
+
+                    <!-- الإجابات -->
+                    <div class="answers-section">
+                        @if (Model.CurrentQuestion.QuestionType.Name == "مقالي")
+                        {
+                            <div class="form-floating">
+                                @* 💡 استخدام المتغير الجاهز هنا بدلاً من التعبير الشرطي *@
+                                <textarea id="essayAnswer" class="form-control" placeholder="اكتب إجابتك هنا..." style="height: 200px">@savedEssayAnswer</textarea>
+                                <label>اكتب إجابتك هنا...</label>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="list-group">
+                                @foreach (var answer in Model.CurrentQuestion.Answers)
+                                {
+                                    <label class="list-group-item list-group-item-action p-3 d-flex align-items-center option-label">
+                                        <input class="form-check-input me-3 option-input" type="radio" name="selectedAnswer"
+                                               value="@answer.Id"
+                                               @(Model.SavedAnswer?.SelectedAnswerId == answer.Id ? "checked" : "")
+                                               style="transform: scale(1.3);">
+                                        <span class="option-content fs-5">@answer.AnswerText</span>
+                                    </label>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white p-4 d-flex justify-content-between">
+                    @if (Model.CurrentQuestionIndex > 1)
+                    {
+                        <a href="@Url.Action("Question", new { q = Model.CurrentQuestionIndex - 1 })" onclick="saveAnswer()" class="btn btn-outline-secondary px-4 btn-lg">
+                            <i class="bi bi-arrow-right me-2"></i> السابق
+                        </a>
+                    }
+                    else
+                    { <div></div>}
+
+                    @if (Model.CurrentQuestionIndex < Model.TotalQuestions)
+                    {
+                        <a href="@Url.Action("Question", new { q = Model.CurrentQuestionIndex + 1 })" onclick="saveAnswer()" class="btn btn-primary px-4 btn-lg">
+                            التالي <i class="bi bi-arrow-left ms-2"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button onclick="finishExam()" class="btn btn-success px-4 btn-lg">
+                            تسليم <i class="bi bi-check-lg ms-2"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // المؤقت
+        var endTime = new Date("@Model.EndTime.ToString("o")").getTime();
+        var timerEl = document.getElementById('timer');
+
+        var timerInterval = setInterval(function() {
+            var now = new Date().getTime();
+            var distance = endTime - now;
+
+            if (distance < 0) {
+                clearInterval(timerInterval);
+                saveAnswer();
+                alert("انتهى الوقت! سيتم تسليم الامتحان تلقائياً.");
+                window.location.href = "@Url.Action("SubmitExam")";
+                return;
+            }
+
+            var h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var s = Math.floor((distance % (1000 * 60)) / 1000);
+
+            timerEl.innerHTML = `<i class="bi bi-alarm me-2"></i> ${h}:${m}:${s}`;
+
+            // تحذير عند قرب الانتهاء
+            if (distance < 300000) { // أقل من 5 دقائق
+                timerEl.classList.add('animate__animated', 'animate__flash', 'infinite');
+            }
+        }, 1000);
+
+        // حفظ الإجابة
+        function saveAnswer() {
+            var data = {
+                enrollmentId: $('#enrollmentId').val(),
+                questionId: $('#questionId').val(),
+                selectedAnswerId: $('input[name=selectedAnswer]:checked').val(),
+                essayAnswerText: $('#essayAnswer').val()
+            };
+
+            // الحفظ المتزامن (Synchronous) لضمان الحفظ قبل الانتقال
+            $.ajax({
+                type: "POST",
+                url: "@Url.Action("SaveAnswer")",
+                data: data,
+                async: false
+            });
+        }
+
+        // إنهاء الامتحان
+        function finishExam() {
+            saveAnswer();
+            if (confirm('هل أنت متأكد من إنهاء الامتحان وتسليم الإجابات؟ لا يمكن التراجع بعد ذلك.')) {
+                window.location.href = "@Url.Action("SubmitExam")";
+            }
+        }
+
+        // الحفظ التلقائي عند الاختيار
+        $('.option-input').on('change', function() {
+            // إزالة التنسيق من الجميع
+            $('.list-group-item').removeClass('bg-light border-primary');
+            // إضافة للمختار
+            $(this).closest('label').addClass('bg-light border-primary');
+            saveAnswer(); // حفظ في الخلفية
+        });
+
+        // الحفظ عند مغادرة حقل النص
+        $('#essayAnswer').on('blur', function() {
+            saveAnswer();
+        });
+    </script>
+}

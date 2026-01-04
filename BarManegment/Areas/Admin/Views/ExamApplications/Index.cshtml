@@ -1,0 +1,315 @@
+﻿@model IEnumerable<BarManegment.Models.ExamApplication>
+@{
+    ViewBag.Title = "إدارة طلبات امتحان القبول";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    string currentCat = ViewBag.CurrentCategory as string;
+
+    // استقبال المتغير من الكنترولر
+    bool isSuperAdmin = ViewBag.IsSuperAdmin != null && (bool)ViewBag.IsSuperAdmin;
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i> @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary fw-bold"><i class="bi bi-card-checklist me-2"></i>@ViewBag.Title</h4>
+
+        <div class="d-flex gap-2">
+            @* === 💡 الإضافة الجديدة: زر إنشاء ملف جديد === *@
+            <a href="@Url.Action("Create", "ExamRegistration", new { area = "" })" class="btn btn-primary shadow-sm"  target="_blank">
+                <i class="bi bi-person-plus-fill me-1"></i> تسجيل متقدم جديد
+            </a>
+            @* === نهاية الإضافة === *@
+
+            @using (Html.BeginForm("GenerateAndExportPasswords", "ExamApplications", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success shadow-sm">
+                    <i class="bi bi-file-earmark-excel-fill me-1"></i> تصدير بيانات الدخول
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- 1. شريط التبويبات (Tabs) -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body p-2 bg-light rounded">
+            <ul class="nav nav-pills nav-fill gap-2">
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { category = "", searchTerm = ViewBag.SearchTerm })"
+                       class="nav-link @(string.IsNullOrEmpty(currentCat) ? "active bg-secondary" : "bg-white text-secondary") shadow-sm fw-bold position-relative">
+                        الكل <span class="badge bg-light text-dark border ms-1 rounded-pill">@ViewBag.CountAll</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { category = "Pending", searchTerm = ViewBag.SearchTerm })"
+                       class="nav-link @(currentCat == "Pending" ? "active bg-warning text-dark" : "bg-white text-dark") shadow-sm fw-bold">
+                        <i class="bi bi-hourglass-split"></i> قيد المراجعة <span class="badge bg-danger ms-1 rounded-pill">@ViewBag.CountPending</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { category = "Accepted", searchTerm = ViewBag.SearchTerm })"
+                       class="nav-link @(currentCat == "Accepted" ? "active bg-primary" : "bg-white text-primary") shadow-sm fw-bold">
+                        <i class="bi bi-person-check"></i> مقبول <span class="badge bg-light text-dark ms-1 rounded-pill">@ViewBag.CountAccepted</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { category = "Passed", searchTerm = ViewBag.SearchTerm })"
+                       class="nav-link @(currentCat == "Passed" ? "active bg-success" : "bg-white text-success") shadow-sm fw-bold">
+                        <i class="bi bi-trophy-fill"></i> ناجحون <span class="badge bg-light text-dark ms-1 rounded-pill">@ViewBag.CountPassed</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { category = "Failed", searchTerm = ViewBag.SearchTerm })"
+                       class="nav-link @(currentCat == "Failed" ? "active bg-danger" : "bg-white text-danger") shadow-sm fw-bold">
+                        <i class="bi bi-x-circle"></i> راسبون <span class="badge bg-light text-dark ms-1 rounded-pill">@ViewBag.CountFailed</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", new { category = "Exempt", searchTerm = ViewBag.SearchTerm })"
+                       class="nav-link @(currentCat == "Exempt" ? "active bg-info text-dark" : "bg-white text-info") shadow-sm fw-bold">
+                        <i class="bi bi-star-fill"></i> معفيون <span class="badge bg-light text-dark ms-1 rounded-pill">@ViewBag.CountExempt</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 2. مربع البحث -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "ExamApplications", FormMethod.Get, new { @class = "row g-2 align-items-center" }))
+            {
+                <input type="hidden" name="category" value="@currentCat" />
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input class="form-control border-start-0 ps-0" type="search" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="بحث بالاسم، الهوية، أو البريد الإلكتروني...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">بحث</button>
+                </div>
+
+                if (!string.IsNullOrWhiteSpace(ViewBag.SearchTerm))
+                {
+                    <div class="col-12">
+                        <a href="@Url.Action("Index", new { category = currentCat })" class="text-danger text-decoration-none small">
+                            <i class="bi bi-x-lg"></i> إلغاء البحث
+                        </a>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- 3. جدول البيانات -->
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive" style="min-height: 300px;">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>الاسم الكامل</th>
+                        <th>الرقم الوطني</th>
+                        <th>تاريخ التقديم</th>
+                        <th class="text-center">النتيجة</th>
+                        <th class="text-center">الحالة</th>
+                        <th class="text-end">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="fw-bold text-dark">@item.FullName</span><br>
+                                    <small class="text-muted">@item.Email</small>
+                                </td>
+                                <td class="font-monospace">@item.NationalIdNumber</td>
+                                <td>@item.ApplicationDate.ToString("yyyy-MM-dd")</td>
+
+                                <td class="text-center">
+                                    @if (item.ExamScore.HasValue)
+                                    {
+                                        <span class="fw-bold @(item.ExamResult == "ناجح" ? "text-success" : "text-danger")">
+                                            @item.ExamResult (@item.ExamScore%)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    @if (item.Status == "مقبول للامتحان")
+                                    {<span class="badge bg-primary bg-opacity-10 text-primary border border-primary">جاهز للامتحان</span> }
+                                    else if (item.Status.Contains("ناجح"))
+                                    { <span class="badge bg-success bg-opacity-10 text-success border border-success">ناجح (مؤهل)</span> }
+                                    else if (item.Status == "راسب")
+                                    { <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">راسب</span> }
+                                    else if (item.Status.Contains("معفى"))
+                                    { <span class="badge bg-info bg-opacity-10 text-info border border-info">معفى</span> }
+                                    else if (item.Status == "قيد المراجعة")
+                                    { <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">قيد المراجعة</span> }
+                                    else if (item.Status == "مرفوض")
+                                    { <span class="badge bg-dark">مرفوض</span> }
+                                    else
+                                    { <span class="badge bg-secondary">@item.Status</span>}
+                                </td>
+
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                                            <i class="bi bi-gear-fill"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("Details", new { id = item.Id })">
+                                                    <i class="bi bi-eye me-2 text-primary"></i> تفاصيل الملف
+                                                </a>
+                                            </li>
+
+                                            @if (isSuperAdmin && (item.Status == "مقبول للامتحان" || item.Status.Contains("ناجح") || item.Status == "راسب"))
+                                            {
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <button class="dropdown-item" type="button"
+                                                            data-bs-toggle="modal" data-bs-target="#examResultModal"
+                                                            data-app-id="@item.Id" data-app-name="@item.FullName"
+                                                            data-current-score="@(item.ExamScore ?? 0)">
+                                                        <i class="bi bi-pencil-square me-2 text-success"></i> رصد/تعديل النتيجة
+                                                    </button>
+                                                </li>
+                                            }
+
+                                            @if (item.Status == "قيد المراجعة" || item.Status == "مقبول للامتحان")
+                                            {
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    @using (Html.BeginForm("Exempt", "ExamApplications", new { id = item.Id }, FormMethod.Post))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-warning" onclick="return confirm('تأكيد إعفاء المتقدم @item.FullName من الامتحان؟')">
+                                                            <i class="bi bi-star-fill me-2"></i> إعفاء من الامتحان
+                                                        </button>
+                                                    }
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <div class="py-4">
+                                    <i class="bi bi-inbox display-4 d-block mb-3 opacity-25"></i>
+                                    <p>لا توجد طلبات في هذا التصنيف حالياً.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div style="height: 150px;"></div>
+</div>
+
+<!-- Modal: Record Exam Result -->
+<div class="modal fade" id="examResultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-award me-2"></i>رصد نتيجة الامتحان</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            @using (Html.BeginForm("UpdateExamResult", "ExamApplications", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" id="resultAppId" name="id" />
+
+                    <div class="alert alert-light border d-flex align-items-center mb-4">
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-person-fill text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">المتقدم</small>
+                            <strong id="resultAppName" class="fs-5 text-dark"></strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الدرجة (من 100)</label>
+                        <div class="input-group input-group-lg">
+                            <input type="number" id="scoreInput" name="score" class="form-control text-center fw-bold text-primary" min="0" max="100" required placeholder="0" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text">سيتم تحديد الحالة (ناجح/راسب) تلقائياً بناءً على درجة النجاح.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">درجة النجاح (الافتراضي 50)</label>
+                        <input type="number" name="passingScore" class="form-control form-control-sm" value="50" />
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">حفظ واعتماد النتيجة</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var resultModal = document.getElementById('examResultModal');
+            resultModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var id = button.getAttribute('data-app-id');
+                var name = button.getAttribute('data-app-name');
+                var score = button.getAttribute('data-current-score');
+
+                resultModal.querySelector('#resultAppId').value = id;
+                resultModal.querySelector('#resultAppName').textContent = name;
+
+                if (score && score > 0) {
+                    resultModal.querySelector('#scoreInput').value = score;
+                } else {
+                    resultModal.querySelector('#scoreInput').value = '';
+                }
+            });
+        });
+    </script>
+}

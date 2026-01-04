@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - نظام إدارة النقابة</title>
+
+    <!-- استدعاء مكتبات التصميم والخطوط العربية -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        /* تنسيقات عامة للطباعة */
+        body {
+            font-family: 'Cairo', sans-serif; /* الخط الافتراضي للعناصر */
+            background-color: #525659; /* خلفية رمادية للعرض على الشاشة (مثل برامج PDF) */
+            margin: 0;
+            padding: 0;
+            font-size: 14px; /* حجم خط أساسي مناسب للقراءة */
+        }
+
+        /* حاوية الصفحة (تمثل الورقة البيضاء) */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm; /* هوامش داخلية للورقة */
+            margin: 10mm auto;
+            background: white;
+            position: relative;
+            box-sizing: border-box;
+            display: block;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3); /* ظل للورقة */
+        }
+
+        /* إعدادات الطباعة الفعلية (عند الضغط على Ctrl+P) */
+        @@media print {
+            @@page {
+                size: A4;
+                margin: 0; /* إلغاء هوامش المتصفح الافتراضية */
+            }
+
+            body {
+                background-color: white;
+                margin: 0;
+            }
+
+            .page {
+                width: 100%;
+                margin: 0;
+                padding: 15mm; /* الحفاظ على الهوامش الداخلية عند الطباعة */
+                border: none;
+                box-shadow: none;
+                height: auto;
+                page-break-after: always; /* ضمان فصل الصفحات */
+            }
+
+            /* إخفاء العناصر غير المرغوبة في الطباعة */
+            .no-print {
+                display: none !important;
+            }
+
+            /* إخفاء روابط URL التي تظهر بجانب النصوص */
+            a[href]:after {
+                content: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 💡 شريط التحكم بالطباعة (يظهر على الشاشة فقط) -->
+    <div class="no-print container-fluid bg-white border-bottom shadow-sm py-2 mb-4 fixed-top" style="position: sticky; top: 0; z-index: 1000;">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="fw-bold text-secondary">
+                <i class="bi bi-file-earmark-text me-2"></i> @ViewBag.Title
+            </div>
+            <div>
+                <button onclick="window.print()" class="btn btn-primary px-4 fw-bold rounded-pill shadow-sm">
+                    <i class="bi bi-printer-fill me-2"></i> طباعة
+                </button>
+
+                <!-- زر العودة للخلف -->
+                <button onclick="window.history.back()" class="btn btn-outline-secondary px-4 ms-1">
+                    عودة
+                </button>
+
+                <!-- زر إغلاق النافذة -->
+                <button onclick="window.close()" class="btn btn-outline-danger px-4 rounded-pill ms-2">
+                    <i class="bi bi-x-lg me-2"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- محتوى التقرير -->
+    @RenderBody()
+
+    <script>
+            // طباعة تلقائية عند التحميل (يمكنك إلغاء التعليق لتفعيلها)
+            // window.onload = function () { window.print(); }
+    </script>
+</body>
+</html>

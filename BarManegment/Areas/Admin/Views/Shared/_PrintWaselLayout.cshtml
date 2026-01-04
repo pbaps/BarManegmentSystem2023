@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - نظام إدارة النقابة</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        /* تنسيقات عامة للطباعة */
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #b1b9bf; /* لون رمادي للخلفية عند العرض */
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+        }
+
+        /* حاوية الصفحة (تمثل الورقة البيضاء) */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            margin: 10mm auto;
+            background: white;
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* إعدادات الطباعة الفعلية */
+        @@media print {
+            @@page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                background-color: white;
+                margin: 0;
+            }
+
+            .page {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 10mm; /* تقليل الهوامش عند الطباعة الفعلية */
+                border: none;
+                box-shadow: none;
+                display: block; /* تغيير من flex إلى block لضمان عدم قص الصفحات */
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            a[href]:after {
+                content: none !important;
+            }
+        }
+    </style>
+
+    @* هذا السكشن ضروري لأن بعض صفحات الطباعة تستخدمه لتمرير تنسيقات خاصة *@
+    @RenderSection("styles", required: false)
+</head>
+<body>
+
+    <div class="no-print container-fluid bg-white border-bottom shadow-sm py-2 mb-4 fixed-top" style="position: sticky; top: 0; z-index: 1000;">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="fw-bold text-secondary">
+                <i class="bi bi-file-earmark-text me-2"></i> @ViewBag.Title
+            </div>
+            <div>
+                <button onclick="window.print()" class="btn btn-primary px-4 fw-bold rounded-pill shadow-sm">
+                    <i class="bi bi-printer-fill me-2"></i> طباعة
+                </button>
+
+                <button onclick="window.history.back()" class="btn btn-outline-secondary px-4 ms-1">
+                    عودة
+                </button>
+
+                <button onclick="window.close()" class="btn btn-outline-danger px-4 rounded-pill ms-2">
+                    <i class="bi bi-x-lg me-2"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @RenderBody()
+
+    @RenderSection("Scripts", required: false)
+
+</body>
+</html>

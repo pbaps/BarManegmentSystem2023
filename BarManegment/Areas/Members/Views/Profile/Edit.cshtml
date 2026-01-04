@@ -1,0 +1,515 @@
+﻿@model BarManegment.Areas.Members.ViewModels.MemberProfileViewModel
+@{
+    ViewBag.Title = "استكمال بيانات الملف الشخصي";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+
+    // البحث عن ID نوع المرفق "موافقة المشرف" أو "شهادة المشرف" من القائمة
+    // ملاحظة: يجب أن يكون الاسم مطابقاً لما هو في قاعدة البيانات
+    var supervisorDocType = Model.AttachmentTypes.FirstOrDefault(x => x.Text.Contains("موافقة") && x.Text.Contains("المشرف"))
+                         ?? Model.AttachmentTypes.FirstOrDefault(x => x.Text.Contains("شهادة") && x.Text.Contains("المشرف"));
+
+    string supervisorDocTypeId = supervisorDocType?.Value;
+
+    // التحقق مما إذا كان الملف مرفوعاً مسبقاً
+    var supervisorDocAttachment = Model.Attachments.FirstOrDefault(a => a.AttachmentTypeId.ToString() == supervisorDocTypeId);
+}
+
+<div class="container mt-4 mb-5">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+            <p class="text-muted mb-0">يرجى مراجعة البيانات المعبأة مسبقًا واستكمال جميع الحقول المطلوبة.</p>
+        </div>
+        <div class="card-body p-4">
+            @if (TempData["SuccessMessage"] != null)
+            {<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+            @if (TempData["ErrorMessage"] != null)
+            {<div class="alert alert-danger">@Html.Raw(TempData["ErrorMessage"])</div>}
+            @if (TempData["InfoMessage"] != null)
+            {<div class="alert alert-info">@TempData["InfoMessage"]</div>}
+
+            @using (Html.BeginForm("Edit", "Profile", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.Id)
+                @Html.ValidationSummary(false, "يرجى تصحيح الأخطاء التالية:", new { @class = "text-danger" })
+
+                <h5 class="mt-2">البيانات الأساسية</h5>
+                <hr />
+
+                @* --- الصورة الشخصية --- *@
+                <div class="row mb-3">
+                    <div class="col-md-3 text-center">
+                        <label class="form-label">الصورة الحالية:</label>
+                        <img src="@(!string.IsNullOrEmpty(Model.CurrentPersonalPhotoPath) ? Url.Content(Model.CurrentPersonalPhotoPath) : Url.Content("~/Content/Images/default-avatar.png"))"
+                             alt="الصورة الشخصية" class="img-thumbnail mb-2" style="max-width: 150px; max-height: 200px;" id="photoPreview" />
+                        @Html.HiddenFor(m => m.CurrentPersonalPhotoPath)
+                    </div>
+                    <div class="col-md-9 align-self-center">
+                        @Html.LabelFor(m => m.PersonalPhotoFile, new { @class = "form-label" })
+                        <input type="file" name="PersonalPhotoFile" id="PersonalPhotoFile" class="form-control" accept="image/jpeg, image/png, image/gif" onchange="previewImage(event)" />
+                        @Html.ValidationMessageFor(m => m.PersonalPhotoFile, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                @* --- البيانات الأساسية --- *@
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ArabicName, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ArabicName, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.NationalIdNumber, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.NationalIdNumber, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        @Html.LabelFor(m => m.CurrentStatusName, new { @class = "form-label" })
+                        <input type="text" value="@Model.CurrentStatusName" class="form-control" readonly style="font-weight:bold; color: #0d6efd; background-color: #e9ecef;" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.EnglishName, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.EnglishName, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.EnglishName, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.BirthDate, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.BirthDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                        @Html.ValidationMessageFor(m => m.BirthDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.BirthPlace, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.BirthPlace, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.BirthPlace, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.Nationality, new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.Nationality, Model.Nationalities, "--- اختر الجنسية ---", new { @class = "form-select" })
+                        @Html.ValidationMessageFor(m => m.Nationality, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <h5 class="mt-4">بيانات الاتصال</h5>
+                <hr />
+                @Html.HiddenFor(m => m.ContactInfo.Id, new { Value = Model.Id })
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.Governorate, new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.ContactInfo.Governorate, Model.Governorates, "--- اختر المحافظة ---", new { @class = "form-select" })
+                        @Html.ValidationMessageFor(m => m.ContactInfo.Governorate, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.City, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.City, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.ContactInfo.City, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.Street, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.Street, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.ContactInfo.Street, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.BuildingNumber, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.BuildingNumber, new { htmlAttributes = new { @class = "form-control" } })
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.MobileNumber, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.MobileNumber, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.ContactInfo.MobileNumber, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.WhatsAppNumber, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.WhatsAppNumber, new { htmlAttributes = new { @class = "form-control" } })
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.HomePhoneNumber, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.HomePhoneNumber, new { htmlAttributes = new { @class = "form-control" } })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.Email, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.Email, new { htmlAttributes = new { @class = "form-control" } })
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.EmergencyContactPerson, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.EmergencyContactPerson, new { htmlAttributes = new { @class = "form-control" } })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.ContactInfo.EmergencyContactNumber, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.ContactInfo.EmergencyContactNumber, new { htmlAttributes = new { @class = "form-control" } })
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    @Html.LabelFor(m => m.TelegramChatId, new { @class = "form-label" })
+
+                    @if (Model.TelegramChatId.HasValue)
+                    {
+                        <div class="input-group">
+                            @Html.EditorFor(m => m.TelegramChatId, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly", style = "background-color: #e9ecef;" } })
+                            <span class="input-group-text bg-success text-white">
+                                <i class="bi bi-check-circle-fill"></i> تم الربط
+                            </span>
+                        </div>
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(Model.TelegramBotName))
+                        {
+                            var startLink = $"https://t.me/{Model.TelegramBotName}?start=g_{Model.NationalIdNumber}";
+                            <a href="@startLink" target="_blank" class="btn btn-info w-100">
+                                <i class="bi bi-telegram me-1"></i> اضغط هنا للربط مع بوت الإشعارات
+                            </a>
+                        }
+                        else
+                        {
+                            <input type="text" value="الربط غير متاح حالياً" class="form-control" readonly disabled />
+                        }
+                    }
+                </div>
+
+                <h5 class="mt-4">بيانات البنك (لتحويل حصة الطوابع)</h5>
+                <hr />
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.BankName, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.BankName, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.BankName, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.BankBranch, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.BankBranch, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.BankBranch, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.AccountNumber, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.AccountNumber, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(m => m.AccountNumber, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.Iban, new { @class = "form-label" })
+                        @Html.EditorFor(m => m.Iban, new { htmlAttributes = new { @class = "form-control", placeholder = "PS..." } })
+                        @Html.ValidationMessageFor(m => m.Iban, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                @* === قسم الإشراف وكتاب الموافقة === *@
+                if (Model.CurrentStatusName != "محامي مزاول" && Model.CurrentStatusName != "Advocate")
+                {
+                    <h5 class="mt-4">بيانات الإشراف (مطلوبة)</h5>
+                    <hr />
+
+                    @Html.HiddenFor(m => m.SupervisorId, new { id = "SupervisorId_hidden" })
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">@Html.DisplayNameFor(m => m.SupervisorNationalId)</label>
+                            <div class="input-group">
+                                @Html.TextBoxFor(m => m.SupervisorNationalId, new { @class = "form-control", id = "SupervisorNationalId_input", placeholder = "أدخل الرقم الوطني للمشرف..." })
+                                <button class="btn btn-outline-primary" type="button" id="verifySupervisorBtn">
+                                    <i class="bi bi-search"></i> تحقق
+                                </button>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.SupervisorNationalId, "", new { @class = "text-danger" })
+                            <div id="supervisorVerifyResult" class="mt-2">
+                                @if (Model.SupervisorId.HasValue)
+                                {
+                                    <div class="alert alert-success py-2"><i class="bi bi-check-circle me-1"></i> المشرف الحالي: @Model.SupervisorNameDisplay</div>
+                                }
+                            </div>
+                        </div>
+
+                        @* === 💡 الإضافة الجديدة: حقل رفع شهادة المشرف مباشرة === *@
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold text-primary">كتاب/شهادة موافقة المشرف <span class="text-danger">*</span></label>
+
+                            @if (supervisorDocTypeId != null)
+                            {
+                                if (supervisorDocAttachment != null)
+                                {
+                                    <div class="alert alert-success py-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-file-earmark-check me-1"></i> تم رفع الكتاب</span>
+                                        <a href="@Url.Action("GetAttachmentFile", "Profile", new { id = supervisorDocAttachment.Id })" target="_blank" class="btn btn-sm btn-light border">عرض</a>
+                                    </div>
+                                    <div class="form-text text-muted">إذا كنت ترغب بتغييره، يرجى حذفه من قسم المرفقات بالأسفل ثم إعادة رفعه.</div>
+                                }
+                                else
+                                {
+                                    <div class="card border-primary bg-light">
+                                        <div class="card-body p-3">
+                                            <p class="small text-muted mb-2">يرجى تحميل صورة عن كتاب موافقة المشرف لإكمال الملف.</p>
+                                            @* نستخدم حقل input منفصل خارج الفورم الرئيسي ونرفعه بـ AJAX أو نجعله جزء من زر الحفظ *@
+                                            @* الحل الأبسط: زر يفتح مودال خاص لرفع هذا الملف تحديداً *@
+                                            <button type="button" class="btn btn-primary w-100" onclick="openSupervisorDocModal()">
+                                                <i class="bi bi-upload me-1"></i> رفع كتاب الموافقة الآن
+                                            </button>
+                                            @* سنستخدم حقل مخفي لتمرير الـ ID للمودال *@
+                                            <input type="hidden" id="supervisorDocTypeIdVal" value="@supervisorDocTypeId" />
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning py-2 small">يرجى التواصل مع الإدارة لإضافة نوع مرفق "موافقة المشرف".</div>
+                            }
+                        </div>
+                        @* === نهاية الإضافة === *@
+                    </div>
+                }
+                else
+                {
+                    @Html.HiddenFor(m => m.SupervisorId, new { Value = Model.Id })
+                    @Html.HiddenFor(m => m.SupervisorNationalId, new { Value = Model.NationalIdNumber })
+                }
+
+
+                <div class="p-4 rounded-3 bg-info-subtle border border-info-subtle mt-4">
+                    <h5 class="mt-0 text-info-emphasis fw-bold"><i class="bi bi-person-vcard me-2"></i>البريد الإلكتروني</h5>
+                    <hr />
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            @Html.LabelFor(m => m.Email, new { @class = "form-label fw-bold" })
+                            @Html.EditorFor(m => m.Email, new { htmlAttributes = new { @class = "form-control form-control-lg", dir = "ltr" } })
+                            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 rounded-3 bg-warning-subtle border border-warning-subtle mt-4">
+                    <h5 class="mt-0 text-warning-emphasis fw-bold"><i class="bi bi-shield-lock me-2"></i>تغيير كلمة المرور (اختياري)</h5>
+                    <hr />
+                    <p class="text-muted small">اترك الحقول التالية فارغة إذا كنت لا ترغب في تغيير كلمة المرور.</p>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            @Html.LabelFor(m => m.OldPassword, new { @class = "form-label fw-bold" })
+                            @Html.PasswordFor(m => m.OldPassword, new { @class = "form-control form-control-lg", autocomplete = "off" })
+                            @Html.ValidationMessageFor(m => m.OldPassword, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            @Html.LabelFor(m => m.NewPassword, new { @class = "form-label fw-bold" })
+                            @Html.PasswordFor(m => m.NewPassword, new { @class = "form-control form-control-lg", autocomplete = "new-password" })
+                            @Html.ValidationMessageFor(m => m.NewPassword, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            @Html.LabelFor(m => m.ConfirmNewPassword, new { @class = "form-label fw-bold" })
+                            @Html.PasswordFor(m => m.ConfirmNewPassword, new { @class = "form-control form-control-lg", autocomplete = "new-password" })
+                            @Html.ValidationMessageFor(m => m.ConfirmNewPassword, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    @if (Model.CurrentStatusName == "طلب جديد" || Model.CurrentStatusName == "بانتظار استكمال النواقص")
+                    {
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send me-1"></i> حفظ وإرسال للجنة للمراجعة
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save me-1"></i> حفظ التعديلات
+                        </button>
+                    }
+                </div>
+            }
+
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mt-4 mb-0">المؤهلات العلمية</h5>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addQualificationModal">
+                    <i class="bi bi-plus-circle me-1"></i> إضافة مؤهل
+                </button>
+            </div>
+            @{ Html.RenderPartial("_QualificationList", Model.Qualifications); }
+
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mt-4 mb-0">المرفقات</h5>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAttachmentModal">
+                    <i class="bi bi-plus-circle me-1"></i> إضافة مرفق
+                </button>
+            </div>
+            @{ Html.RenderPartial("_AttachmentList", Model.Attachments); }
+        </div>
+    </div>
+</div>
+
+
+@* --- مودال إضافة المؤهلات --- *@
+<div class="modal fade" id="addQualificationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddQualification", "Profile", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مؤهل علمي جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-floating mb-3">
+                        @Html.DropDownListFor(m => m.NewQualification.QualificationTypeId, Model.QualificationTypes, "--- اختر نوع المؤهل ---", new { @class = "form-select" })
+                        <label>نوع المؤهل</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        @Html.TextBoxFor(m => m.NewQualification.UniversityName, new { @class = "form-control", placeholder = " " })
+                        <label>اسم الجامعة / المدرسة</label>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.TextBoxFor(m => m.NewQualification.Faculty, new { @class = "form-control", placeholder = " " })
+                                <label>الكلية</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.TextBoxFor(m => m.NewQualification.Specialization, new { @class = "form-control", placeholder = " " })
+                                <label>التخصص</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.TextBoxFor(m => m.NewQualification.GraduationYear, new { @class = "form-control", placeholder = " ", type = "number" })
+                                <label>سنة التخرج</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                @Html.TextBoxFor(m => m.NewQualification.GradePercentage, new { @class = "form-control", placeholder = " ", type = "number", step = "0.01" })
+                                <label>المعدل (%)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> حفظ المؤهل</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@* --- مودال إضافة المرفقات (العام) --- *@
+<div class="modal fade" id="addAttachmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("UploadAttachment", "Profile", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ApplicationId" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title">رفع مرفق جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-floating mb-3">
+                        @Html.DropDownListFor(m => m.NewAttachment.AttachmentTypeId, Model.AttachmentTypes, "--- اختر نوع المرفق ---", new { @class = "form-select", id = "generalAttachmentTypeSelect" })
+                        @Html.LabelFor(m => m.NewAttachment.AttachmentTypeId)
+                    </div>
+                    <div class="mb-3">
+                        @Html.LabelFor(m => m.NewAttachment.File)
+                        @Html.TextBoxFor(m => m.NewAttachment.File, new { type = "file", @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.NewAttachment.File, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> رفع وحفظ</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script>
+    // (دالة عرض الصورة)
+    var currentUserPhotoUrl = "@(!string.IsNullOrEmpty(Model.CurrentPersonalPhotoPath) ? Url.Content(Model.CurrentPersonalPhotoPath) : Url.Content("~/Content/Images/default-avatar.png"))";
+
+    function previewImage(event) {
+        var reader = new FileReader();
+        var output = document.getElementById('photoPreview');
+        reader.onload = function(){
+            output.src = reader.result;
+        };
+        if (event.target.files && event.target.files[0]) {
+             reader.readAsDataURL(event.target.files[0]);
+        } else {
+             output.src = currentUserPhotoUrl;
+        }
+    }
+
+    // دالة لفتح مودال المرفقات وتحديد نوع "كتاب المشرف" تلقائياً
+    function openSupervisorDocModal() {
+        var typeId = $('#supervisorDocTypeIdVal').val();
+        if(typeId) {
+            $('#generalAttachmentTypeSelect').val(typeId);
+            // فتح المودال العام
+            var myModal = new bootstrap.Modal(document.getElementById('addAttachmentModal'));
+            myModal.show();
+        } else {
+            alert('لم يتم العثور على نوع المرفق "موافقة المشرف" في القائمة.');
+        }
+    }
+
+    $(document).ready(function () {
+        // (كود التحقق من المشرف)
+        $('#verifySupervisorBtn').on('click', function () {
+            var nationalId = $('#SupervisorNationalId_input').val();
+            var resultDiv = $('#supervisorVerifyResult');
+            var hiddenInput = $('#SupervisorId_hidden');
+
+            if (!nationalId) {
+                resultDiv.html('<div class="alert alert-danger">الرجاء إدخال الرقم الوطني للمشرف.</div>');
+                hiddenInput.val('');
+                return;
+            }
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("VerifySupervisor", "Profile")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    nationalId: nationalId
+                },
+                success: function (response) {
+                    if (response.success) {
+                        resultDiv.html('<div class="alert alert-success">تم العثور على المشرف: ' + response.name + '</div>');
+                        hiddenInput.val(response.id);
+                    } else {
+                        resultDiv.html('<div class="alert alert-danger">' + response.message + '</div>');
+                        hiddenInput.val('');
+                    }
+                },
+                error: function () {
+                    resultDiv.html('<div class="alert alert-danger">حدث خطأ أثناء الاتصال بالخادم.</div>');
+                    hiddenInput.val('');
+                }
+            });
+        });
+    });
+    </script>
+}

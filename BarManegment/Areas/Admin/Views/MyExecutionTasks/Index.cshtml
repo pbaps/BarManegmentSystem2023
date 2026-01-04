@@ -1,0 +1,59 @@
+﻿@model IEnumerable<BarManegment.Models.AgendaItem>
+@{ ViewBag.Title = "المهام المكلف بها"; Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml"; }
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h4 class="m-0 font-weight-bold text-primary">المهام (قرارات المجلس) بانتظار التنفيذ</h4>
+    </div>
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-success text-center">
+                <i class="bi bi-check2-all display-4"></i>
+                <p class="mt-2">لا توجد مهام مكلف بها حالياً.</p>
+            </div>
+        }
+
+        @foreach (var item in Model)
+        {
+            using (Html.BeginForm("SubmitExecutionAction", "MyExecutionTasks", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="itemId" value="@item.Id" />
+
+                <div class="card mb-3 border-warning">
+                    <div class="card-header bg-warning text-dark d-flex justify-content-between">
+                        <strong>@item.Title (من جلسة @item.CouncilSession.SessionNumber)</strong>
+                        <span>(محال إليك)</span>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>القرار المطلوب تنفيذه:</strong> @item.DecisionText</p>
+
+                        <div class="mb-3">
+                            <label for="notes-@item.Id" class="form-label fw-bold">الدراسة / الملاحظات / إجراءات التنفيذ:</label>
+                            <textarea id="notes-@item.Id" name="executionNotes" class="form-control" rows="4" placeholder="أكتب هنا ملاحظاتك، أو الدراسة التي قمت بها، أو الإجراء الذي اتخذته لتنفيذ القرار..."></textarea>
+                        </div>
+
+                        <hr />
+
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <label class="form-label">اختر الإجراء النهائي:</label>
+                                <select name="selectedAction" class="form-select">
+                                    <option value="Execute">تم التنفيذ (إغلاق المهمة)</option>
+                                    <option value="ReturnToSecretary">إعادة للسكرتير (للمراجعة/بحاجة لقرار إضافي)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 text-start mt-2">
+                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('هل أنت متأكد من إرسال هذا الرد؟')">
+                                    <i class="bi bi-send-check"></i> إرسال واعتماد
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

@@ -1,0 +1,64 @@
+﻿@model BarManegment.Models.TrainingLog
+@{
+    ViewBag.Title = "مراجعة سجل التدريب";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+            <p class="text-muted mb-0">للمتدرب: @Model.Trainee.ArabicName (شهر @Model.Month/@Model.Year)</p>
+        </div>
+        <div class="card-body">
+
+            <h5 class="text-primary">ملخص الأعمال المقدم من المتدرب</h5>
+            <div class="alert alert-light">
+                <pre style="white-space: pre-wrap; font-family: inherit;">@Model.WorkSummary</pre>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.FilePath))
+            {
+                <h5 class="text-primary mt-4">المرفق</h5>
+                <a href="@Url.Action("GetTrainingLogAttachment", "Dashboard", new { logId = Model.Id })" target="_blank" class="btn btn-outline-info">
+                    <i class="bi bi-paperclip"></i> عرض المرفق
+                </a>
+ 
+            }
+
+            <hr class="my-4" />
+
+            <h5 class="text-primary">اتخاذ قرار</h5>
+
+            @* --- زر الموافقة --- *@
+            @using (Html.BeginForm("ApproveLog", "Dashboard", new { logId = Model.Id }, FormMethod.Post, new { @class = "d-inline" }))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success"
+                        onclick="return confirm('هل أنت متأكد من اعتماد هذا السجل؟')">
+                    <i class="bi bi-check-circle"></i> اعتماد السجل
+                </button>
+            }
+
+            <hr class="my-4" />
+
+            @* --- نموذج الرفض --- *@
+            @using (Html.BeginForm("RejectLog", "Dashboard", new { logId = Model.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="form-floating mb-3">
+                    <textarea name="supervisorNotes" class="form-control" placeholder=" " style="height: 100px"></textarea>
+                    <label>ملاحظات (إلزامي في حال الرفض)</label>
+                </div>
+                <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('هل أنت متأكد من رفض هذا السجل؟')">
+                    <i class="bi bi-x-circle"></i> رفض السجل (مع إرسال الملاحظات)
+                </button>
+            }
+
+        </div>
+        <div class="card-footer">
+            @Html.ActionLink("العودة إلى لوحة التحكم", "Index", "Dashboard", null, new { @class = "btn btn-secondary" })
+        </div>
+    </div>
+</div>

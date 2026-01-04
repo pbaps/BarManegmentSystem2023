@@ -1,0 +1,89 @@
+﻿@model IEnumerable<BarManegment.Models.Committee>
+
+@{
+    ViewBag.Title = "إدارة اللجان";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">اللجان النقابية</h1>
+ 
+
+        <button type="button" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createCommitteeModal">
+            <i class="fas fa-plus fa-sm text-white-50"></i> إنشاء لجنة جديدة
+        </button>
+    </div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="row">
+    @foreach (var item in Model)
+    {
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                @(item.IsActive ? "نشطة" : "مجمدة")
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@item.Name</div>
+                            <div class="mt-2">
+                                <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-primary">
+                                    إدارة اللجنة <i class="fa fa-arrow-left"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="createCommitteeModal" tabindex="-1" aria-labelledby="createCommitteeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("Create", "Committees", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createCommitteeModalLabel">إضافة لجنة نقابية جديدة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم اللجنة <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" class="form-control" required placeholder="مثال: لجنة التأديب" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">وصف اللجنة</label>
+                        <textarea name="Description" class="form-control" rows="3" placeholder="وصف مهام اللجنة..."></textarea>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="IsActive" value="true" checked id="isActiveCheck">
+                        <label class="form-check-label" for="isActiveCheck">
+                            لجنة فعالة
+                        </label>
+                        <input name="IsActive" type="hidden" value="false" />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ البيانات</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

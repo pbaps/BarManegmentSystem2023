@@ -1,0 +1,27 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.UpcomingLectureViewModel>
+
+<div class="card-body p-0">
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mb-0 text-center">
+            لا يوجد محاضرات قادمة مجدولة حاليًا.
+        </div>
+    }
+    else
+    {
+        <ul class="list-group list-group-flush">
+            @foreach (var lecture in Model)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">@lecture.Title</h6>
+                        <small class="text-muted">@lecture.StartTime.ToString("yyyy/MM/dd - hh:mm tt")</small>
+                    </div>
+                    <a href="@lecture.TeamsLink" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="bi bi-microsoft-teams me-1"></i> رابط
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+</div>

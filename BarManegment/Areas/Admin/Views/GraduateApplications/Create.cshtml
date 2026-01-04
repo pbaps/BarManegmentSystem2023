@@ -1,0 +1,349 @@
+﻿@model BarManegment.ViewModels.GraduateApplicationViewModel
+@{
+    ViewBag.Title = "تسجيل طلب انتساب جديد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="text-primary fw-bold"><i class="bi bi-person-plus-fill me-2"></i> @ViewBag.Title</h4>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-right me-1"></i> العودة للقائمة
+                </a>
+            </div>
+
+            <!-- 1. قسم البحث والاستيراد -->
+            <div class="card shadow-sm border-primary border-start border-5 mb-4">
+                <div class="card-body bg-light">
+                    <h6 class="card-title text-primary fw-bold mb-3"><i class="bi bi-cloud-download me-2"></i> استيراد بيانات من سجل الامتحانات</h6>
+                    @using (Html.BeginForm("Create", "GraduateApplications", FormMethod.Get, new { @class = "row g-2 align-items-center" }))
+                    {
+                        <div class="col-md-9">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                <input type="text" name="nationalId" class="form-control" placeholder="أدخل الرقم الوطني للمتقدم للبحث عن بياناته..." value="@Request.QueryString["nationalId"]">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">بحث وجلب البيانات</button>
+                        </div>
+                    }
+                    @if (TempData["InfoMessage"] != null)
+                    {
+                        <div class="alert alert-info mt-3 mb-0 shadow-sm">
+                            <i class="bi bi-info-circle-fill me-2"></i> @TempData["InfoMessage"]
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger mt-3 mb-0 shadow-sm">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 2. نموذج البيانات -->
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">بيانات الطلب الأساسية</h5>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm("Create", "GraduateApplications", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        // عرض التنبيه فقط في حال وجود أخطاء
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            @Html.ValidationSummary(false, "يرجى تصحيح الأخطاء التالية:", new { @class = "alert alert-danger mb-4" })
+                        }
+
+                        <div class="row">
+                            <!-- 📸 العمود الجانبي: الصورة الشخصية -->
+                            <div class="col-md-3 text-center mb-4 mb-md-0 border-end">
+                                <div class="p-3">
+                                    <label class="form-label fw-bold mb-3 d-block">الصورة الشخصية</label>
+                                    <div class="position-relative d-inline-block">
+                                        <img id="photoPreview"
+                                             src="https://placehold.co/150x150/f8f9fa/adb5bd?text=صورة+شخصية"
+                                             class="img-thumbnail rounded-circle shadow-sm mb-3"
+                                             alt="معاينة الصورة"
+                                             style="width: 160px; height: 160px; object-fit: cover; border: 4px solid #fff;">
+
+                                        <div class="mt-2">
+                                            <label for="PersonalPhotoFile" class="btn btn-sm btn-outline-primary w-100">
+                                                <i class="bi bi-camera-fill me-1"></i> اختيار صورة
+                                            </label>
+                                            <input type="file" name="PersonalPhotoFile" id="PersonalPhotoFile" class="d-none" accept="image/*"
+                                                   onchange="if(this.files && this.files[0]) document.getElementById('photoPreview').src = window.URL.createObjectURL(this.files[0])" />
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.PersonalPhotoFile, "", new { @class = "text-danger small mt-1 d-block" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 📝 العمود الرئيسي: باقي الحقول -->
+                            <div class="col-md-9">
+                                <div class="row g-3">
+                                    <!-- البيانات الشخصية -->
+                                    <div class="col-12"><h6 class="text-primary border-bottom pb-2 mb-3 fw-bold">البيانات الشخصية</h6></div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.ArabicName, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.ArabicName, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(model => model.ArabicName, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.EnglishName, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.EnglishName, new { htmlAttributes = new { @class = "form-control", dir = "ltr" } })
+                                        @Html.ValidationMessageFor(model => model.EnglishName, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.NationalIdNumber, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.NationalIdNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(model => model.NationalIdNumber, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.NationalIdTypeId, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.DropDownListFor(model => model.NationalIdTypeId, Model.NationalIdTypes, "اختر نوع الهوية...", new { @class = "form-select" })
+                                        @Html.ValidationMessageFor(model => model.NationalIdTypeId, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.BirthDate, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.BirthDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                        @Html.ValidationMessageFor(model => model.BirthDate, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.BirthPlace, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.BirthPlace, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(model => model.BirthPlace, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.Nationality, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.DropDownListFor(model => model.Nationality, Model.Countries, "اختر الجنسية...", new { @class = "form-select" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.GenderId, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.DropDownListFor(model => model.GenderId, Model.Genders, "اختر الجنس...", new { @class = "form-select" })
+                                    </div>
+
+                                    <!-- بيانات الاتصال -->
+                                    <div class="col-12 mt-4"><h6 class="text-primary border-bottom pb-2 mb-3 fw-bold">بيانات الاتصال</h6></div>
+
+                                    <div class="col-md-4">
+                                        @Html.LabelFor(model => model.ContactInfo.MobileNumber, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.ContactInfo.MobileNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(model => model.ContactInfo.MobileNumber, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        @Html.LabelFor(model => model.ContactInfo.Email, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.ContactInfo.Email, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(model => model.ContactInfo.Email, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        @Html.LabelFor(model => model.ContactInfo.Governorate, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.DropDownListFor(model => model.ContactInfo.Governorate, Model.Governorates, "اختر المحافظة...", new { @class = "form-select" })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.ContactInfo.City, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.ContactInfo.City, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.ContactInfo.Street, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(model => model.ContactInfo.Street, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+
+                                    <!-- 💡 1. إضافة قسم اختيار المشرف -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3 fw-bold">بيانات المحامي المشرف (المدرب)</h6>
+                                        <div class="card bg-light border-0">
+                                            <div class="card-body">
+                                                <div class="row g-3 align-items-end">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">بحث عن المشرف</label>
+                                                        <div class="input-group">
+                                                            <input type="text" id="supervisorSearch" class="form-control" placeholder="أدخل الاسم أو رقم العضوية..." />
+                                                            <button type="button" class="btn btn-primary" id="btnCheckSupervisor">
+                                                                <i class="bi bi-search"></i> فحص
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        @Html.HiddenFor(model => model.SupervisorId, new { id = "SupervisorId" })
+                                                        <div id="supervisorResult" class="form-control-plaintext text-muted small pt-2 border rounded px-2 bg-white" style="min-height: 38px;">
+                                                            يرجى البحث واختيار المشرف للتحقق من أهليته.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- قائمة النتائج -->
+                                                <div id="supervisorList" class="list-group mt-2 shadow-sm" style="display:none; max-height: 200px; overflow-y: auto;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 💡 2. قسم عرض المؤهلات والمرفقات (للعرض فقط إن وجدت) -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3 fw-bold">الوثائق والمؤهلات</h6>
+
+                                        <!-- جدول المؤهلات -->
+                                        <div class="mb-3">
+                                            <label class="fw-bold small text-muted mb-2">المؤهلات العلمية المستوردة</label>
+                                            @if (Model.Qualifications != null && Model.Qualifications.Any())
+                                            {
+                                                <table class="table table-sm table-bordered bg-white">
+                                                    <thead class="table-light"><tr><th>المؤهل</th><th>الجامعة</th><th>سنة التخرج</th></tr></thead>
+                                                    <tbody>
+                                                        @foreach (var q in Model.Qualifications)
+                                                        {
+                                                            <tr><td>@(q.QualificationType?.Name)</td><td>@q.UniversityName</td><td>@q.GraduationYear</td></tr>
+
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            }
+                                            else
+                                            {
+                                                <div class="alert alert-light border small text-muted"><i class="bi bi-info-circle me-1"></i> سيتم جلب المؤهلات تلقائياً من سجل الامتحان عند حفظ الطلب.</div>
+                                            }
+                                        </div>
+
+                                        <!-- جدول المرفقات -->
+                                        <div>
+                                            <label class="fw-bold small text-muted mb-2">المرفقات المستوردة</label>
+                                            @if (Model.Attachments != null && Model.Attachments.Any())
+                                            {
+                                                <ul class="list-group list-group-flush small">
+                                                    @foreach (var att in Model.Attachments)
+                                                    {
+                                                        <li class="list-group-item bg-transparent"><i class="bi bi-paperclip me-2"></i> @(att.AttachmentType?.Name)</li>
+
+                                                    }
+                                                </ul>
+                                            }
+                                            else
+                                            {
+                                                <div class="alert alert-light border small text-muted"><i class="bi bi-info-circle me-1"></i> سيتم نقل المرفقات تلقائياً من سجل الامتحان عند حفظ الطلب.</div>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- حالة الطلب (إداري) -->
+                                    <div class="col-12 mt-4"><h6 class="text-primary border-bottom pb-2 mb-3 fw-bold">إعدادات الطلب</h6></div>
+
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(model => model.ApplicationStatusId, htmlAttributes: new { @class = "form-label fw-bold" })
+                                        @Html.DropDownListFor(model => model.ApplicationStatusId, Model.ApplicationStatuses, null, new { @class = "form-select" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm">
+                                <i class="bi bi-save me-2"></i> حفظ البيانات
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // منطق البحث عن المشرف (محدث لعرض تفاصيل الأهلية)
+            $('#btnCheckSupervisor').click(function () {
+                var term = $('#supervisorSearch').val();
+                var list = $('#supervisorList');
+                var resultBox = $('#supervisorResult');
+
+                if (term.length < 2) {
+                    alert("يرجى إدخال حرفين على الأقل للبحث.");
+                    return;
+                }
+
+                list.html('<div class="list-group-item text-muted text-center"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري البحث...</div>').show();
+
+                // استدعاء الأكشن من GraduateApplicationsController
+                $.get('@Url.Action("SearchSupervisors", "GraduateApplications", new { area = "Admin" })', { searchTerm: term }, function (data) {
+                    list.empty();
+                    if (data.success && data.supervisors.length > 0) {
+                        $.each(data.supervisors, function (i, item) {
+
+                            var isEligible = item.isEligible;
+                            var reason = item.ineligibilityReason || "غير محدد";
+
+                            var itemContent;
+                            if (isEligible) {
+                                // مشرف مؤهل
+                                itemContent = `
+                                    <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">${item.name}</div>
+                                            <small class="text-muted">تاريخ المزاولة: ${item.practiceDate}</small>
+                                        </div>
+                                        <span class="badge bg-success rounded-pill">مؤهل</span>
+                                    </button>
+                                `;
+                            } else {
+                                // مشرف غير مؤهل
+                                itemContent = `
+                                    <div class="list-group-item list-group-item-light text-muted d-flex justify-content-between align-items-start" style="cursor: not-allowed; opacity: 0.8;">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold text-decoration-line-through">${item.name}</div>
+                                            <small class="text-danger"><i class="bi bi-exclamation-circle-fill"></i> ${reason}</small>
+                                        </div>
+                                        <span class="badge bg-danger rounded-pill">غير مؤهل</span>
+                                    </div>
+                                `;
+                            }
+
+                            var $item = $(itemContent);
+
+                            // تفعيل النقر فقط للمؤهلين
+                            if (isEligible) {
+                                $item.click(function () {
+                                    $('#SupervisorId').val(item.id);
+                                    resultBox.html(`<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> تم اختيار: ${item.name}</span>`);
+                                    $('#supervisorSearch').val(item.name);
+                                    list.hide();
+                                });
+                            }
+
+                            list.append($item);
+                        });
+                    } else {
+                        var msg = data.message ? data.message : 'لا توجد نتائج مطابقة.';
+                        list.html('<div class="list-group-item text-danger text-center">' + msg + '</div>');
+                    }
+                }).fail(function() {
+                    list.html('<div class="list-group-item text-danger text-center">حدث خطأ أثناء الاتصال بالسيرفر.</div>');
+                });
+            });
+
+            // إخفاء القائمة عند النقر خارجها
+            $(document).click(function(e) {
+                if (!$(e.target).closest('#supervisorSearch, #btnCheckSupervisor, #supervisorList').length) {
+                    $('#supervisorList').hide();
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,78 @@
+﻿@model IEnumerable<BarManegment.Models.PaymentVoucher>
+
+@{
+    ViewBag.Title = "سجل القسائم العامة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-receipt"></i> القسائم العامة (الجهات الخارجية)</h6>
+        <div>
+            <a href="@Url.Action("CreateGeneralVoucher")" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-lg"></i> إنشاء قسيمة عامة جديدة
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-return-right"></i> عودة للقسائم الرئيسية
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="generalVouchersTable" width="100%" cellspacing="0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>رقم القسيمة</th>
+                        <th>الجهة / المستفيد</th>
+                        <th>تاريخ الإصدار</th>
+                        <th>تاريخ الانتهاء</th>
+                        <th>المبلغ</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="font-monospace">@item.Id</td>
+                            <td class="fw-bold">
+                                @(item.CheckNumber ?? "غير محدد")
+                            </td>
+
+                            <td>@item.IssueDate.ToString("yyyy/MM/dd")</td>
+                            <td>@item.ExpiryDate.ToString("yyyy/MM/dd")</td>
+                            <td class="fw-bold text-success">@item.TotalAmount.ToString("N0")</td>
+                            <td>
+                                <span class="badge bg-warning text-dark">@item.Status</span>
+                            </td>
+
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-outline-primary" title="عرض"><i class="bi bi-eye"></i></a>
+                                    <a href="@Url.Action("PrintVoucher", new { id = item.Id })" target="_blank" class="btn btn-outline-dark" title="طباعة"><i class="bi bi-printer"></i></a>
+                                    <a href="@Url.Action("Create", "Receipts", new { voucherId = item.Id })" class="btn btn-success" title="سداد"><i class="bi bi-cash"></i></a>
+                                    <a href="@Url.Action("Delete", new { id = item.Id })" class="btn btn-danger" onclick="return confirm('حذف القسيمة؟')" title="حذف"><i class="bi bi-trash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#generalVouchersTable').DataTable({
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/ar.json" },
+                "order": [[0, "desc"]]
+            });
+        });
+    </script>
+}

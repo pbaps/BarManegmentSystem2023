@@ -1,0 +1,35 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CommitteeMemberSelection
+@*
+    هذا الملف هو الواجهة الجزئية (القالب) لصف عضو واحد.
+    يتم جلبه بواسطة Ajax عند الضغط على "إضافة عضو آخر".
+*@
+@{
+    // جلب البيانات التي أرسلها الكنترولر
+    int index = (int)ViewData["Index"];
+    var availableMembers = (IEnumerable<SelectListItem>)ViewData["AvailableMembers"];
+    var availableRoles = (List<string>)ViewData["AvailableRoles"];
+
+    // إنشاء أسماء الحقول بناءً على الـ Index لضمان الربط الصحيح بالنموذج
+    string idPrefix = $"Members_{index}__";
+    string namePrefix = $"Members[{index}]";
+}
+
+<div class="row g-3 mb-3 align-items-center member-row p-2 border rounded" style="background-color: #fdfdfd;">
+    <div class="col-md-5">
+        @* استخدام Helper لإنشاء الحقول بالأسماء الصحيحة *@
+        @Html.Label(namePrefix + ".MemberLawyerId", "العضو", new { @class = "form-label" }) <span class="text-danger">*</span>
+        @* تأكد أن ViewModel.MemberLawyerId هو الاسم الصحيح للخاصية *@
+        @Html.DropDownList(namePrefix + ".MemberLawyerId", new SelectList(availableMembers, "Value", "Text", Model.MemberLawyerId), "--- اختر العضو ---", new { @class = "form-select member-select", id = idPrefix + "MemberLawyerId" })
+        @Html.ValidationMessage(namePrefix + ".MemberLawyerId", "", new { @class = "text-danger" })
+    </div>
+    <div class="col-md-5">
+        @Html.Label(namePrefix + ".Role", "الدور", new { @class = "form-label" }) <span class="text-danger">*</span>
+        @Html.DropDownList(namePrefix + ".Role", new SelectList(availableRoles, Model.Role), new { @class = "form-select role-select", id = idPrefix + "Role" })
+        @Html.ValidationMessage(namePrefix + ".Role", "", new { @class = "text-danger" })
+    </div>
+    <div class="col-md-2 pt-4">
+        <button type="button" class="btn btn-sm btn-danger remove-member-btn w-100" title="إزالة العضو">
+            <i class="bi bi-trash-fill"></i> إزالة
+        </button>
+    </div>
+</div>

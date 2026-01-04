@@ -1,0 +1,163 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.PurchaseInvoiceViewModel
+
+@{
+    ViewBag.Title = "إضافة فاتورة شراء جديدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-cart-plus me-2"></i> توريد مخزني جديد</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Create", "PurchaseInvoices", FormMethod.Post, new { id = "purchaseForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">المورد</label>
+                        @Html.DropDownList("SupplierId", null, "اختر المورد...", new { @class = "form-select select2", required = "required" })
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">رقم فاتورة المورد</label>
+                        @Html.EditorFor(model => model.SupplierInvoiceNumber, new { htmlAttributes = new { @class = "form-control", required = "required" } })
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">تاريخ الفاتورة</label>
+                        @Html.EditorFor(model => model.InvoiceDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">طريقة الدفع</label>
+                        @Html.DropDownListFor(model => model.PaymentMethod,
+                            new SelectList(new[] { "آجل", "نقدي", "شيك", "حوالة بنكية" }),
+                            new { @class = "form-select" })
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">ملاحظات</label>
+                    @Html.TextAreaFor(model => model.Notes, new { @class = "form-control", rows = 2 })
+                </div>
+
+                <hr />
+
+                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-list-check me-2"></i> الأصناف الموردة</h6>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%">الصنف</th>
+                                <th style="width: 15%">الكمية</th>
+                                <th style="width: 20%">سعر الشراء (للوحدة)</th>
+                                <th style="width: 20%">الإجمالي</th>
+                                <th style="width: 5%">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddRow">
+                                        <i class="bi bi-plus-circle"></i> إضافة صنف
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="table-active">
+                                <td colspan="3" class="text-end fw-bold">الإجمالي الكلي للفاتورة:</td>
+                                <td class="fw-bold fs-5 text-success"><span id="grandTotal">0.00</span></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">عودة</a>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold">حفظ وترحيل للمخزن</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تحويل قائمة الأصناف من السيرفر إلى جافاسكريبت
+            var itemsList = @Html.Raw(Json.Encode(ViewBag.ItemsList));
+            var rowIndex = 0;
+
+            // دالة بناء خيارات الـ Select
+            function getItemsOptions() {
+                var options = '<option value="">اختر الصنف...</option>';
+                $.each(itemsList, function (i, item) {
+                    options += `<option value="${item.Id}">${item.Name}</option>`;
+                });
+                return options;
+            }
+
+            // إضافة سطر جديد
+            $('#btnAddRow').click(function () {
+                var rowHtml = `
+                    <tr class="item-row">
+                        <td>
+                            <select name="Items[${rowIndex}].ItemId" class="form-select item-select" required>
+                                ${getItemsOptions()}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="Items[${rowIndex}].Quantity" class="form-control qty-input" min="1" value="1" required />
+                        </td>
+                        <td>
+                            <input type="number" name="Items[${rowIndex}].UnitPrice" class="form-control price-input" step="0.01" min="0" value="0" required />
+                        </td>
+                        <td>
+                            <input type="text" class="form-control total-input" readonly value="0.00" />
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger remove-row"><i class="bi bi-x"></i></button>
+                        </td>
+                    </tr>
+                `;
+                $('#itemsBody').append(rowHtml);
+
+                // تفعيل Select2 للسطر الجديد
+                $('.item-select').last().select2({ theme: "bootstrap-5", dir: "rtl", width: '100%' });
+
+                rowIndex++;
+            });
+
+            // حذف سطر
+            $(document).on('click', '.remove-row', function () {
+                $(this).closest('tr').remove();
+                calculateGrandTotal();
+            });
+
+            // حساب الإجماليات عند التغيير
+            $(document).on('input change', '.qty-input, .price-input', function () {
+                var row = $(this).closest('tr');
+                var qty = parseFloat(row.find('.qty-input').val()) || 0;
+                var price = parseFloat(row.find('.price-input').val()) || 0;
+                var total = qty * price;
+
+                row.find('.total-input').val(total.toFixed(2));
+                calculateGrandTotal();
+            });
+
+            function calculateGrandTotal() {
+                var grandTotal = 0;
+                $('.total-input').each(function () {
+                    grandTotal += parseFloat($(this).val()) || 0;
+                });
+                $('#grandTotal').text(grandTotal.toFixed(2));
+            }
+
+            // إضافة سطر افتراضي عند التحميل
+            $('#btnAddRow').click();
+        });
+    </script>
+}

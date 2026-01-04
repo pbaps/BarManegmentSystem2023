@@ -1,0 +1,70 @@
+﻿@model BarManegment.Models.TrainingSession
+@{
+    ViewBag.Title = "تعديل جلسة تدريبية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-pencil-square me-2"></i> @ViewBag.Title</h5>
+                    <a href="@Url.Action("Index", new { courseId = Model.TrainingCourseId })" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-right me-1"></i> العودة للجلسات
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+                        @Html.HiddenFor(model => model.TrainingCourseId)
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                @Html.LabelFor(model => model.SessionTitle, "عنوان الجلسة", htmlAttributes: new { @class = "form-label fw-bold" })
+                                @Html.EditorFor(model => model.SessionTitle, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.SessionTitle, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(model => model.InstructorName, "اسم المحاضر", htmlAttributes: new { @class = "form-label fw-bold" })
+                                @Html.EditorFor(model => model.InstructorName, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.InstructorName, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(model => model.CreditHours, "عدد الساعات", htmlAttributes: new { @class = "form-label fw-bold" })
+                                @Html.EditorFor(model => model.CreditHours, new { htmlAttributes = new { @class = "form-control", type = "number" } })
+                                @Html.ValidationMessageFor(model => model.CreditHours, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(model => model.SessionDate, "تاريخ ووقت الجلسة", htmlAttributes: new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(model => model.SessionDate, "{0:yyyy-MM-ddTHH:mm}", new { @class = "form-control", type = "datetime-local" })
+                                @Html.ValidationMessageFor(model => model.SessionDate, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <!-- حقول الاجتماع الافتراضي (اختياري) -->
+                            <div class="col-12"><hr class="text-muted opacity-25 my-2"></div>
+
+                            <div class="col-md-12">
+                                @Html.LabelFor(model => model.TeamsMeetingUrl, "رابط الاجتماع (Teams/Zoom)", htmlAttributes: new { @class = "form-label fw-bold" })
+                                @Html.EditorFor(model => model.TeamsMeetingUrl, new { htmlAttributes = new { @class = "form-control", placeholder = "https://..." } })
+                                @Html.ValidationMessageFor(model => model.TeamsMeetingUrl, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="text-end border-top pt-3 mt-4">
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">
+                                <i class="bi bi-check-circle me-1"></i> حفظ التغييرات
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,159 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.SupervisorRequestViewModel
+@{
+    ViewBag.Title = "تقديم طلب جديد";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header"><h4>@ViewBag.Title للمتدرب: @Model.TraineeName</h4></div>
+        @using (Html.BeginForm("Create", "SupervisorChangeRequests", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                @Html.HiddenFor(m => m.TraineeId)
+                @Html.HiddenFor(m => m.TraineeName)
+
+                @* ===
+                    === بداية الإضافة: عرض المشرف الحالي
+                    === *@
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.CurrentSupervisorName, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.CurrentSupervisorName, new { @class = "form-control", @readonly = "readonly", style = "background-color: #e9ecef;" })
+                </div>
+                @* === نهاية الإضافة === *@
+
+                @* --- اختيار نوع الطلب --- *@
+                <div class="form-group mb-3">
+                    @Html.LabelFor(m => m.RequestType, new { @class = "control-label" }) <span class="text-danger">*</span>
+                    @Html.DropDownListFor(m => m.RequestType, new SelectList(new[] { "نقل", "وقف", "استكمال" }), "--- اختر نوع الطلب ---", new { @class = "form-select", id = "requestType" })
+                    @Html.ValidationMessageFor(m => m.RequestType, "", new { @class = "text-danger" })
+                </div>
+
+                @* --- قسم المشرف الجديد (للنقل والاستكمال) --- *@
+                <div id="newSupervisorSection" class="mb-3" style="display:none;">
+                    @Html.LabelFor(m => m.SupervisorSearch, new { @class = "control-label" }) <span id="newSupervisorRequired" class="text-danger" style="display:none;">*</span>
+                    @Html.TextBoxFor(m => m.SupervisorSearch, new { @class = "form-control", id = "supervisorSearch", placeholder = "ابحث عن اسم المشرف الجديد..." })
+                    @Html.HiddenFor(m => m.NewSupervisorId, new { id = "newSupervisorId" })
+                    @Html.ValidationMessageFor(m => m.NewSupervisorId, "", new { @class = "text-danger" })
+                </div>
+
+                @* --- قسم فترة السماح (للـ وقف) --- *@
+                <div id="gracePeriodSection" class="mb-3" style="display:none;">
+                    @Html.LabelFor(m => m.GracePeriodInDays, new { @class = "control-label" })
+                    @Html.EditorFor(m => m.GracePeriodInDays, new { htmlAttributes = new { @class = "form-control", type = "number", placeholder = "اختياري: مثال 30 يوم" } })
+                    @Html.ValidationMessageFor(m => m.GracePeriodInDays, "", new { @class = "text-danger" })
+                </div>
+
+                @* --- قسم السبب/الملاحظات (لكل الأنواع) --- *@
+                <div class="form-group mb-3">
+                    @Html.LabelFor(m => m.Reason, new { @class = "control-label" })
+                    @Html.TextAreaFor(m => m.Reason, new { @class = "form-control", rows = "3" })
+                    @Html.ValidationMessageFor(m => m.Reason, "", new { @class = "text-danger" })
+                </div>
+
+                @* --- قسم مرفق المشرف القديم (للنقل فقط) --- *@
+                <div id="oldSupervisorFileSection" class="mb-3" style="display:none;">
+                    @Html.LabelFor(m => m.OldSupervisorApprovalFile, new { @class = "control-label" })
+                    <input type="file" name="OldSupervisorApprovalFile" class="form-control" />
+                    @Html.ValidationMessageFor(m => m.OldSupervisorApprovalFile, "", new { @class = "text-danger" })
+                </div>
+
+                @* --- قسم مرفق المشرف الجديد (للنقل) أو مرفق الاستكمال/الوقف --- *@
+                <div id="newSupervisorFileSection" class="mb-3" style="display:none;">
+                    <label id="newSupervisorFileLabel" for="NewSupervisorApprovalFile" class="control-label">@Html.DisplayNameFor(m => m.NewSupervisorApprovalFile)</label>
+                    <span id="newSupervisorFileRequired" class="text-danger" style="display:none;">*</span>
+                    <input type="file" name="NewSupervisorApprovalFile" id="NewSupervisorApprovalFile" class="form-control" />
+                    @Html.ValidationMessageFor(m => m.NewSupervisorApprovalFile, "", new { @class = "text-danger" })
+                </div>
+
+                @* --- زر تأجيل الرسوم --- *@
+                <div class="mb-3 p-3 bg-warning-subtle border border-warning rounded" id="deferPaymentSection" style="display:none;">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="form-check form-switch " style="margin-left:10px">
+                            @Html.CheckBoxFor(m => m.DeferPayment, new { @class = "form-check-input", id = "deferCheck", style = " margin-top: 5px;" })
+                        </div>
+                        <div class="flex-grow-1">
+                            @Html.LabelFor(m => m.DeferPayment, new { @class = "form-check-label fw-bold" })
+                            <small class="d-block text-muted">سيؤدي تحديد هذا الخيار إلى تمرير الطلب للجنة مباشرة دون إنشاء قسيمة دفع، وتسجيل الرسم كـ "دين مؤجل" يُحصّل عند أداء اليمين.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="تقديم الطلب" class="btn btn-primary" />
+                @Html.ActionLink("إلغاء", "Details", "TraineeProfile", new { area = "Admin", id = Model.TraineeId }, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
+
+    <script>
+        $(document).ready(function () {
+             // ... (كود Autocomplete يبقى كما هو) ...
+            $("#supervisorSearch").autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: "@Url.Action("SearchSupervisors", "SupervisorChangeRequests", new { area = "Admin" })",
+                        dataType: "json",
+                        data: { term: request.term },
+                        success: function (data) { response(data); }
+                    });
+                },
+                minLength: 2,
+                select: function (event, ui) {
+                    $("#newSupervisorId").val(ui.item.id);
+                    $("#supervisorSearch").val(ui.item.label);
+                    return false;
+                },
+                 change: function(event, ui){
+                     if (!ui.item) { $("#newSupervisorId").val(""); }
+                 }
+            });
+
+            // ===
+            // === بداية التعديل: تحديث JavaScript
+            // ===
+            function updateFormVisibility() {
+                var type = $('#requestType').val();
+
+                $('#newSupervisorSection, #gracePeriodSection, #oldSupervisorFileSection, #newSupervisorFileSection, #deferPaymentSection').hide();
+                $('#newSupervisorRequired, #newSupervisorFileRequired').hide();
+                $('#newSupervisorFileLabel').text('@Html.DisplayNameFor(m => m.NewSupervisorApprovalFile)');
+
+
+                if (type === 'نقل') {
+                    $('#newSupervisorSection').show();
+                    $('#newSupervisorRequired').show();
+                    $('#oldSupervisorFileSection').show();
+                    $('#newSupervisorFileSection').show();
+                    $('#newSupervisorFileRequired').show();
+                    $('#deferPaymentSection').show();
+                } else if (type === 'وقف') {
+                    $('#gracePeriodSection').show();
+                    $('#newSupervisorFileSection').show();
+                    $('#newSupervisorFileLabel').text('إرفاق سبب الوقف (اختياري)');
+                } else if (type === 'استكمال') {
+
+                    // (هذا هو التعديل)
+                    $('#newSupervisorSection').show(); // إظهار حقل المشرف
+                    $('#newSupervisorRequired').hide(); // جعله اختيارياً
+
+                    $('#newSupervisorFileSection').show();
+                    $('#newSupervisorFileLabel').text('مرفق طلب الاستكمال (اختياري)');
+                    $('#deferPaymentSection').show();
+                }
+            }
+            // === نهاية التعديل ===
+
+            $('#requestType').on('change', updateFormVisibility);
+            updateFormVisibility();
+        });
+    </script>
+}

@@ -1,0 +1,134 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.StampShareManagementViewModel
+@{
+    ViewBag.Title = "إدارة حجوزات (الطوابع) لـ: " + Model.LawyerName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@* عرض رسائل النجاح أو الخطأ *@
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="alert alert-success">@ViewBag.SuccessMessage</div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h5 class="m-0 font-weight-bold text-primary">@ViewBag.Title</h5>
+        <p class="mb-0 text-muted">الحالة الحالية للمحامي: @Model.LawyerStatus</p>
+    </div>
+    <div class="card-body">
+        <p>
+            تسمح لك هذه الشاشة بإدارة حصص الطوابع الخاصة بالمحامي يدوياً.
+            الحصص المحجوزة لن تظهر في كشف البنك.
+        </p>
+        <a href="@Url.Action("Index", "StampFinancials")" class="btn btn-secondary mb-3">
+            <i class="bi bi-arrow-right-circle"></i> العودة للتقرير المالي
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-danger text-white">
+                <h6 class="m-0 fw-bold"><i class="bi bi-lock-fill me-1"></i> حصص محجوزة حالياً (@Model.HeldShares.Count)</h6>
+            </div>
+            <div class="card-body">
+                @if (!Model.HeldShares.Any())
+                {
+                    <p class="text-muted text-center p-3">لا توجد حصص طوابع محجوزة لهذا المحامي.</p>
+                }
+                else
+                {
+                    using (Html.BeginForm("ReleaseShares", "StampShareManagement", new { area = "Admin" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.LawyerId)
+
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" class="form-check-input" onchange="$('#heldSharesTable .chk-item').prop('checked', $(this).prop('checked'));" /></th>
+                                    <th>تاريخ البيع</th>
+                                    <th>المبلغ</th>
+                                    <th>سبب الحجز</th>
+                                </tr>
+                            </thead>
+                            <tbody id="heldSharesTable">
+                                @foreach (var item in Model.HeldShares)
+                                {
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="selectedSaleIds" value="@item.Id" class="form-check-input chk-item" />
+                                        </td>
+                                        <td>@item.SaleDate.ToString("yyyy/MM/dd")</td>
+                                        <td>@item.AmountToLawyer.ToString("N2")</td>
+                                        <td>@item.HoldReason</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <button type="submit" class="btn btn-success mt-2">
+                            <i class="bi bi-unlock-fill me-1"></i> فك الحجز عن (المحدد)
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h6 class="m-0 fw-bold"><i class="bi bi-unlock-fill me-1"></i> حصص جاهزة للدفع (@Model.ReleasedShares.Count)</h6>
+            </div>
+            <div class="card-body">
+                @if (!Model.ReleasedShares.Any())
+                {
+                    <p class="text-muted text-center p-3">لا توجد حصص طوابع جاهزة للدفع حالياً.</p>
+                }
+                else
+                {
+                    using (Html.BeginForm("HoldShares", "StampShareManagement", new { area = "Admin" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.LawyerId)
+
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.HoldReason, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.HoldReason, new { @class = "form-control", placeholder = "اكتب سبب الحجز هنا (مثال: خصم مديونية)..." })
+                            @Html.ValidationMessageFor(m => m.HoldReason, "", new { @class = "text-danger" })
+                        </div>
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" class="form-check-input" onchange="$('#releasedSharesTable .chk-item').prop('checked', $(this).prop('checked'));" /></th>
+                                    <th>تاريخ البيع</th>
+                                    <th>المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="releasedSharesTable">
+                                @foreach (var item in Model.ReleasedShares)
+                                {
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="selectedSaleIds" value="@item.Id" class="form-check-input chk-item" />
+                                        </td>
+                                        <td>@item.SaleDate.ToString("yyyy/MM/dd")</td>
+                                        <td>@item.AmountToLawyer.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <button type="submit" class="btn btn-warning mt-2">
+                            <i class="bi bi-lock-fill me-1"></i> تطبيق الحجز على (المحدد)
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

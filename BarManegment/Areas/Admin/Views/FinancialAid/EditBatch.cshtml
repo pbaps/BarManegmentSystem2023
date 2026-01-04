@@ -1,0 +1,61 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.BatchAidViewModel
+
+@{
+    ViewBag.Title = "تعديل الكشف الجماعي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    string batchRef = ViewBag.BatchRef;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0 border-top border-4 border-warning">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-pencil-square me-2 text-warning"></i> تعديل الكشف الجماعي: <span class="text-primary">@batchRef</span>
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>تنبيه هام:</strong> سيتم تطبيق هذه التعديلات على <u>جميع</u> المستفيدين في هذا الكشف.
+                    </div>
+
+                    @using (Html.BeginForm("EditBatch", "FinancialAid", new { batchRef = batchRef }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">نوع المساعدة الجديد</label>
+                                @Html.DropDownListFor(m => m.AidTypeId, ViewBag.AidTypeId as SelectList, new { @class = "form-select form-select-lg", required = "required" })
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">المبلغ الموحد الجديد</label>
+                                @Html.TextBoxFor(m => m.AmountPerLawyer, new { @class = "form-control form-select-lg", type = "number", step = "0.01", required = "required" })
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">العملة</label>
+                                @Html.DropDownListFor(m => m.CurrencyId, ViewBag.CurrencyId as SelectList, new { @class = "form-select form-select-lg" })
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">تحديث الملاحظات</label>
+                                @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = 3 })
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-5">
+                            <a href="@Url.Action("BatchDetails", new { batchRef = batchRef })" class="btn btn-light text-muted">إلغاء وعودة</a>
+                            <button type="submit" class="btn btn-warning btn-lg px-5 fw-bold text-dark" onclick="return confirm('هل أنت متأكد من تحديث جميع السجلات في هذا الكشف؟')">
+                                تحديث الكل
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

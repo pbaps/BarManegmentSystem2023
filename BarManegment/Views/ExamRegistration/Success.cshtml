@@ -1,0 +1,53 @@
+﻿@{
+    ViewBag.Title = "تم استلام طلبك بنجاح";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+
+            <!-- رأس الصفحة والشعار -->
+            <div class="text-center mb-5">
+                <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" class="mb-3" style="height: 100px;" onerror="this.style.display='none'">
+                <h2 class="fw-bold text-primary">نقابة المحامين الفلسطينيين - مركز غزة</h2>
+            </div>
+
+            <div class="card shadow-lg border-0 rounded-3 text-center">
+                <div class="card-body p-5">
+
+                    <!-- أيقونة النجاح المتحركة -->
+                    <div class="mb-4">
+                        <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                            <i class="bi bi-check-lg text-success" style="font-size: 5rem;"></i>
+                        </div>
+                    </div>
+
+                    <h2 class="fw-bold text-success mb-3">@ViewBag.Title</h2>
+
+                    <div class="alert alert-success border-0 bg-success bg-opacity-10 rounded-3 py-4 px-3 mb-4">
+                        <h5 class="alert-heading fw-bold mb-2"><i class="bi bi-stars me-2"></i> نتمنى لك التوفيق</h5>
+                        <p class="mb-0 text-success-emphasis">
+                            لقد تم استلام طلبك للتقديم لامتحان القبول بنجاح.
+                            <br />
+                            سيتم مراجعة طلبك من قبل اللجنة المختصة وسيتم التواصل معك عبر البريد الإلكتروني أو الواتساب أو الجوال.
+                        </p>
+                    </div>
+
+                    <p class="text-muted small mb-4">يمكنك الآن إغلاق هذه الصفحة بأمان.</p>
+
+                    <div class="d-grid gap-2 col-md-8 mx-auto">
+                        <a href="@Url.Action("Index", "Home", new { area = "" })" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-house-door-fill me-2"></i> العودة إلى البوابة الرئيسية
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="text-center mt-4 text-muted small">
+                &copy; @DateTime.Now.Year نقابة المحامين الفلسطينيين
+            </div>
+        </div>
+    </div>
+</div>

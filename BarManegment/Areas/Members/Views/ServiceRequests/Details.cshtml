@@ -1,0 +1,52 @@
+﻿@model BarManegment.Models.SupervisorChangeRequest
+@{
+    ViewBag.Title = "متابعة الطلب";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-clipboard-check me-2"></i> @ViewBag.Title</h4>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">رقم الطلب:</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+
+            <dt class="col-sm-3">نوع الطلب:</dt>
+            <dd class="col-sm-9">@Model.RequestType</dd>
+
+            <dt class="col-sm-3">تاريخ التقديم:</dt>
+            <dd class="col-sm-9">@Model.RequestDate.ToString("yyyy/MM/dd")</dd>
+
+            <dt class="col-sm-3">الحالة:</dt>
+            <dd class="col-sm-9"><span class="badge bg-primary fs-6">@Model.Status</span></dd>
+
+            @* --- (تعديل: عرض المرفق بدلاً من المشرف) --- *@
+            @if (!string.IsNullOrEmpty(Model.NewSupervisorApprovalPath))
+            {
+                <dt class="col-sm-3">المرفق المقدم:</dt>
+                <dd class="col-sm-9">
+                    <a href="@Url.Content(Model.NewSupervisorApprovalPath)" target="_blank" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-eye me-1"></i> عرض المرفق
+                    </a>
+                </dd>
+            }
+
+            <dt class="col-sm-3">ملاحظات اللجنة:</dt>
+            <dd class="col-sm-9">
+                @if (!string.IsNullOrEmpty(Model.CommitteeNotes))
+                {
+                    <pre class="alert alert-warning mb-0">@Model.CommitteeNotes</pre>
+                }
+                else
+                {
+                    <span class="text-muted">لا يوجد ملاحظات حالياً.</span>
+                }
+            </dd>
+        </dl>
+    </div>
+    <div class="card-footer">
+        @Html.ActionLink("العودة إلى لوحة التحكم", "Index", "Dashboard", null, new { @class = "btn btn-secondary" })
+    </div>
+</div>

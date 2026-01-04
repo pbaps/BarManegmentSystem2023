@@ -1,0 +1,43 @@
+﻿@{
+    ViewBag.Title = "تعيين لجنة مناقشة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    int researchId = ViewBag.ResearchId ?? 0;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+            <p class="text-muted mb-0">للبحث: "@ViewBag.ResearchTitle" (للمتدرب: @ViewBag.TraineeName)</p>
+        </div>
+
+        @using (Html.BeginForm("AssignCommittee", "LegalResearch", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.Hidden("researchId", researchId)
+
+            <div class="card-body">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                @if (TempData["ErrorMessage"] != null)
+                {<div class="alert alert-danger">@TempData["ErrorMessage"]</div>}
+
+
+                <div class="mb-3">
+                    <label for="selectedCommitteeId" class="form-label">اختر اللجنة الفعالة:</label>
+                    @Html.DropDownList("selectedCommitteeId", (SelectList)ViewBag.AvailableCommittees, "--- اختر لجنة ---", new { @class = "form-select", required = "required" })
+                </div>
+
+                <p class="text-muted small">
+                    سيتم ربط البحث المحدد باللجنة المختارة وتغيير حالة البحث إلى "تم تعيين لجنة".
+                </p>
+
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i> تعيين اللجنة
+                </button>
+                @Html.ActionLink("إلغاء", "Details", "LegalResearch", new { id = researchId }, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

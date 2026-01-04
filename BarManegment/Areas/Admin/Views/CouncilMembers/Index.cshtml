@@ -1,0 +1,32 @@
+﻿@model IEnumerable<BarManegment.Models.CouncilMember>
+
+@{
+    ViewBag.Title = "إدارة أعضاء المجلس";
+}
+
+<h2>@ViewBag.Title</h2>
+
+<p>
+    @Html.ActionLink("إضافة عضو جديد", "Create", null, new { @class = "btn btn-primary" })
+</p>
+<table class="table table-bordered table-striped">
+    <tr>
+        <th>@Html.DisplayNameFor(model => model.Name)</th>
+        <th>@Html.DisplayNameFor(model => model.Title)</th>
+        <th>@Html.DisplayNameFor(model => model.IsActive)</th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@Html.DisplayFor(modelItem => item.Name)</td>
+            <td>@Html.DisplayFor(modelItem => item.Title)</td>
+            <td>@Html.DisplayFor(modelItem => item.IsActive)</td>
+            <td>
+                @Html.ActionLink("تعديل", "Edit", new { id = item.Id }, new { @class = "btn btn-warning btn-sm" })
+            </td>
+        </tr>
+    }
+</table>
+

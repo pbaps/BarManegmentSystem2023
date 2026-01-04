@@ -1,0 +1,59 @@
+﻿@model BarManegment.Models.Exam
+
+<div class="dropdown">
+    @* 💡 الإصلاح: استخدام boundary="window" للسماح للقائمة بالخروج عن حدود الجدول *@
+    <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" aria-expanded="false">
+        <i class="bi bi-gear-fill text-secondary"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="z-index: 9999;">
+        <li><h6 class="dropdown-header">الإعدادات</h6></li>
+        <li>
+            <a class="dropdown-item" href="@Url.Action("Edit", new { id = Model.Id })">
+                <i class="bi bi-pencil me-2 text-primary"></i> تعديل البيانات
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="@Url.Action("Index", "Questions", new { examId = Model.Id })">
+                <i class="bi bi-question-circle me-2 text-info"></i> إدارة الأسئلة
+            </a>
+        </li>
+
+        <li><hr class="dropdown-divider"></li>
+        <li><h6 class="dropdown-header">المتقدمين</h6></li>
+
+        <li>
+            <a class="dropdown-item" href="@Url.Action("Index", "ExamEnrollments", new { examId = Model.Id, area = "Admin" })">
+                <i class="bi bi-person-plus me-2 text-success"></i> تسجيل المتقدمين
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="@Url.Action("AssignGraders", new { examId = Model.Id })">
+                <i class="bi bi-person-badge me-2 text-dark"></i> تعيين مصححين
+            </a>
+        </li>
+
+        <li><hr class="dropdown-divider"></li>
+        <li><h6 class="dropdown-header">النتائج</h6></li>
+
+        @* خيار خاص لامتحانات إنهاء التدريب *@
+        @if (Model.ExamType.Name == "امتحان إنهاء تدريب")
+        {
+            <li>
+                <a class="dropdown-item" href="@Url.Action("UploadWrittenResults", "Exams", new { area = "Admin", examId = Model.Id })">
+                    <i class="bi bi-upload me-2 text-warning"></i> رفع نتائج تحريرية
+                </a>
+            </li>
+        }
+
+        <li>
+            <a class="dropdown-item" href="@Url.Action("ManageResults", "ExamEnrollments", new { examId = Model.Id, area = "Admin" })">
+                <i class="bi bi-clipboard-check me-2 text-success"></i> رصد/عرض النتائج
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="@Url.Action("ExportResults", new { examId = Model.Id })">
+                <i class="bi bi-file-earmark-excel me-2 text-success"></i> تصدير النتائج (Excel)
+            </a>
+        </li>
+    </ul>
+</div>

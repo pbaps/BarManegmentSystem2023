@@ -1,0 +1,312 @@
+﻿@model BarManegment.Models.GraduateApplication
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml";
+    ViewBag.Title = "تقرير الخريج: " + Model.ArabicName;
+
+    // استخراج المؤهل الجامعي من قائمة المؤهلات في الموديل مباشرة
+    var quals = Model.Qualifications ?? new List<BarManegment.Models.Qualification>();
+    var universityDegree = quals.FirstOrDefault(q => q.QualificationType != null && (q.QualificationType.Name.Contains("بكالوريوس") || q.QualificationType.Name.Contains("ليسانس")));
+    // إضافة متغير الثانوية العامة
+    var highSchool = quals.FirstOrDefault(q => q.QualificationType != null && q.QualificationType.Name.Contains("ثانوية"));
+}
+
+<style>
+    /* تخصيصات خاصة بهذا التقرير */
+    .header-img {
+        width: 100%;
+        max-height: 120px;
+        object-fit: contain;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 10px;
+    }
+
+    .profile-photo-container {
+        position: absolute;
+        top: 35mm;
+        left: 20mm;
+        width: 30mm;
+        height: 35mm;
+        border: 1px solid #ddd;
+        padding: 3px;
+        background: #fff;
+        z-index: 10;
+    }
+
+    .profile-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: 700;
+        font-size: 22px;
+        margin-bottom: 30px;
+        margin-top: 10px;
+        text-decoration: underline;
+        text-underline-offset: 5px;
+    }
+
+    .section-title {
+        background-color: #f8f9fa;
+        padding: 8px 15px;
+        font-weight: 700;
+        border-right: 5px solid #0d6efd;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        font-size: 16px;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+
+        .data-table th, .data-table td {
+            border: 1px solid #444;
+            padding: 8px 10px;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background-color: #f0f0f0 !important;
+            font-weight: 700;
+            width: 18%;
+            white-space: nowrap;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .data-table td {
+            width: 32%;
+        }
+
+    .info-value {
+        font-weight: 600;
+        color: #000;
+    }
+</style>
+
+<div class="page">
+    <!-- الترويسة -->
+    <div class="text-center mb-4 pb-2 border-bottom border-2 border-dark">
+        <h3 class="fw-bold">نقابة المحامين الفلسطينيين</h3>
+        <h5 class="text-muted">لجنة التدريب - ملف الخريج</h5>
+    </div>
+
+    <!-- الصورة الشخصية -->
+    <div class="profile-photo-container">
+        @if (!string.IsNullOrEmpty(Model.PersonalPhotoPath))
+        {
+            <img src="@Url.Content(Model.PersonalPhotoPath)" class="profile-photo" alt="الصورة" onerror="this.style.display='none'">
+        }
+        else
+        {
+            <div class="d-flex align-items-center justify-content-center h-100 bg-light text-muted text-center small">
+                لا توجد صورة
+            </div>
+        }
+    </div>
+
+    <h2 class="report-title">تقرير بيانات خريج / متدرب</h2>
+
+    <!-- 1. البيانات الأساسية -->
+    <div class="section-title">أولاً: البيانات الشخصية</div>
+    <table class="data-table">
+        <tr>
+            <th>الاسم بالعربية</th>
+            <td class="info-value">@Model.ArabicName</td>
+            <th>الاسم بالإنجليزية</th>
+            <td class="info-value">@Model.EnglishName</td>
+        </tr>
+        <tr>
+            <th>الرقم الوطني</th>
+            <td class="info-value">
+                @Model.NationalIdNumber
+                <span class="small text-muted">(@(Model.NationalIdType?.Name ?? "-"))</span>
+            </td>
+            <th>الجنس</th>
+            <td class="info-value">@(Model.Gender?.Name ?? "-")</td>
+        </tr>
+        <tr>
+            <th>تاريخ الميلاد</th>
+            <td class="info-value">@Model.BirthDate.ToString("yyyy/MM/dd")</td>
+            <th>مكان الميلاد</th>
+            <td class="info-value">@Model.BirthPlace</td>
+        </tr>
+        <tr>
+            <th>الجنسية</th>
+            <td class="info-value">@Model.Nationality</td>
+            <th>الحالة الحالية</th>
+            <td class="info-value">
+                <span style="padding: 2px 8px; border: 1px solid #000; border-radius: 4px;">
+                    @(Model.ApplicationStatus?.Name ?? "غير محدد")
+                </span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- 2. بيانات الاتصال -->
+    <div class="section-title">ثانياً: بيانات الاتصال والعنوان</div>
+    @if (Model.ContactInfo != null)
+    {
+        <table class="data-table">
+            <tr>
+                <th>الجوال</th>
+                <td class="info-value" dir="ltr" style="text-align:right;">@Model.ContactInfo.MobileNumber</td>
+                <th>البريد الإلكتروني</th>
+                <td class="info-value">@Model.ContactInfo.Email</td>
+            </tr>
+            <tr>
+                <th>هاتف المنزل</th>
+                <td class="info-value">@(Model.ContactInfo.HomePhoneNumber ?? "-")</td>
+                <th>رقم الواتساب</th>
+                <td class="info-value" dir="ltr" style="text-align:right;">@(Model.ContactInfo.WhatsAppNumber ?? "-")</td>
+            </tr>
+            <tr>
+                <th>العنوان</th>
+                <td colspan="3" class="info-value">
+                    @Model.ContactInfo.Governorate - @Model.ContactInfo.City
+                    @if (!string.IsNullOrWhiteSpace(Model.ContactInfo.Street))
+                    {<span>، شارع: @Model.ContactInfo.Street</span>}
+                    @if (!string.IsNullOrWhiteSpace(Model.ContactInfo.BuildingNumber))
+                    {<span>، مبنى: @Model.ContactInfo.BuildingNumber</span>}
+                </td>
+            </tr>
+            <tr>
+                <th>للطوارئ</th>
+                <td colspan="3" class="info-value">
+                    @if (!string.IsNullOrWhiteSpace(Model.ContactInfo.EmergencyContactPerson))
+                    {
+                        <span>@Model.ContactInfo.EmergencyContactPerson (<strong>@Model.ContactInfo.EmergencyContactNumber</strong>)</span>
+                    }
+                    else
+                    { <span>-</span>}
+                </td>
+            </tr>
+        </table>
+    }
+    else
+    {
+        <p class="text-center text-muted border p-2">لا توجد بيانات اتصال مسجلة.</p>
+    }
+
+    <!-- 3. المؤهلات العلمية (الجدول المطلوب) -->
+    <div class="section-title">ثالثاً: المؤهلات العلمية</div>
+    <table class="data-table">
+        <tr>
+            <th colspan="4" style="text-align:center; background-color:#e2e6ea !important;">الدرجة الجامعية الأولى</th>
+        </tr>
+        <tr>
+            <th>المؤهل العلمي</th>
+            <td class="info-value">
+                @if (universityDegree != null)
+                {
+                    @universityDegree.QualificationType.Name <span> - </span> @universityDegree.Specialization
+                }
+                else
+                {
+                    <span class="text-danger">غير محدد</span>
+                }
+            </td>
+            <th>الجامعة</th>
+            <td class="info-value">@(universityDegree?.UniversityName ?? "-")</td>
+        </tr>
+        <tr>
+            <th>سنة التخرج</th>
+            <td class="info-value">@(universityDegree?.GraduationYear.ToString() ?? "-")</td>
+            <th>المعدل</th>
+            <td class="info-value">
+                @if (universityDegree != null && universityDegree.GradePercentage.HasValue)
+                {
+                    @universityDegree.GradePercentage.Value<span>%</span>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </td>
+        </tr>
+
+        <!-- إضافة الثانوية العامة -->
+        <tr>
+            <th colspan="4" style="text-align:center; background-color:#e2e6ea !important;">الثانوية العامة</th>
+        </tr>
+        <tr>
+            <th>المدرسة</th>
+            <td class="info-value">@(highSchool?.UniversityName ?? "-")</td>
+            <th>الفرع</th>
+            <td class="info-value">@(highSchool?.Specialization ?? "-")</td>
+        </tr>
+        <tr>
+            <th>سنة التخرج</th>
+            <td class="info-value">@(highSchool?.GraduationYear.ToString() ?? "-")</td>
+            <th>المعدل</th>
+            <td class="info-value">
+                @if (highSchool != null && highSchool.GradePercentage.HasValue)
+                {
+                    @highSchool.GradePercentage.Value<span>%</span>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </td>
+        </tr>
+    </table>
+
+    <!-- 4. بيانات التدريب -->
+    <div class="section-title">رابعاً: بيانات التدريب</div>
+    <table class="data-table">
+        <tr>
+            <th>المحامي المشرف</th>
+            <td colspan="3" class="info-value">
+                @if (Model.Supervisor != null)
+                {
+                    <span>الأستاذ/ @Model.Supervisor.ArabicName</span>
+                    <span class="ms-2 small text-muted">(رقم العضوية: @Model.Supervisor.Id)</span>
+                }
+                else
+                {
+                    <span class="text-danger fw-bold">لم يتم تعيين مشرف بعد</span>
+                }
+            </td>
+        </tr>
+        <tr>
+            <th>تاريخ التسجيل</th>
+            <td class="info-value">@Model.SubmissionDate.ToString("yyyy/MM/dd")</td>
+            <th>تاريخ بدء التدريب</th>
+            <td class="info-value">
+                @(Model.TrainingStartDate.HasValue ? Model.TrainingStartDate.Value.ToString("yyyy/MM/dd") : "بانتظار الاعتماد")
+            </td>
+        </tr>
+    </table>
+
+    <!-- التذييل -->
+    <div style="margin-top: 50px; border-top: 2px solid #000; padding-top: 10px;">
+        <div class="row text-center">
+            <div class="col-4">
+                <p class="fw-bold">توقيع الموظف المختص</p>
+                <br><br>
+                <p>..............................</p>
+            </div>
+            <div class="col-4">
+                <p class="fw-bold">اعتماد اللجنة</p>
+                <br><br>
+                <p>..............................</p>
+            </div>
+            <div class="col-4">
+                <p class="fw-bold">ختم النقابة</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-3 text-muted small">
+        تاريخ الطباعة: @DateTime.Now.ToString("yyyy/MM/dd HH:mm")
+    </div>
+</div>

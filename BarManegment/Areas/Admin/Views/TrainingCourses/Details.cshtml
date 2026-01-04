@@ -1,0 +1,59 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CourseDetailsViewModel
+@{
+    ViewBag.Title = "إدارة حضور الدورة";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+            <p class="mb-0"><strong>الدورة:</strong> @Model.CourseName</p>
+            <p class="text-muted"><strong>التاريخ:</strong> @Model.CourseDate.ToString("yyyy-MM-dd")</p>
+        </div>
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.CourseId)
+            @Html.HiddenFor(model => model.CourseName)
+            @Html.HiddenFor(model => model.CourseDate)
+
+            <div class="card-body">
+                <p>حدد المتدربين الذين حضروا هذه الدورة ثم اضغط على حفظ.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الرقم المتسلسل</th>
+                                <th>اسم المتدرب</th>
+                                <th class="text-center" style="width: 10%;">حاضر</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Trainees.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        @Html.HiddenFor(m => m.Trainees[i].TraineeId)
+                                        @Html.HiddenFor(m => m.Trainees[i].TraineeName)
+                                        @Html.HiddenFor(m => m.Trainees[i].TraineeSerialNo)
+                                        @Model.Trainees[i].TraineeSerialNo
+                                    </td>
+                                    <td>@Model.Trainees[i].TraineeName</td>
+                                    <td class="text-center">
+                                        <div class="form-check d-flex justify-content-center">
+                                            @Html.CheckBoxFor(m => m.Trainees[i].IsAttended, new { @class = "form-check-input" })
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="حفظ سجل الحضور" class="btn btn-primary" />
+                @Html.ActionLink("العودة إلى قائمة الدورات", "Index", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

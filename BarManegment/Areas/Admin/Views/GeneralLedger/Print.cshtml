@@ -1,0 +1,167 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.GeneralLedgerViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>كشف حساب - @Model.AccountName</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #fff;
+            font-size: 12px;
+        }
+
+        .header-box {
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .report-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .meta-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .table-custom th, .table-custom td {
+                border: 1px solid #000;
+                padding: 5px;
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            .table-custom th {
+                background-color: #eee !important;
+                -webkit-print-color-adjust: exact;
+                font-weight: bold;
+            }
+
+        .text-start {
+            text-align: right !important;
+        }
+
+        .signatures {
+            margin-top: 60px;
+            page-break-inside: avoid;
+        }
+
+        .sig-line {
+            border-top: 1px dashed #000;
+            width: 70%;
+            margin: 40px auto 0;
+        }
+
+        @@page {
+            size: A4;
+            margin: 15mm;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="container-fluid">
+        <div class="header-box row align-items-center text-center">
+            <div class="col-3">
+                <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" style="height: 80px;" />
+            </div>
+            <div class="col-6">
+                <h4 class="fw-bold mb-1">نقابة المحامين الفلسطينيين</h4>
+                <div class="report-title">كشف حساب تفصيلي</div>
+            </div>
+            <div class="col-3 text-start small">
+                <div>تاريخ: @DateTime.Now.ToString("yyyy/MM/dd")</div>
+                <div>المستخدم: @Session["FullName"]</div>
+            </div>
+        </div>
+
+        <div class="meta-box row">
+            <div class="col-6">
+                <strong>اسم الحساب:</strong> @Model.AccountName
+                <br />
+                <strong>رقم الحساب:</strong> <span class="font-monospace">@Model.AccountCode</span>
+            </div>
+            <div class="col-6 text-start">
+                <strong>الفترة من:</strong> @Model.FromDate?.ToString("yyyy/MM/dd")
+                <br />
+                <strong>إلى:</strong> @Model.ToDate?.ToString("yyyy/MM/dd")
+            </div>
+        </div>
+
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th width="12%">التاريخ</th>
+                    <th width="10%">نوع السند</th>
+                    <th width="10%">رقم السند</th>
+                    <th>البيان</th>
+                    <th width="12%">مدين</th>
+                    <th width="12%">دائن</th>
+                    <th width="14%">الرصيد</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background-color: #fcfcfc;">
+                    <td colspan="3"></td>
+                    <td class="fw-bold text-end">رصيد سابق مدور</td>
+                    <td>@(Model.OpeningBalance > 0 ? Model.OpeningBalance.ToString("N2") : "-")</td>
+                    <td>@(Model.OpeningBalance < 0 ? Math.Abs(Model.OpeningBalance).ToString("N2") : "-")</td>
+                    <td class="fw-bold">@Model.OpeningBalance.ToString("N2")</td>
+                </tr>
+
+                @foreach (var item in Model.Transactions)
+                {
+                    <tr>
+                        <td>@item.Date.ToString("yyyy/MM/dd")</td>
+                        <td>@item.DocumentType</td>
+                        <td>@item.ReferenceNumber</td>
+                        <td class="text-start">@item.Description</td>
+                        <td>@(item.Debit > 0 ? item.Debit.ToString("N2") : "")</td>
+                        <td>@(item.Credit > 0 ? item.Credit.ToString("N2") : "")</td>
+                        <td class="fw-bold" dir="ltr">@item.Balance.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #eee;">
+                    <td colspan="4" class="fw-bold text-end">المجموع / الرصيد الحالي</td>
+                    <td class="fw-bold">@Model.TotalDebit.ToString("N2")</td>
+                    <td class="fw-bold">@Model.TotalCredit.ToString("N2")</td>
+                    <td class="fw-bold fs-6 border border-dark">@Model.ClosingBalance.ToString("N2")</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="row signatures text-center">
+            <div class="col-6">
+                <strong>المحاسب</strong>
+                <div class="sig-line"></div>
+            </div>
+            <div class="col-6">
+                <strong>المدقق المالي</strong>
+                <div class="sig-line"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,93 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CommitteeViewModel
+@{
+    ViewBag.Title = "تشكيل لجنة مناقشة جديدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-people-fill me-2"></i> @ViewBag.Title</h5>
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-light text-primary fw-bold">عودة</a>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
+                                @Html.LabelFor(m => m.CommitteeName, new { @class = "form-label fw-bold" })
+                                @Html.EditorFor(m => m.CommitteeName, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: اللجنة المركزية الدائمة" } })
+                                @Html.ValidationMessageFor(m => m.CommitteeName, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.FormationDate, new { @class = "form-label fw-bold" })
+                                @Html.EditorFor(m => m.FormationDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                @Html.ValidationMessageFor(m => m.FormationDate, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                    <label class="form-check-label" for="IsActive">تفعيل اللجنة فوراً (لإتاحتها في قوائم التعيين)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3">أعضاء اللجنة</h6>
+                        <div id="membersContainer">
+                            @if (Model.Members != null)
+                            {
+                                for (int i = 0; i < Model.Members.Count; i++)
+                                {
+                                    // تمرير المتغيرات للـ Partial View
+                                    ViewBag.Index = i;
+                                    ViewBag.AvailableMembers = Model.AvailableMembers;
+                                    ViewBag.AvailableRoles = Model.AvailableRoles;
+
+                                    // 💡 الإصلاح: ضمان عدم تمرير null واستخدام المسار الكامل للملف المشترك
+                                    var memberItem = Model.Members[i] ?? new BarManegment.Areas.Admin.ViewModels.CommitteeMemberSelection();
+
+                                    @Html.Partial("~/Areas/Admin/Views/CommitteeManagement/_CommitteeMemberEditorRow.cshtml", memberItem)
+                                }
+                            }
+                        </div>
+
+                        <div class="mt-3 mb-4">
+                            <button type="button" id="addMemberBtn" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i> إضافة عضو آخر
+                            </button>
+                        </div>
+
+                        <div class="text-end border-top pt-3">
+                            <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">
+                                <i class="bi bi-save me-2"></i> حفظ وتشكيل
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#addMemberBtn').click(function () {
+                var index = $('#membersContainer .member-row').length;
+                $.get('@Url.Action("GetNewMemberRow")', { index: index }, function (html) {
+                    $('#membersContainer').append(html);
+                });
+            });
+
+            // حذف صف (للعناصر الجديدة)
+            $(document).on('click', '.remove-member-btn', function () {
+                $(this).closest('.member-row').remove();
+            });
+        });
+    </script>
+}

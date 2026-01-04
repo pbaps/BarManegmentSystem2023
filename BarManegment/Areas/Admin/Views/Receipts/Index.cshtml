@@ -1,0 +1,200 @@
+﻿@using PagedList.Mvc;
+@model PagedList.IPagedList<BarManegment.Models.Receipt>
+
+@{
+    ViewBag.Title = "أرشيف السندات المالية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-success fw-bold"><i class="bi bi-receipt-cutoff me-2"></i> سجل الإيصالات المالي</h4>
+        @if (BarManegment.Helpers.PermissionHelper.HasPermission("Receipts"))
+        {
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-plus-lg"></i> تحصيل جديد
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item" href="@Url.Action("Index", "PaymentVouchers", new { area = "Admin" })">
+                    <i class="bi bi-search me-2"></i> بحث عن قسيمة للسداد
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="@Url.Action("SelectTrainee", "PaymentVouchers", new { area = "Admin" })">
+                    <i class="bi bi-file-earmark-plus me-2"></i> إصدار قسيمة جديدة
+                </a>
+            </li>
+        </ul>
+    </div>
+        }
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body bg-light">
+            @using (Html.BeginForm("Index", "Receipts", FormMethod.Get, new { @class = "row g-3 align-items-end", id = "searchForm" }))
+            {
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">بحث شامل</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="searchString" value="@ViewBag.CurrentSort" class="form-control" placeholder="رقم الإيصال، الاسم، البنك...">
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">الجهة</label>
+                    <select name="typeFilter" class="form-select">
+                        <option value="">-- الكل --</option>
+                        <option value="Lawyer" @(ViewBag.TypeFilter == "Lawyer" ? "selected" : "")>محامي / متدرب</option>
+                        <option value="Contractor" @(ViewBag.TypeFilter == "Contractor" ? "selected" : "")>متعهد / خارجي</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">طريقة الدفع</label>
+                    <select name="paymentMethod" class="form-select">
+                        <option value="">-- الكل --</option>
+                        <option value="Cash" @(ViewBag.PaymentMethod == "Cash" ? "selected" : "")>نقدي (صندوق)</option>
+                        <option value="Bank" @(ViewBag.PaymentMethod == "Bank" ? "selected" : "")>إيداع بنكي</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">عرض</label>
+                    <select name="pageSize" class="form-select" onchange="document.getElementById('searchForm').submit();">
+                        <option value="10" @(ViewBag.PageSize == 10 ? "selected" : "")>10 صفوف</option>
+                        <option value="50" @(ViewBag.PageSize == 50 ? "selected" : "")>50 صف</option>
+                        <option value="100" @(ViewBag.PageSize == 100 ? "selected" : "")>100 صف</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i> تصفية</button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-nowrap">
+                        <tr>
+                            <th>رقم السند</th>
+                            <th>التاريخ</th>
+                            <th>الاسم / الجهة</th>
+                            <th>المبلغ</th>
+                            <th>البيان (الغرض)</th>
+                            <th>طريقة الدفع</th>
+                            <th class="text-center">طباعة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            // تحديد نوع الإيصال للعرض
+                            string typeBadge = "bg-secondary";
+                            string typeName = "عام";
+                            string payerName = item.PaymentVoucher.GraduateApplication?.ArabicName ?? "غير محدد";
+
+                            if (item.PaymentVoucher.GraduateApplicationId != null)
+                            {
+                                typeBadge = "bg-primary";
+                                typeName = "محامي/متدرب";
+                            }
+                            else
+                            {
+                                // محاولة معرفة النوع من الملاحظات أو التفاصيل إذا لم يكن هناك اسم
+                                typeBadge = "bg-dark";
+                                typeName = "متعهد/خارجي";
+                                // يمكن جلب اسم المتعهد من جدول آخر إذا لزم الأمر، لكن للسرعة سنعرض الموجود
+                                if (payerName == "غير محدد") { payerName = "متعهد / جهة خارجية"; }
+                            }
+
+                            // تحديد أيقونة الدفع
+                            bool isCash = item.PaymentVoucher.PaymentMethod == "نقدي";
+
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">#@item.SequenceNumber</div>
+                                    <small class="text-muted">قسيمة: @item.Id</small>
+                                </td>
+                                <td>
+                                    <div>@item.CreationDate.ToString("yyyy/MM/dd")</div>
+                                    <small class="text-muted">@item.CreationDate.ToString("HH:mm")</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge @typeBadge rounded-pill me-2" style="font-size: 0.65rem;">@typeName</span>
+                                        <span class="fw-bold">@payerName</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">@item.IssuedByUserName</small>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">@item.PaymentVoucher.TotalAmount.ToString("N2")</span>
+                                </td>
+                                <td>
+                                    @{
+                                        var firstDetail = item.PaymentVoucher.VoucherDetails.FirstOrDefault();
+                                        string desc = firstDetail?.Description ?? firstDetail?.FeeType?.Name ?? "بدون بيان";
+                                        if (item.PaymentVoucher.VoucherDetails.Count > 1) { desc += $" (+{item.PaymentVoucher.VoucherDetails.Count - 1} آخرين)"; }
+                                    }
+                                    <span class="text-secondary small">@desc</span>
+                                </td>
+                                <td>
+                                    @if (isCash)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success"><i class="bi bi-cash-coin"></i> نقدي</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="bi bi-bank"></i> بنك</span>
+                                        <div class="small text-muted mt-1">@item.BankReceiptNumber</div>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a href="@Url.Action("Details", new { id = item.Id })" target="_blank" class="btn btn-sm btn-outline-dark" title="طباعة السند">
+                                        <i class="bi bi-printer"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
+                    <h5>لا توجد سجلات مطابقة</h5>
+                    <p class="small">جرب تغيير خيارات البحث أو الفلترة</p>
+                </div>
+            }
+        </div>
+
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+            <div class="small text-muted">
+                عرض @Model.Count() من أصل @Model.TotalItemCount سجل
+            </div>
+            <div>
+                @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchString = ViewBag.CurrentSort, typeFilter = ViewBag.TypeFilter, paymentMethod = ViewBag.PaymentMethod, pageSize = ViewBag.PageSize }),
+                new PagedListRenderOptions
+                {
+                    LiElementClasses = new string[] { "page-item" },
+                 //   PageClasses = new string[] { "page-link" },
+                    DisplayLinkToFirstPage = PagedListDisplayMode.Always,
+                    DisplayLinkToLastPage = PagedListDisplayMode.Always,
+                    DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                    DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                    LinkToPreviousPageFormat = "السابق",
+                    LinkToNextPageFormat = "التالي",
+                    MaximumPageNumbersToDisplay = 5
+                })
+            </div>
+        </div>
+    </div>
+</div>

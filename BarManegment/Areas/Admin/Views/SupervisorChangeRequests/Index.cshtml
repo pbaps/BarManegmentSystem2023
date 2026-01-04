@@ -1,0 +1,44 @@
+﻿@model IEnumerable<BarManegment.Models.SupervisorChangeRequest>
+@{
+    ViewBag.Title = "طلبات تغيير المشرف ووقف التدريب";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+            @Html.ActionLink("تقديم طلب جديد", "SelectTrainee", null, new { @class = "btn btn-primary" })
+        </div>
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+            }
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم الطلب</th>
+                            <th>اسم المتدرب</th>
+                            <th>نوع الطلب</th>
+                            <th>الحالة</th>
+                            <th>تاريخ الطلب</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.Trainee.ArabicName</td>
+                                <td>@item.RequestType</td>
+                                <td><span class="badge bg-info">@item.Status</span></td>
+                                <td>@item.RequestDate.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,208 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.ExamEnrollmentViewModel
+
+@{
+    ViewBag.Title = "تسجيل المتقدمين للامتحان";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+    <div class="container-fluid pt-4 px-4">
+
+        <!-- التنبيهات -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-start border-5 border-success" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill fs-4 me-3 text-success"></i>
+                    <div>@TempData["SuccessMessage"]</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- 1. بطاقة تفاصيل الامتحان (Header) -->
+        <div class="card shadow-sm border-0 mb-4 bg-primary bg-gradient text-white">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2 small fw-bold">@Model.ExamTypeName</h6>
+                        <h2 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i> @Model.ExamTitle</h2>
+                    </div>
+                    <div class="text-end">
+                        @* 💡 زر الإضافة اليدوية الجديد *@
+                        <a href="@Url.Action("Create", "ExamEnrollments", new { area = "Admin", examId = Model.ExamId })" class="btn btn-warning fw-bold shadow-sm me-2">
+                            <i class="bi bi-person-plus-fill"></i> إضافة يدوية
+                        </a>
+                        <a href="@Url.Action("Index", "Exams", new { area = "Admin" })" class="btn btn-light text-primary fw-bold shadow-sm">
+                            <i class="bi bi-arrow-right"></i> عودة للقائمة
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 1. بطاقة تفاصيل الامتحان (Header) -->
+ 
+
+        <!-- 2. منطقة البحث والفلترة -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-light p-4 rounded">
+                @using (Html.BeginForm("Index", "ExamEnrollments", FormMethod.Get, new { @class = "row g-3 align-items-center" }))
+                {
+                    <input type="hidden" name="examId" value="@Model.ExamId" />
+
+                    <div class="col-md-10">
+                        <label class="form-label text-muted small fw-bold">بحث في القائمة</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-white border-end-0 text-primary"><i class="bi bi-search"></i></span>
+                            <input class="form-control border-start-0 ps-0" type="search" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="ابحث باسم المتقدم أو الرقم الوطني..." />
+                        </div>
+                    </div>
+                    <div class="col-md-2 align-self-end">
+                        <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">بحث</button>
+                    </div>
+
+                    if (!string.IsNullOrWhiteSpace(ViewBag.SearchTerm))
+                    {
+                        <div class="col-12">
+                            <a href="@Url.Action("Index", new { examId = Model.ExamId })" class="text-danger text-decoration-none small fw-bold">
+                                <i class="bi bi-x-circle-fill"></i> إلغاء البحث وعرض جميع المؤهلين
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- 3. قائمة المرشحين -->
+        @if (Model.Candidates != null && Model.Candidates.Any())
+        {
+            using (Html.BeginForm("Index", "ExamEnrollments", FormMethod.Post, new { id = "enrollmentForm" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ExamId)
+                @Html.HiddenFor(m => m.ExamTitle)
+                @Html.HiddenFor(m => m.ExamTypeName)
+
+                <div class="card shadow border-0">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                        <div>
+                            <h5 class="card-title mb-0 text-dark fw-bold"><i class="bi bi-people me-2 text-primary"></i> قائمة المرشحين</h5>
+                            <span class="text-muted small">العدد الإجمالي: @Model.Candidates.Count</span>
+                        </div>
+
+                        <div class="d-flex align-items-center bg-light px-3 py-2 rounded border">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="selectAllSwitch" style="cursor: pointer;">
+                                <label class="form-check-label fw-bold ms-2" for="selectAllSwitch" style="cursor: pointer;">تحديد / إلغاء تحديد الكل</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-uppercase small text-muted">
+                                <tr>
+                                    <th style="width: 60px;" class="text-center">#</th>
+                                    <th>اسم المتقدم</th>
+                                    <th>الرقم الوطني / التسلسل</th>
+                                    <th class="text-center" style="width: 180px;">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Candidates.Count; i++)
+                                {
+                                    <tr class="candidate-row @(Model.Candidates[i].IsEnrolled ? "table-success bg-opacity-10 border-start border-5 border-success" : "")" style="transition: all 0.2s;">
+                                        <td class="text-center">
+                                            <!-- الحقول المخفية -->
+                                            @Html.HiddenFor(m => m.Candidates[i].ApplicantId)
+
+                                            <div class="form-check d-flex justify-content-center">
+                                                @Html.CheckBoxFor(m => m.Candidates[i].IsEnrolled, new { @class = "form-check-input candidate-check fs-5", style = "cursor:pointer;" })
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <label class="form-check-label d-block w-100 cursor-pointer fw-bold text-dark" for="@("Candidates_" + i + "__IsEnrolled")" style="cursor:pointer;">
+                                                @Model.Candidates[i].Name
+                                            </label>
+                                        </td>
+                                        <td class="font-monospace text-secondary">
+                                            <span class="badge bg-light text-dark border">
+                                                <i class="bi bi-upc-scan me-1"></i> @Model.Candidates[i].Identifier
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge rounded-pill status-badge @(Model.Candidates[i].IsEnrolled ? "bg-success" : "bg-secondary") px-3 py-2">
+                                                <i class="bi @(Model.Candidates[i].IsEnrolled ? "bi-check-lg" : "bi-dash") me-1"></i>
+                                                @(Model.Candidates[i].IsEnrolled ? "مسجل" : "غير مسجل")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- شريط الحفظ العائم -->
+                    <div class="card-footer bg-white py-3 sticky-bottom border-top shadow-lg d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            <i class="bi bi-info-circle me-1"></i> تم تحديد <span id="selectedCount" class="fw-bold text-primary">0</span> متقدم
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg px-5 fw-bold shadow-sm rounded-pill">
+                            <i class="bi bi-save me-2"></i> حفظ التسجيلات
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <i class="bi bi-search text-muted opacity-50" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-secondary">@ViewBag.NoResultsMessage</h4>
+                <p class="text-muted">تأكد من وجود متقدمين مؤهلين لهذا النوع من الامتحانات، أو جرب كلمات بحث مختلفة.</p>
+            </div>
+        }
+    </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // دالة لتحديث عداد المختارين
+            function updateCount() {
+                var count = $('.candidate-check:checked').length;
+                $('#selectedCount').text(count);
+            }
+
+            // عند التحميل
+            updateCount();
+
+            // تحديد الكل
+            $('#selectAllSwitch').on('change', function () {
+                var isChecked = $(this).is(':checked');
+                $('.candidate-check').prop('checked', isChecked).trigger('change');
+            });
+
+            // عند تغيير أي Checkbox
+            $('.candidate-check').on('change', function () {
+                var row = $(this).closest('tr');
+                var badge = row.find('.status-badge');
+                var icon = badge.find('i');
+
+                if ($(this).is(':checked')) {
+                    row.addClass('table-success bg-opacity-10 border-start border-5 border-success');
+                    badge.removeClass('bg-secondary').addClass('bg-success').text(' مسجل');
+                    badge.prepend('<i class="bi bi-check-lg me-1"></i>');
+                } else {
+                    row.removeClass('table-success bg-opacity-10 border-start border-5 border-success');
+                    badge.removeClass('bg-success').addClass('bg-secondary').text(' غير مسجل');
+                    badge.prepend('<i class="bi bi-dash me-1"></i>');
+                }
+
+                updateCount();
+            });
+        });
+    </script>
+}

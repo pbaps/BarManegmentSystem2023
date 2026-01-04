@@ -1,0 +1,135 @@
+﻿@model BarManegment.Models.JournalEntry
+
+@{
+    ViewBag.Title = "تفاصيل قيد اليومية";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml";
+}
+
+<style>
+    /* تنسيق الطباعة */
+    @@media print {
+        .d-print-none { display: none !important; }
+        body { background-color: white !important; font-size: 12pt; }
+        .card { border: none !important; box-shadow: none !important; }
+        .card-header { background-color: white !important; border-bottom: 2px solid #000 !important; }
+        .table thead th { background-color: #f0f0f0 !important; color: #000 !important; border: 1px solid #000 !important; }
+        .table tbody td { border: 1px solid #000 !important; }
+        #sidebar, footer, .navbar { display: none !important; }
+        .wrapper { display: block !important; margin: 0 !important; padding: 0 !important; }
+        .content-wrapper { margin: 0 !important; padding: 0 !important; }
+    }
+
+    .signature-section { margin-top: 50px; page-break-inside: avoid; }
+    .sig-box { border-top: 1px dashed #000; padding-top: 5px; text-align: center; width: 80%; margin: 0 auto; }
+</style>
+
+<div class="container-fluid">
+ 
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <div class="row align-items-center text-center">
+                <div class="col-4 text-end">
+                    <h5 class="fw-bold">نقابة المحامين النظاميين</h5>
+                    <small>النظام المالي</small>
+                </div>
+                <div class="col-4">
+                    <h3 class="fw-bold text-decoration-underline">سند قيد يومية</h3>
+                    <span class="badge bg-dark fs-6">@Model.EntryNumber</span>
+
+                </div>
+                <div class="col-4 text-start">
+                    <div><strong>التاريخ:</strong> @Model.EntryDate.ToString("yyyy/MM/dd")</div>
+ 
+                    <div><strong>السنة المالية:</strong> @ViewBag.FiscalYearName</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-3 bg-light p-2 rounded border mx-1">
+                <div class="col-md-8">
+                    <strong>البيان العام:</strong> @Model.Description
+                </div>
+                <div class="col-md-4">
+                    <strong>المصدر:</strong>
+                    @if (Model.SourceModule == "Manual")
+                    {<span>قيد يدوي</span> }
+                    else
+                    { <span>@Model.SourceModule</span>}
+
+                    @if (!string.IsNullOrEmpty(Model.ReferenceNumber))
+                    {
+                        <span class="ms-2 text-muted">(مستند: @Model.ReferenceNumber)</span>
+                    }
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered text-center align-middle">
+                    <thead class="table-light border-dark">
+                        <tr>
+                            <th style="width: 15%">رقم الحساب</th>
+                            <th style="width: 25%">اسم الحساب</th>
+                            <th style="width: 15%">مركز التكلفة</th>
+                            <th style="width: 25%">البيان</th>
+                            <th style="width: 10%">مدين</th>
+                            <th style="width: 10%">دائن</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in Model.Lines)
+                        {
+                            <tr>
+                                <td>@line.Account.Code</td>
+                                <td class="text-end">@line.Account.Name</td>
+                                <td>@(line.CostCenter?.Name ?? "-")</td>
+                                <td class="text-end small">@line.Description</td>
+                                <td class="fw-bold">@(line.Debit > 0 ? line.Debit.ToString("N2") : "-")</td>
+                                <td class="fw-bold">@(line.Credit > 0 ? line.Credit.ToString("N2") : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light fw-bold border-dark">
+                        <tr>
+                            <td colspan="4" class="text-end">الإجمالي</td>
+                            <td>@Model.TotalDebit.ToString("N2")</td>
+                            <td>@Model.TotalCredit.ToString("N2")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="row mt-2">
+                <div class="col-12">
+                    <p><strong>فقط:</strong> @ViewBag.AmountInWords لا غير.</p>
+                </div>
+            </div>
+
+            <div class="row signature-section mt-5">
+                <div class="col-4">
+                    <div class="text-center">
+                        <strong>إعداد / المحاسب</strong>
+                        <div class="sig-box mt-4"></div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center">
+                        <strong>المدير المالي</strong>
+                        <div class="sig-box mt-4"></div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center">
+                        <strong>أمين الصندوق</strong>
+                        <div class="sig-box mt-4"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="card-footer text-muted text-center small d-print-none">
+            تمت الطباعة بواسطة: @Session["FullName"] بتاريخ @DateTime.Now.ToString("yyyy/MM/dd HH:mm")
+        </div>
+    </div>
+</div>

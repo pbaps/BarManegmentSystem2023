@@ -1,0 +1,166 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TrialBalanceViewModel
+
+@{
+    ViewBag.Title = "ميزان المراجعة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // حساب المجاميع للفوتر
+    decimal totalOpenDebit = Model.Rows.Sum(r => r.OpeningDebit);
+    decimal totalOpenCredit = Model.Rows.Sum(r => r.OpeningCredit);
+
+    decimal totalPeriodDebit = Model.Rows.Sum(r => r.PeriodDebit);
+    decimal totalPeriodCredit = Model.Rows.Sum(r => r.PeriodCredit);
+
+    decimal totalEndDebit = Model.Rows.Sum(r => r.EndingDebit);
+    decimal totalEndCredit = Model.Rows.Sum(r => r.EndingCredit);
+}
+
+<style>
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .card {
+            border: none !important;
+            shadow: none !important;
+        }
+
+        .table {
+            font-size: 12px;
+        }
+
+            .table th {
+                background-color: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+            }
+    }
+</style>
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="card shadow-sm mb-4 no-print">
+        <div class="card-body bg-light">
+            @using (Html.BeginForm("TrialBalance", "AccountingReports", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">من تاريخ</label>
+                    <input type="date" name="from" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">إلى تاريخ</label>
+                    <input type="date" name="to" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i> عرض التقرير</button>
+                </div>
+ 
+
+
+
+                <div class="col-md-2">
+                    <a href="@Url.Action("PrintTrialBalance", new { from = Model.FromDate, to = Model.ToDate })" target="_blank" class="btn btn-secondary w-100">
+                        <i class="bi bi-printer"></i> طباعة رسمية
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white text-center py-3">
+            <h4 class="fw-bold text-dark mb-1">ميزان المراجعة (Trial Balance)</h4>
+            <p class="text-muted mb-0">
+                للفترة من @(Model.FromDate?.ToString("yyyy/MM/dd")) إلى @(Model.ToDate?.ToString("yyyy/MM/dd"))
+            </p>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover mb-0 text-center align-middle">
+                    <thead class="table-dark text-white">
+                        <tr>
+                            <th rowspan="2" class="align-middle">رقم الحساب</th>
+                            <th rowspan="2" class="align-middle">اسم الحساب</th>
+                            <th colspan="2">الرصيد الافتتاحي</th>
+                            <th colspan="2">حركة الفترة</th>
+                            <th colspan="2">الرصيد الختامي</th>
+                        </tr>
+                        <tr>
+                            <th>مدين</th>
+                            <th>دائن</th>
+                            <th>مدين</th>
+                            <th>دائن</th>
+                            <th>مدين</th>
+                            <th>دائن</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Rows.Any())
+                        {
+                            foreach (var row in Model.Rows)
+                            {
+                                <tr>
+                                    <td class="font-monospace fw-bold">@row.AccountCode</td>
+                                    <td class="text-end">@row.AccountName</td>
+
+                                    <td class="text-secondary">@(row.OpeningDebit > 0 ? row.OpeningDebit.ToString("N2") : "-")</td>
+                                    <td class="text-secondary">@(row.OpeningCredit > 0 ? row.OpeningCredit.ToString("N2") : "-")</td>
+
+                                    <td class="fw-bold">@(row.PeriodDebit > 0 ? row.PeriodDebit.ToString("N2") : "-")</td>
+                                    <td class="fw-bold">@(row.PeriodCredit > 0 ? row.PeriodCredit.ToString("N2") : "-")</td>
+
+                                    @if (row.NetBalance > 0)
+                                    {
+                                        <td class="text-success fw-bold bg-success bg-opacity-10">@Math.Abs(row.NetBalance).ToString("N2")</td>
+                                        <td class="bg-success bg-opacity-10">-</td>
+                                    }
+                                    else if (row.NetBalance < 0)
+                                    {
+                                        <td class="bg-danger bg-opacity-10">-</td>
+                                        <td class="text-danger fw-bold bg-danger bg-opacity-10">@Math.Abs(row.NetBalance).ToString("N2")</td>
+                                    }
+                                    else
+                                    {
+                                        <td>-</td>
+                                        <td>-</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="py-5 text-muted">لا توجد بيانات مالية في هذه الفترة.</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-dark fw-bold">
+                        <tr>
+                            <td colspan="2" class="text-end">الإجمالي الكلي</td>
+
+                            <td>@totalOpenDebit.ToString("N0")</td>
+                            <td>@totalOpenCredit.ToString("N0")</td>
+
+                            <td class="text-warning">@totalPeriodDebit.ToString("N0")</td>
+                            <td class="text-warning">@totalPeriodCredit.ToString("N0")</td>
+
+                            <td>@totalEndDebit.ToString("N0")</td>
+                            <td>@totalEndCredit.ToString("N0")</td>
+                        </tr>
+                        @if (totalPeriodDebit != totalPeriodCredit)
+                        {
+                            <tr class="bg-danger text-white">
+                                <td colspan="8" class="text-center">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> تنبيه: الميزان غير متوازن! يوجد فرق قدره @(Math.Abs(totalPeriodDebit - totalPeriodCredit))
+                                </td>
+                            </tr>
+                        }
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white text-muted small no-print">
+            تم استخراج التقرير بواسطة: @Session["FullName"] بتاريخ @DateTime.Now.ToString("yyyy/MM/dd HH:mm")
+        </div>
+    </div>
+</div>

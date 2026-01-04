@@ -1,0 +1,202 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.BatchAidViewModel
+
+@{
+    ViewBag.Title = "إنشاء كشف مساعدات جماعي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-file-spreadsheet me-2"></i> إنشاء كشف مساعدات جماعي</h5>
+            <a href="@Url.Action("Index")" class="btn btn-sm btn-light bg-opacity-25 border-0 text-white">إلغاء</a>
+        </div>
+        <div class="card-body p-4">
+            @using (Html.BeginForm("BatchCreate", "FinancialAid", FormMethod.Post, new { id = "batchForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                @* 1. الإعدادات العامة *@
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <h6 class="text-success fw-bold mb-3 border-bottom pb-2">1. إعدادات المساعدة الموحدة</h6>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">نوع المساعدة</label>
+                                @Html.DropDownListFor(m => m.AidTypeId, ViewBag.AidTypeId as SelectList, "اختر النوع...", new { @class = "form-select border-success", required = "required" })
+                                @Html.ValidationMessageFor(m => m.AidTypeId, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">المبلغ لكل فرد</label>
+                                @Html.TextBoxFor(m => m.AmountPerLawyer, new { @class = "form-control border-success", type = "number", step = "0.01", required = "required" })
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">العملة</label>
+                                @Html.DropDownListFor(m => m.CurrencyId, ViewBag.CurrencyId as SelectList, new { @class = "form-select" })
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ملاحظات للكشف</label>
+                                @Html.TextBoxFor(m => m.Notes, new { @class = "form-control", placeholder = "وصف مختصر للكشف..." })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* 2. أدوات الإضافة *@
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm border-primary border-start border-4">
+                            <div class="card-body">
+                                <h6 class="text-primary fw-bold mb-3"><i class="bi bi-cloud-download me-2"></i> استيراد مجموعة</h6>
+                                <div class="input-group">
+                                    @Html.DropDownList("StatusFilter", ViewBag.StatusList as SelectList, "اختر الفئة (مثلاً: مزاول)", new { @class = "form-select", id = "statusSelect" })
+                                    <button type="button" class="btn btn-primary" onclick="loadByStatus()">تعبئة</button>
+                                </div>
+                                <small class="text-muted mt-2 d-block">يضيف جميع المحامين في الفئة المختارة إلى الجدول.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm border-secondary border-start border-4">
+                            <div class="card-body">
+                                <h6 class="text-secondary fw-bold mb-3"><i class="bi bi-person-plus me-2"></i> إضافة فردية</h6>
+                                <div class="input-group">
+                                    <select id="singleLawyerSearch" class="form-control"></select>
+                                    <button type="button" class="btn btn-secondary" onclick="addSingleLawyer()">إضافة</button>
+                                </div>
+                                <small class="text-muted mt-2 d-block">للبحث عن شخص محدد وإضافته يدوياً.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* 3. الجدول *@
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold m-0"><i class="bi bi-list-check me-2"></i> الأسماء المختارة (<span id="countBadge" class="text-success">0</span>)</h6>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearTable()">حذف الكل</button>
+                </div>
+
+                <div class="table-responsive border rounded bg-white shadow-sm" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-striped table-hover align-middle mb-0" id="beneficiariesTable">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>الاسم</th>
+                                <th>الهوية</th>
+                                <th>بيانات الدفع المتوفرة</th>
+                                <th class="text-center" style="width: 100px;">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-success btn-lg fw-bold py-3 shadow" onclick="return validateList()">
+                        <i class="bi bi-check2-all me-2"></i> حفظ الكشف والانتقال للاعتماد
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#singleLawyerSearch').select2({
+                placeholder: "ابحث بالاسم أو الهوية...",
+                allowClear: true,
+                theme: 'bootstrap-5',
+                dir: "rtl",
+                ajax: {
+                    url: '@Url.Action("SearchLawyerByName", "FinancialAid")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) { return { term: params.term }; },
+                    processResults: function (data) { return { results: data }; }
+                }
+            });
+        });
+
+        var existingIds = [];
+
+        function addRow(id, name, nationalId, bank, iban, wallet) {
+            if (existingIds.includes(id)) return;
+            existingIds.push(id);
+            var rowCount = $('#beneficiariesTable tbody tr').length + 1;
+
+            // تحديد نص طريقة الدفع المتوفرة
+            var paymentInfo = '<span class="badge bg-secondary">نقدي (لا يوجد بيانات)</span>';
+            if (iban) {
+                paymentInfo = `<span class="badge bg-primary">بنك</span> <small>${bank} - ${iban}</small>`;
+            } else if (wallet) {
+                paymentInfo = `<span class="badge bg-info text-dark">محفظة</span> <small>${wallet}</small>`;
+            }
+
+            var html = `
+                <tr id="row-${id}">
+                    <td class="row-index">${rowCount}</td>
+                    <td class="fw-bold text-primary">${name}</td>
+                    <td>${nationalId}</td>
+                    <td>${paymentInfo}</td>
+                    <td class="text-center">
+                        <input type="hidden" name="SelectedLawyerIds" value="${id}" />
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle" onclick="removeRow(${id})">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </td>
+                </tr>`;
+
+            $('#beneficiariesTable tbody').append(html);
+            updateCount();
+        }
+
+        function removeRow(id) {
+            $(`#row-${id}`).remove();
+            existingIds = existingIds.filter(item => item !== id);
+            updateCount();
+        }
+
+        function clearTable() {
+            if(confirm('حذف جميع الأسماء من القائمة؟')) { $('#beneficiariesTable tbody').empty(); existingIds = []; updateCount(); }
+        }
+
+        function updateCount() { $('#countBadge').text(existingIds.length); }
+
+        function loadByStatus() {
+            var statusId = $('#statusSelect').val();
+            if (!statusId) { alert("اختر الفئة أولاً"); return; }
+            var btn = event.target; $(btn).prop('disabled', true).text('جاري التحميل...');
+
+            $.get('@Url.Action("GetLawyersByStatus", "FinancialAid")', { statusId: statusId }, function (data) {
+                $(btn).prop('disabled', false).text('تعبئة');
+                if (data.length === 0) { alert("لا يوجد بيانات"); return; }
+
+                data.forEach(function (item) {
+                    addRow(item.id, item.name, item.nationalId, item.bank, item.iban, item.wallet);
+                });
+            });
+        }
+
+        function addSingleLawyer() {
+            var data = $('#singleLawyerSearch').select2('data')[0];
+            if (!data) return;
+
+            // تحليل النص القادم من السيرفر
+            var parts = data.text.split('(');
+            var name = parts[0].trim();
+            var nid = parts.length > 1 ? parts[1].replace(')', '').trim() : '---';
+
+            // البيانات الإضافية تأتي في كائن data نفسه
+            addRow(parseInt(data.id), name, nid, data.bank, data.iban, data.wallet);
+
+            $('#singleLawyerSearch').val(null).trigger('change');
+        }
+
+        function validateList() {
+            if (existingIds.length === 0) { alert("الكشف فارغ!"); return false; }
+            return confirm(`حفظ الكشف لـ ${existingIds.length} مستفيد؟`);
+        }
+    </script>
+}

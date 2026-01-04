@@ -1,0 +1,111 @@
+﻿@model BarManegment.ViewModels.UserViewModel
+@{
+    ViewBag.Title = "تعديل بيانات المستخدم";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-person-gear me-2"></i> @ViewBag.Title</h5>
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-light text-primary fw-bold">عودة للقائمة</a>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm("Edit", "Users", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.Id)
+
+                        <!-- عرض الأخطاء للتأكد من سبب عدم الحفظ -->
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="row">
+                            <!-- الصورة الشخصية -->
+                            <div class="col-md-4 text-center mb-4 mb-md-0">
+                                <div class="mb-3">
+                                    <img src="@(!string.IsNullOrEmpty(Model.ProfilePicturePath) ? Url.Content(Model.ProfilePicturePath) : "/Content/Images/default-avatar.png")"
+                                         class="img-thumbnail rounded-circle shadow-sm" style="width: 150px; height: 150px; object-fit: cover;" id="profilePreview">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="ProfilePictureFile" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-camera-fill me-1"></i> تغيير الصورة
+                                    </label>
+                                    <input type="file" id="ProfilePictureFile" name="ProfilePictureFile" class="d-none" accept="image/*" onchange="document.getElementById('profilePreview').src = window.URL.createObjectURL(this.files[0])">
+                                </div>
+                            </div>
+
+                            <!-- البيانات -->
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.FullNameArabic, new { @class = "form-label fw-bold" })
+                                    @Html.EditorFor(m => m.FullNameArabic, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(m => m.FullNameArabic, "", new { @class = "text-danger small" })
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.Username, new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(m => m.Username, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(m => m.Username, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.IdentificationNumber, new { @class = "form-label fw-bold" })
+                                        @Html.EditorFor(m => m.IdentificationNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(m => m.IdentificationNumber, "", new { @class = "text-danger small" })
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.Email, new { @class = "form-label fw-bold" })
+                                    @Html.EditorFor(m => m.Email, new { htmlAttributes = new { @class = "form-control", dir = "ltr" } })
+                                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.UserTypeId, new { @class = "form-label fw-bold" })
+                                        @Html.DropDownListFor(m => m.UserTypeId, Model.UserTypes, new { @class = "form-select" })
+                                        @Html.ValidationMessageFor(m => m.UserTypeId, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-6 mb-3 d-flex align-items-end">
+                                        <div class="form-check form-switch mb-2">
+                                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4">
+                                <h6 class="text-danger fw-bold mb-3"><i class="bi bi-shield-lock me-2"></i> تغيير كلمة المرور (اختياري)</h6>
+
+                                <div class="row bg-light p-3 rounded border">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.Password, "كلمة المرور الجديدة", new { @class = "form-label" })
+                                        @Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "new-password" })
+                                        @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
+                                    </div>
+
+                                    <!-- 💡 الحقل الضروري جداً للحفظ -->
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.ConfirmPassword, "تأكيد كلمة المرور", new { @class = "form-label" })
+                                        @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-12">
+                                        <small class="text-muted">اترك هذه الحقول فارغة إذا كنت لا تريد تغيير كلمة المرور الحالية.</small>
+                                    </div>
+                                </div>
+
+                                <div class="text-end mt-4">
+                                    <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">حفظ التعديلات</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

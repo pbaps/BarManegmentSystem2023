@@ -1,0 +1,106 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TransferRequestViewModel
+@{
+    ViewBag.Title = "طلب نقل إشراف";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title للمتدرب: @Model.TraineeName</h4>
+            <p class="text-muted mb-0">المشرف الحالي: @Model.CurrentSupervisorName</p>
+        </div>
+        @using (Html.BeginForm("CreateTransferRequest", "SupervisorChangeRequests", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.TraineeId)
+            @Html.HiddenFor(m => m.NewSupervisorId, new { id = "NewSupervisorIdHidden" }) @* حقل مخفي لتخزين ID المشرف المختار *@
+
+            <div class="card-body">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.NewSupervisorSearch, new { @class = "form-label" }) <span class="text-danger">*</span>
+                    @Html.TextBoxFor(m => m.NewSupervisorSearch, new { @class = "form-control", id = "supervisorSearchInput", placeholder = "ابدأ بكتابة اسم المشرف أو رقمه..." })
+                    @Html.ValidationMessageFor(m => m.NewSupervisorId, "", new { @class = "text-danger" }) @* عرض خطأ الـ ID هنا *@
+                    <div id="supervisorDetails" class="mt-2 text-muted small" style="display:none;"></div> @* لعرض تفاصيل المشرف المختار *@
+                </div>
+
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.Reason, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.Reason, new { @class = "form-control", rows = "4" })
+                    @Html.ValidationMessageFor(m => m.Reason, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.NewSupervisorApprovalFile, new { @class = "form-label" }) <span class="text-danger">*</span>
+                    @Html.TextBoxFor(m => m.NewSupervisorApprovalFile, new { @class = "form-control", type = "file" })
+                    @Html.ValidationMessageFor(m => m.NewSupervisorApprovalFile, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.OldSupervisorApprovalFile, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.OldSupervisorApprovalFile, new { @class = "form-control", type = "file" })
+                    @Html.ValidationMessageFor(m => m.OldSupervisorApprovalFile, "", new { @class = "text-danger" })
+                </div>
+
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send-fill me-1"></i> تقديم الطلب
+                </button>
+                @Html.ActionLink("إلغاء", "Details", "TraineeProfile", new { id = Model.TraineeId }, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>
+
+@* إضافة jQuery UI للبحث التلقائي (Autocomplete) *@
+@section scripts {
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+        $(function () {
+            $("#supervisorSearchInput").autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: "@Url.Action("SearchSupervisors", "SupervisorChangeRequests", new { area = "Admin"})", // تأكد أن لديك هذا الأكشن
+                        dataType: "json",
+                        data: {
+                            term: request.term // قيمة حقل البحث
+                        },
+                        success: function (data) {
+                            response(data); // عرض قائمة النتائج
+                        }
+                    });
+                },
+                minLength: 2, // ابدأ البحث بعد حرفين
+                select: function (event, ui) {
+                    // عند اختيار مشرف من القائمة
+                    $("#NewSupervisorIdHidden").val(ui.item.id); // ضع الـ ID في الحقل المخفي
+                    $("#supervisorSearchInput").val(ui.item.label); // ضع الاسم مع الرقم في حقل البحث للعرض
+                    $("#supervisorDetails").text("تم اختيار: " + ui.item.label).show(); // عرض تأكيد الاختيار
+                    return false; // منع القيمة الافتراضية
+                },
+                change: function(event, ui){
+                     // إذا لم يتم اختيار أي عنصر من القائمة، امسح الـ ID
+                     if (!ui.item) {
+                         $("#NewSupervisorIdHidden").val("");
+                         $("#supervisorDetails").hide();
+                     }
+                }
+            }).autocomplete("instance")._renderItem = function (ul, item) {
+                 // تخصيص شكل عرض النتائج في القائمة
+                return $("<li>")
+                    .append("<div>" + item.label + "</div>")
+                    .appendTo(ul);
+            };
+
+             // منع إرسال النموذج بالضغط على Enter في حقل البحث
+             $('#supervisorSearchInput').keypress(function (e) {
+                if (e.which == 13) { // 13 is the Enter key code
+                    return false;
+                }
+            });
+        });
+    </script>
+}

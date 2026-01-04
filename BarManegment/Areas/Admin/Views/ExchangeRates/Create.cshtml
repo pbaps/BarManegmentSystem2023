@@ -1,0 +1,62 @@
+﻿@model BarManegment.Models.ExchangeRate
+@{
+    ViewBag.Title = "إضافة سعر صرف جديد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">تحديث سعر صرف العملة</h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">@Html.ValidationSummary(false, "", new { @class = "mb-0" })</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">العملة الأجنبية</label>
+                            @Html.DropDownList("CurrencyId", null, "--- اختر العملة ---", new { @class = "form-select select2" })
+                            @Html.ValidationMessageFor(m => m.CurrencyId, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">سعر التحويل (كم شيكل يساوي 1 وحدة؟)</label>
+                            <div class="input-group">
+                                @Html.EditorFor(m => m.Rate, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.0001", placeholder = "3.50" } })
+                                <span class="input-group-text">شيكل</span>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.Rate, "", new { @class = "text-danger" })
+                            <div class="form-text">مثال: للدولار أدخل 3.75، للدينار أدخل 5.30</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">تاريخ السريان</label>
+                            @Html.EditorFor(m => m.Date, "{0:yyyy-MM-dd}", new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success fw-bold">حفظ السعر</button>
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">إلغاء</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({ theme: 'bootstrap-5', dir: 'rtl' });
+        });
+    </script>
+}

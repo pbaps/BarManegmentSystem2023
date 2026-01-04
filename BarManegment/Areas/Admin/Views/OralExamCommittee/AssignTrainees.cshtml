@@ -1,0 +1,44 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.AssignTraineeToOralCommitteeViewModel
+@{
+    ViewBag.Title = "تسجيل متدرب في اختبار شفوي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0 fw-bold">حجز موعد اختبار شفوي</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="fw-bold text-center mb-4 fs-5">للمتدرب: <span class="text-primary">@Model.TraineeName</span></p>
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.TraineeId)
+                        @Html.HiddenFor(m => m.TraineeName)
+
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.SelectedCommitteeId, new { @class = "form-label fw-bold" })
+                            @Html.DropDownListFor(m => m.SelectedCommitteeId, Model.AvailableCommittees, "--- اختر اللجنة المتاحة ---", new { @class = "form-select" })
+                            @Html.ValidationMessageFor(m => m.SelectedCommitteeId, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="mb-4">
+                            @Html.LabelFor(m => m.ExamDate, new { @class = "form-label fw-bold" })
+                            @Html.EditorFor(m => m.ExamDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                            @Html.ValidationMessageFor(m => m.ExamDate, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Details", "TraineeProfile", new { id = Model.TraineeId })" class="btn btn-secondary">إلغاء</a>
+                            <button type="submit" class="btn btn-success px-4 fw-bold">تأكيد الحجز</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,170 @@
+﻿**المسار:** `~/Areas/Admin/Views/LoanPayments/PrintLoanInstallmentReceipt.cshtml`
+```html
+@model BarManegment.Areas.Admin.ViewModels.PrintLoanReceiptViewModel
+@{
+    ViewBag.Title = "طباعة إيصال سداد قسط";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLOanayout.cshtml"; // (استخدام تخطيط الطباعة النظيف)
+}
+
+@section styles {
+    <style>
+
+        .receipt-print-container {
+            border: 2px solid #000;
+            padding: 15px;
+            margin: 15px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: bold;
+        }
+
+        .header-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .header-item {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+        }
+
+            .header-item.logo {
+                text-align: right;
+                border: none;
+                padding: 0;
+            }
+
+            .header-item img {
+                max-height: 50px;
+            }
+
+            .header-item label {
+                display: block;
+                font-size: 0.9em;
+                color: #555;
+            }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .main-item {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+        }
+
+            .main-item label {
+                display: block;
+                font-size: 0.9em;
+                color: #555;
+            }
+
+        .footer-line {
+            border-bottom: 2px solid #000;
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 5px;
+        }
+
+        @@media print {
+            .receipt-print-container {
+                border: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .print-footer-layout {
+                display: none;
+            }
+        }
+    </style>
+}
+
+@* (دالة مساعدة لطباعة النسخ المتعددة) *@
+@helper RenderReceiptBody(string copyName)
+{
+    <div class="receipt-print-container">
+        <div class="header-grid">
+            <div class="logo-container logo">
+                @* (يمكن إضافة الشعار هنا إذا أردت) *@
+                <strong>نقابة المحامين الفلسطينيين</strong><br />
+                <small>PALESTINIAN BAR ASSOCIATION</small>
+            </div>
+            <div class="header-item">
+                <label>بنك فلسطين - الرمال / رقم حساب:</label>
+                <div>(رقم الحساب)</div>
+            </div>
+            <div class="header-item">
+                <label>رقم الإيصال</label>
+                <div>@Model.ReceiptFullNumber</div>
+            </div>
+            <div class="header-item">
+                <label>تاريخ السداد</label>
+                <div>@Model.PaymentDate.ToString("yyyy-MM-dd")</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="main-item">
+                <label>رقم القرض</label>
+                <div>@Model.LoanId</div>
+            </div>
+            <div class="main-item">
+                <label>قيمة القرض</label>
+                <div>(قيمة القرض الكلية)</div> @* (ملاحظة: نحتاج لإضافة هذا للـ ViewModel) *@
+            </div>
+            <div class="main-item">
+                <label>العملة</label>
+                <div>@Model.CurrencySymbol</div>
+            </div>
+            <div class="main-item">
+                <label>عدد الأقساط</label>
+                <div>(إجمالي الأقساط)</div> @* (ملاحظة: نحتاج لإضافة هذا للـ ViewModel) *@
+            </div>
+            <div class="main-item">
+                <label>رقم القسط</label>
+                <div>@Model.InstallmentNumber</div>
+            </div>
+            <div class="main-item">
+                <label>رقم وصل البنك</label>
+                <div>@Model.BankReceiptNumber</div>
+            </div>
+        </div>
+
+        <div class="footer-line">
+            <strong>اسم المحامي/</strong> @Model.LawyerName
+            <strong>آخر موعد للدفع/</strong> @Model.PaymentDate.ToString("yyyy/MM/dd")
+        </div>
+        <div class="footer-line">
+            <strong>مبلغ الدفع/</strong> @Model.AmountPaid.ToString("N2") @Model.CurrencySymbol
+        </div>
+        <div class="footer-line">
+            <strong>المبلغ بالكلمات/</strong> @Model.AmountInWords
+        </div>
+        <div class="footer-line">
+            <strong>الموظف/</strong> @Model.EmployeeName
+            <strong>توقيع/</strong> .......................
+        </div>
+
+        <p class="text-center mt-3">(@copyName)</p>
+    </div>
+}
+
+@RenderReceiptBody("نسخة المحامي")
+<hr style="border-top: 2px dashed #000; margin: 20px;" />
+@RenderReceiptBody("نسخة المحاسبة")
+
+
+@section scripts {
+    <script>window.addEventListener("load", function () {
+            window.print();
+        });</script>
+}

@@ -1,0 +1,80 @@
+﻿@model IEnumerable<BarManegment.Models.GraduateApplication>
+@{
+    ViewBag.Title = "بحث عن الصندوق المالي للمحامي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="m-0"><i class="bi bi-wallet2 me-2"></i> الصندوق المالي للمحامي</h4>
+        </div>
+        <div class="card-body">
+
+            <!-- فورم البحث -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-8">
+                    @using (Html.BeginForm("Index", "LawyerFinancialBox", FormMethod.Get, new { @class = "d-flex gap-2" }))
+                    {
+                        <input type="text" name="searchString" class="form-control form-control-lg"
+                               placeholder="ابحث باسم المحامي، الرقم الوطني، أو رقم العضوية..."
+                               value="@ViewBag.CurrentSearch" autofocus />
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i class="bi bi-search"></i> بحث
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- نتائج البحث -->
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>اسم المحامي</th>
+                                <th>الرقم الوطني</th>
+                                <th>رقم العضوية</th>
+                                <th>الحالة</th>
+                                <th class="text-center">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@item.ArabicName</td>
+                                    <td>@item.NationalIdNumber</td>
+                                    <td>@(item.MembershipId ?? "-")</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">@item.ApplicationStatus.Name</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-success btn-sm">
+                                            <i class="bi bi-box-arrow-in-right me-1"></i> فتح الصندوق المالي
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else if (Model != null && !Model.Any() && !string.IsNullOrEmpty(ViewBag.CurrentSearch))
+            {
+                <div class="alert alert-warning text-center">
+                    لا توجد نتائج مطابقة للبحث "@ViewBag.CurrentSearch".
+                </div>
+            }
+            else
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-search display-1 opacity-25"></i>
+                    <p class="mt-3">الرجاء استخدام مربع البحث أعلاه للوصول لملف المحامي المالي.</p>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,121 @@
+﻿@model BarManegment.Models.GeneralExpense
+
+@{
+    ViewBag.Title = "سند صرف جديد";
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">إنشاء سند صرف مالي</h6>
+        <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">عودة للقائمة</a>
+    </div>
+    <div class="card-body">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+
+            if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-bold">رقم السند</label>
+                    @Html.EditorFor(model => model.VoucherNumber, new { htmlAttributes = new { @class = "form-control bg-light", @readonly = "readonly" } })
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-bold">تاريخ الصرف <span class="text-danger">*</span></label>
+                    @Html.EditorFor(model => model.ExpenseDate, "{0:yyyy-MM-dd}", new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">المستفيد (يصرف لأمر) <span class="text-danger">*</span></label>
+                    @Html.EditorFor(model => model.PayeeName, new { htmlAttributes = new { @class = "form-control", placeholder = "اسم الشخص أو الشركة المستلمة" } })
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold text-danger">الطرف المدين (حساب المصروف/المشتريات) <span class="text-danger">*</span></label>
+                    @Html.DropDownList("ExpenseAccountId", null, "--- ابحث عن الحساب ---", htmlAttributes: new { @class = "form-control select2-search" })
+                    @Html.ValidationMessageFor(model => model.ExpenseAccountId, "", new { @class = "text-danger" })
+                    <div class="form-text text-muted small">يمكنك البحث برقم الحساب أو الاسم.</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">مركز التكلفة (اختياري)</label>
+                    @Html.DropDownList("CostCenterId", null, "--- عام ---", htmlAttributes: new { @class = "form-control select2-search" })
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold text-success">الطرف الدائن (يصرف من) <span class="text-danger">*</span></label>
+                    @Html.DropDownList("TreasuryAccountId", null, "--- اختر الصندوق أو البنك ---", htmlAttributes: new { @class = "form-control select2-search" })
+                    @Html.ValidationMessageFor(model => model.TreasuryAccountId, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-bold">طريقة الدفع</label>
+                    @Html.DropDownListFor(model => model.PaymentMethod, new List<SelectListItem>
+                    {
+                        new SelectListItem { Text = "نقدي", Value = "نقدي" },
+                        new SelectListItem { Text = "شيك", Value = "شيك" },
+                        new SelectListItem { Text = "حوالة بنكية", Value = "حوالة" }
+                    }, new { @class = "form-control" })
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-bold">رقم المرجع (شيك/حوالة)</label>
+                    @Html.EditorFor(model => model.ReferenceNumber, new { htmlAttributes = new { @class = "form-control", placeholder = "اختياري" } })
+                </div>
+            </div>
+
+            <div class="row bg-light p-4 rounded border mt-2">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-bold fs-5 text-dark">المبلغ الإجمالي <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-lg">
+                        @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control text-center fw-bold text-danger", type = "number", step = "0.01", min = "0.01" } })
+                        <span class="input-group-text">₪</span>
+                    </div>
+                    @Html.ValidationMessageFor(model => model.Amount, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-9 mb-3">
+                    <label class="form-label fw-bold">البيان (شرح مفصل) <span class="text-danger">*</span></label>
+                    @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = "2", placeholder = "أكتب شرحاً وافياً لسبب الصرف..." })
+                    @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-end gap-2">
+                <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-success px-5 fw-bold">
+                    <i class="bi bi-check-circle me-2"></i> حفظ وترحيل القيد
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تفعيل مكتبة Select2 على القوائم المنسدلة لجعلها قابلة للبحث
+            $('.select2-search').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                dir: "rtl",
+                language: {
+                    noResults: function () {
+                        return "لا توجد نتائج مطابقة";
+                    }
+                }
+            });
+
+            // تحسين تجربة المستخدم: وضع المؤشر في حقل المستفيد عند التحميل
+            $('#PayeeName').focus();
+        });
+    </script>
+}

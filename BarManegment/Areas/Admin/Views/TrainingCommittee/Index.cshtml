@@ -1,0 +1,227 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TrainingCommitteeIndexViewModel
+@{
+    ViewBag.Title = "لوحة لجنة التدريب";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    int countApproval = Model.AwaitingCommitteeApprovalApplications.Count;
+    int countCompletion = Model.AwaitingCompletionApplications.Count;
+    int countApproved = Model.ApprovedApplications.Count;
+    int countExempt = Model.ExemptedApplications.Count;
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary fw-bold"><i class="bi bi-people-fill me-2"></i> @ViewBag.Title</h4>
+    </div>
+
+    <!-- 1. شريط التبويبات -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body p-2 bg-light rounded">
+            <ul class="nav nav-pills nav-fill gap-2" id="committeeTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold" id="approval-tab" data-bs-toggle="tab" data-bs-target="#approval" type="button" role="tab">
+                        <i class="bi bi-hourglass-split"></i> للموافقة النهائية
+                        <span class="badge bg-danger ms-2 rounded-pill">@countApproval</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="completion-tab" data-bs-toggle="tab" data-bs-target="#completion" type="button" role="tab">
+                        <i class="bi bi-pencil-square"></i> نواقص / جدد
+                        <span class="badge bg-warning text-dark ms-2 rounded-pill">@countCompletion</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab">
+                        <i class="bi bi-check-circle"></i> بانتظار الدفع
+                        <span class="badge bg-success ms-2 rounded-pill">@countApproved</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="exempt-tab" data-bs-toggle="tab" data-bs-target="#exempt" type="button" role="tab">
+                        <i class="bi bi-shield-check"></i> معفيون (للتسجيل)
+                        <span class="badge bg-info text-dark ms-2 rounded-pill">@countExempt</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 2. مربع البحث -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "TrainingCommittee", FormMethod.Get, new { @class = "row g-2" }))
+            {
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input class="form-control border-start-0 ps-0" type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="بحث بالاسم أو الرقم الوطني...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">بحث</button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- 3. المحتوى (الجداول) -->
+    <div class="tab-content" id="committeeTabsContent">
+
+        <!-- تبويب 1: للموافقة النهائية (الأهم) -->
+        <div class="tab-pane fade show active" id="approval" role="tabpanel">
+            <div class="card shadow-sm border-0 border-top border-4 border-danger">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>الرقم الوطني</th>
+                                    <th>المشرف</th>
+                                    <th class="text-center">الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.AwaitingCommitteeApprovalApplications)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@item.ArabicName</td>
+                                        <td class="font-monospace">@item.NationalIdNumber</td>
+                                        <td>@(item.Supervisor?.ArabicName ?? "---")</td>
+                                        <td class="text-center">
+                                            <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-primary btn-sm px-3 fw-bold shadow-sm">
+                                                <i class="bi bi-gavel me-1"></i> مراجعة
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (countApproval == 0)
+                                {
+                                    <tr><td colspan="4" class="text-center py-4 text-muted">لا توجد طلبات بانتظار الموافقة.</td></tr>
+}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- تبويب 2: استكمال النواقص -->
+        <div class="tab-pane fade" id="completion" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>الحالة</th>
+                                    <th class="text-center">الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.AwaitingCompletionApplications)
+                                {
+                                    <tr>
+                                        <td>@item.ArabicName</td>
+                                        <td><span class="badge bg-warning text-dark">@item.ApplicationStatus.Name</span></td>
+                                        <td class="text-center">
+                                            <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-outline-secondary btn-sm">
+                                                <i class="bi bi-eye"></i> عرض
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (countCompletion == 0)
+                                {
+                                    <tr><td colspan="3" class="text-center py-4 text-muted">لا توجد طلبات.</td></tr>
+}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- تبويب 3: المقبولين (للمالية) -->
+        <div class="tab-pane fade" id="approved" role="tabpanel">
+            <div class="card shadow-sm border-0 border-top border-4 border-success">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>تاريخ الاعتماد</th>
+                                    <th class="text-center">الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.ApprovedApplications)
+                                {
+                                    <tr>
+                                        <td class="fw-bold text-success">@item.ArabicName</td>
+                                        <td>@DateTime.Now.ToString("yyyy-MM-dd")</td> <!-- يفضل استخدام تاريخ حقيقي -->
+                                        <td class="text-center">
+                                            <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-secondary btn-sm">
+                                                <i class="bi bi-eye"></i> التفاصيل
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (countApproved == 0)
+                                {
+                                    <tr><td colspan="3" class="text-center py-4 text-muted">لا توجد طلبات مقبولة.</td></tr>
+}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- تبويب 4: المعفيين -->
+        <div class="tab-pane fade" id="exempt" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr><th>الاسم</th><th>الهوية</th><th class="text-center">الإجراء</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.ExemptedApplications)
+                                {
+                                    <tr>
+                                        <td>@item.FullName</td>
+                                        <td>@item.NationalIdNumber</td>
+                                        <td class="text-center">
+                                            <!-- تصحيح: الرابط يذهب لمتحكم الامتحانات -->
+                                            <a href="@Url.Action("Details", "ExamApplications", new { id = item.Id })" class="btn btn-outline-info btn-sm">
+                                                <i class="bi bi-eye"></i> عرض
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (countExempt == 0)
+                                {
+                                    <tr><td colspan="3" class="text-center py-4 text-muted">لا يوجد.</td></tr>
+}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

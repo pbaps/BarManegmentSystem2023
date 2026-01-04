@@ -1,0 +1,185 @@
+﻿@model List<BarManegment.Models.Account>
+
+@{
+    ViewBag.Title = "إدخال الأرصدة الافتتاحية (القيد الافتتاحي)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="alert alert-info shadow-sm border-start border-4 border-info">
+        <h5 class="alert-heading fw-bold"><i class="bi bi-info-circle-fill me-2"></i> تعليمات القيد الافتتاحي</h5>
+        <p class="mb-0 small">
+            يستخدم هذا النموذج لتسجيل أرصدة الحسابات في بداية تشغيل النظام أو بداية السنة المالية.
+            <br />
+            <strong>ملاحظة هامة:</strong> يجب أن يتطابق إجمالي المدين مع إجمالي الدائن ليتمكن النظام من حفظ القيد.
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i> القيد الافتتاحي</h5>
+            <div class="fw-bold" id="balanceStatusBadge">
+                <span class="badge bg-white text-dark">جاري التحميل...</span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @using (Html.BeginForm("SaveOpeningBalances", "OpeningBalances", FormMethod.Post, new { id = "openingBalanceForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="p-3 bg-light border-bottom">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="fw-bold mb-1">تاريخ القيد الافتتاحي:</label>
+                            <input type="date" name="entryDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-md-8 text-end">
+                            <small class="text-muted">عدد الحسابات: @Model.Count</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
+                    <table class="table table-hover table-bordered mb-0 align-middle">
+                        <thead class="table-light sticky-top" style="z-index: 1;">
+                            <tr>
+                                <th style="width: 15%">رقم الحساب</th>
+                                <th style="width: 35%">اسم الحساب</th>
+                                <th style="width: 25%" class="text-center text-success">مدين (Debit)</th>
+                                <th style="width: 25%" class="text-center text-danger">دائن (Credit)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Count; i++)
+                            {
+                                <tr>
+                                    <td class="font-monospace bg-light">
+                                        @Model[i].Code
+                                        <input type="hidden" name="items[@i].AccountId" value="@Model[i].Id" />
+                                    </td>
+                                    <td class="fw-bold">@Model[i].Name</td>
+
+                                    <td class="p-1">
+                                        <input type="number"
+                                               name="items[@i].Debit"
+                                               class="form-control form-control-sm text-center fw-bold debit-input"
+                                               step="0.01" min="0" value="0"
+                                               onfocus="this.select();" />
+                                    </td>
+
+                                    <td class="p-1">
+                                        <input type="number"
+                                               name="items[@i].Credit"
+                                               class="form-control form-control-sm text-center fw-bold credit-input"
+                                               step="0.01" min="0" value="0"
+                                               onfocus="this.select();" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white border-top p-3 shadow-lg" style="position: sticky; bottom: 0; z-index: 10;">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between border rounded p-2 bg-light">
+                                <div class="text-success text-center px-3 border-end">
+                                    <small class="d-block text-muted">إجمالي المدين</small>
+                                    <span class="fs-5 fw-bold" id="totalDebitDisplay">0.00</span>
+                                </div>
+                                <div class="text-danger text-center px-3 border-end">
+                                    <small class="d-block text-muted">إجمالي الدائن</small>
+                                    <span class="fs-5 fw-bold" id="totalCreditDisplay">0.00</span>
+                                </div>
+                                <div class="text-center px-3">
+                                    <small class="d-block text-muted">الفرق</small>
+                                    <span class="fs-5 fw-bold" id="diffDisplay">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-secondary me-2">إلغاء</a>
+                            <button type="submit" class="btn btn-success px-5 fw-bold" id="saveBtn" disabled>
+                                <i class="bi bi-save me-2"></i> حفظ وترحيل الأرصدة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            // دالة لحساب المجاميع
+            function calculateTotals() {
+                let totalDebit = 0;
+                let totalCredit = 0;
+
+                // جمع المدين
+                $('.debit-input').each(function () {
+                    let val = parseFloat($(this).val()) || 0;
+                    totalDebit += val;
+                });
+
+                // جمع الدائن
+                $('.credit-input').each(function () {
+                    let val = parseFloat($(this).val()) || 0;
+                    totalCredit += val;
+                });
+
+                // تحديث العرض
+                $('#totalDebitDisplay').text(totalDebit.toFixed(2));
+                $('#totalCreditDisplay').text(totalCredit.toFixed(2));
+
+                let diff = totalDebit - totalCredit;
+                $('#diffDisplay').text(Math.abs(diff).toFixed(2));
+
+                // التحقق من التوازن وتلوين الواجهة
+                const saveBtn = $('#saveBtn');
+                const badge = $('#balanceStatusBadge');
+
+                if (totalDebit === 0 && totalCredit === 0) {
+                    // حالة الصفر
+                    badge.html('<span class="badge bg-secondary">أدخل الأرصدة</span>');
+                    saveBtn.prop('disabled', true);
+                    $('#diffDisplay').removeClass('text-danger text-success').addClass('text-muted');
+                }
+                else if (Math.abs(diff) < 0.01) { // سماحية بسيطة للكسور
+                    // متوازن
+                    badge.html('<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> القيد متوازن</span>');
+                    saveBtn.prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
+                    $('#diffDisplay').removeClass('text-danger').addClass('text-success');
+                } else {
+                    // غير متوازن
+                    badge.html('<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> غير متوازن</span>');
+                    saveBtn.prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
+                    $('#diffDisplay').removeClass('text-success').addClass('text-danger');
+                }
+            }
+
+            // استدعاء الدالة عند تغيير أي قيمة
+            $('.debit-input, .credit-input').on('input change', function () {
+                // منع إدخال قيم في المدين والدائن لنفس السطر (اختياري، لكن مفضل محاسبياً)
+                /*
+                const row = $(this).closest('tr');
+                if ($(this).hasClass('debit-input') && $(this).val() > 0) {
+                    row.find('.credit-input').val(0);
+                } else if ($(this).hasClass('credit-input') && $(this).val() > 0) {
+                    row.find('.debit-input').val(0);
+                }
+                */
+                calculateTotals();
+            });
+
+            // الحساب الأولي عند التحميل
+            calculateTotals();
+        });
+    </script>
+}

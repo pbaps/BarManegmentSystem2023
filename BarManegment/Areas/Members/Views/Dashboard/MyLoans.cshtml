@@ -1,0 +1,16 @@
+﻿
+@model IEnumerable<BarManegment.Areas.Members.ViewModels.MemberLoanViewModel>
+@{
+    ViewBag.Title = "سجل القروض";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<h2><i class="bi bi-wallet2 me-2"></i> @ViewBag.Title</h2>
+<p class="text-muted">
+    عرض تفصيلي لجميع القروض التي حصلت عليها.
+</p>
+<hr />
+@Html.ActionLink("العودة إلى لوحة التحكم", "Index", null, new { @class = "btn btn-outline-secondary mb-3" })
+
+@* (استخدام نفس الواجهة الجزئية لعرض الجدول) *@
+@Html.Partial("_LawyerLoans", Model)

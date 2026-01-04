@@ -1,0 +1,180 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.OathRequestReviewViewModel
+@{
+    ViewBag.Title = "مراجعة طلب أداء اليمين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-2"></i> @TempData["ErrorMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="row g-4">
+        <!-- تفاصيل الطلب -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-person-lines-fill me-2"></i> بيانات مقدم الطلب
+                </div>
+                <div class="card-body text-center">
+                    <img src="@(!string.IsNullOrEmpty(Model.OathRequest.Trainee.PersonalPhotoPath) ? Url.Content(Model.OathRequest.Trainee.PersonalPhotoPath) : "/Content/Images/default-avatar.png")"
+                         class="rounded-circle border p-1 mb-3 shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+
+                    <h5 class="fw-bold text-primary mb-1">@Model.OathRequest.Trainee.ArabicName</h5>
+                    <p class="text-muted small mb-3">@Model.OathRequest.Trainee.EnglishName</p>
+
+                    <ul class="list-group list-group-flush text-start small">
+                        <li class="list-group-item d-flex justify-content-between"><span>تاريخ الطلب:</span> <strong>@Model.OathRequest.RequestDate.ToString("yyyy-MM-dd")</strong></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>الحالة الحالية:</span> <span class="badge bg-info text-dark">@Model.OathRequest.Status</span></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>المشرف:</span> <span>@(Model.OathRequest.Trainee.Supervisor?.ArabicName ?? "-")</span></li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="@Url.Action("Details", "RegisteredTrainees", new { id = Model.OathRequest.GraduateApplicationId })" target="_blank" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> عرض الملف الكامل
+                    </a>
+                </div>
+            </div>
+
+            <!-- المرفقات -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-paperclip me-2"></i> المرفقات المطلوبة
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("GetOathAttachment", new { id = Model.OathRequest.Id, type = "completion" })" target="_blank" class="btn btn-light border text-start">
+                            <i class="bi bi-file-earmark-text text-primary me-2"></i> نموذج انتهاء التدريب
+                        </a>
+                        <a href="@Url.Action("GetOathAttachment", new { id = Model.OathRequest.Id, type = "supervisor" })" target="_blank" class="btn btn-light border text-start">
+                            <i class="bi bi-file-earmark-check text-success me-2"></i> شهادة المشرف
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- قرار اللجنة والرسوم -->
+        <div class="col-md-8">
+            @using (Html.BeginForm("ApproveAndCreateVoucher", "OathRequests", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.OathRequest.Id)
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-wallet2 me-2"></i> الرسوم المالية المستحقة</h5>
+                        <span class="badge bg-white text-primary">خطوة 1 من 2</span>
+                    </div>
+                    <div class="card-body">
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle-fill me-1"></i> يرجى تحديد الرسوم التي يجب على المتدرب دفعها لاستكمال إجراءات اليمين. تشمل القائمة أدناه رسوم المزاولة وأي ديون سابقة مؤجلة.
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 border">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAllFees" checked></th>
+                                        <th>البند / الرسم</th>
+                                        <th>التفاصيل (البنك)</th>
+                                        <th class="text-end">المبلغ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.AvailableFees != null)
+                                    {
+                                        for (int i = 0; i < Model.AvailableFees.Count; i++)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    @Html.HiddenFor(m => m.AvailableFees[i].FeeTypeId)
+                                                    @Html.HiddenFor(m => m.AvailableFees[i].FeeTypeName)
+                                                    @Html.CheckBoxFor(m => m.AvailableFees[i].IsSelected, new { @class = "form-check-input fee-check" })
+                                                </td>
+                                                <td class="fw-bold">
+                                                    @Model.AvailableFees[i].FeeTypeName
+                                                </td>
+                                                <td class="small text-muted">
+                                                    @Model.AvailableFees[i].BankName - @Model.AvailableFees[i].AccountNumber
+                                                </td>
+                                                <td style="width: 150px;">
+                                                    <div class="input-group input-group-sm">
+                                                        @Html.TextBoxFor(m => m.AvailableFees[i].Amount, new
+                                                        {
+                                                            @class = "form-control text-end fee-amount-input",
+                                                            type = "number",
+                                                            step = "0.01",
+                                                            min = "0"
+                                                        })
+                                                        <span class="input-group-text bg-light">@Model.AvailableFees[i].CurrencySymbol</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                                <tfoot class="table-light fw-bold">
+                                    <tr>
+                                        <td colspan="3" class="text-end">الإجمالي المتوقع:</td>
+                                        <td class="text-end" id="totalAmount">0.00</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 border-top border-4 border-success">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 fw-bold text-success"><i class="bi bi-check-circle-fill me-2"></i> الاعتماد والقرار</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CommitteeNotes, "ملاحظات اللجنة / القرار (يظهر في الأرشيف)", new { @class = "form-label fw-bold" })
+                            @Html.TextAreaFor(m => m.CommitteeNotes, new { @class = "form-control", rows = "3", placeholder = "مثال: تمت مراجعة الملف والمرفقات، وهو مستوفٍ للشروط..." })
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("ReviewList")" class="btn btn-outline-secondary px-4">إلغاء وعودة</a>
+                            <button type="submit" class="btn btn-success btn-lg px-5 fw-bold" onclick="return confirm('هل أنت متأكد من اعتماد الطلب وإصدار القسيمة المالية؟')">
+                                <i class="bi bi-file-earmark-check me-2"></i> اعتماد وإصدار القسيمة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // حساب الإجمالي ديناميكياً
+            function calculateTotal() {
+                var total = 0;
+                $('.fee-check:checked').each(function () {
+                    // نبحث عن الحقل المخفي للمبلغ في نفس الصف (index مطابق)
+                    // طريقة أسهل: قراءة القيمة من النص المعروض أو data-attribute (سنعتمد على الـ input hidden المولد من MVC)
+                    // الاسم يكون AvailableFees[i].Amount
+                    var name = $(this).attr('name').replace('.IsSelected', '.Amount');
+                    var amount = parseFloat($('input[name="' + name + '"]').val());
+                    if (!isNaN(amount)) total += amount;
+                });
+                $('#totalAmount').text(total.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+            }
+
+            $('.fee-check').change(calculateTotal);
+            $('#selectAllFees').change(function () {
+                $('.fee-check').prop('checked', $(this).prop('checked')).trigger('change');
+            });
+
+            calculateTotal(); // عند التحميل
+        });
+    </script>
+}

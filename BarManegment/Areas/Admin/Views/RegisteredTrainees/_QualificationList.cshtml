@@ -1,0 +1,48 @@
+﻿@model List<BarManegment.Models.Qualification>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>المؤهل</th>
+                <th>الجامعة</th>
+                <th>الكلية/التخصص</th>
+                <th>سنة التخرج</th>
+                <th>المعدل</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.QualificationType.Name</td>
+                        <td>@item.UniversityName</td>
+                        <td>@item.Faculty - @item.Specialization</td>
+                        <td>@item.GraduationYear</td>
+                        <td>@item.GradePercentage %</td>
+                        <td>
+                            @using (Html.BeginForm("DeleteQualification", "RegisteredTrainees", new { area = "Admin" }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="qualificationId" value="@item.Id" />
+                                <input type="hidden" name="applicationId" value="@item.GraduateApplicationId" />
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من الحذف؟')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted">لا توجد مؤهلات مضافة.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

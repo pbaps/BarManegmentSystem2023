@@ -1,0 +1,35 @@
+﻿@model BarManegment.Models.PaymentVoucher
+@{ ViewBag.Title = "تأكيد الحذف"; }
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">@ViewBag.Title</h3>
+        </div>
+        <div class="card-body">
+            <p class="lead">هل أنت متأكد من رغبتك في حذف قسيمة الدفع رقم <strong>@Model.Id</strong>؟</p>
+            <div>
+                <hr />
+                <dl class="row">
+                    <dt class="col-sm-3">اسم المتدرب</dt>
+                    <dd class="col-sm-9">@Model.GraduateApplication.ArabicName</dd>
+
+                    <dt class="col-sm-3">المبلغ الإجمالي</dt>
+                    <dd class="col-sm-9">@Model.TotalAmount  </dd>
+
+                    <dt class="col-sm-3">تاريخ الإصدار</dt>
+                    <dd class="col-sm-9">@Model.IssueDate.ToString("yyyy-MM-dd")</dd>
+                </dl>
+
+                @using (Html.BeginForm())
+                { 
+                    @Html.AntiForgeryToken()
+                    <div class="form-actions no-color mt-4">
+                        <input type="submit" value="تأكيد الحذف" class="btn btn-danger" /> |
+                        @Html.ActionLink("العودة إلى القائمة", "Index", null, new { @class = "btn btn-secondary" })
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

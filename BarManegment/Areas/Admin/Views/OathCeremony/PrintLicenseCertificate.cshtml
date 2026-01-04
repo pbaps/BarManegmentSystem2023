@@ -1,0 +1,95 @@
+﻿@model BarManegment.Models.GraduateApplication
+@{
+    ViewBag.Title = "شهادة إجازة المحاماة";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml";
+}
+
+<style>
+    .cert-border {
+        border: 5px double #003366;
+        padding: 40px;
+        height: 95vh;
+        position: relative;
+        background-image: url('/Content/Images/watermark.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    .cert-title {
+        text-align: center;
+        font-family: 'Amiri', serif;
+        color: #003366;
+        margin-bottom: 50px;
+    }
+
+    .cert-body {
+        font-size: 22px;
+        line-height: 2;
+        text-align: justify;
+        font-family: 'Amiri', serif;
+        margin: 0 50px;
+    }
+
+    .highlight {
+        font-weight: bold;
+        color: #000;
+        text-decoration: underline;
+    }
+
+    .cert-footer {
+        margin-top: 100px;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 50px;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+    }
+</style>
+
+<div class="page cert-border">
+    <div class="cert-title">
+        <h1>نقابة المحامين الفلسطينيين</h1>
+        <h2 style="margin-top: 20px; text-decoration: underline;">شهادة إجازة ممارسة مهنة المحاماة</h2>
+    </div>
+
+    <div class="cert-body">
+        <p>
+            بناءً على قانون المحامين النظاميين وقرار مجلس النقابة،
+            <br>
+            نشهد بأن الأستاذ/ة <span class="highlight">@Model.ArabicName</span>،
+            الحامل/ة لرقم الهوية <span class="highlight">@Model.NationalIdNumber</span>،
+        </p>
+        <p>
+            قد استكمل/ت كافة متطلبات التدريب القانوني واجتاز/ت الامتحانات المقررة، وأدى/ت اليمين القانونية بتاريخ <span class="highlight">@(Model.PracticeStartDate?.ToString("yyyy/MM/dd") ?? "---")</span>.
+        </p>
+        <p style="text-align: center; margin-top: 30px;">
+            وبناءً عليه، قرر المجلس منحه/ها لقب:
+            <br>
+            <span style="font-size: 32px; color: #b8860b; font-weight: bold;">محامـي مـزاول</span>
+            <br>
+            وسُجل/ت في سجل المحامين المزاولين تحت الرقم: <span class="highlight">@Model.MembershipId</span>
+        </p>
+    </div>
+
+    <div class="cert-footer">
+        <div>
+            أمين السر
+            <br><br>
+            _________________
+        </div>
+        <div>
+            <img src="~/Content/Images/seal.png" width="120" style="opacity: 0.8;" />
+        </div>
+        <div>
+            نقيب المحامين
+            <br><br>
+            _________________
+        </div>
+    </div>
+</div>
+
+<div class="no-print text-center mt-4">
+    <button onclick="window.print()" class="btn btn-primary btn-lg">طباعة الشهادة</button>
+</div>

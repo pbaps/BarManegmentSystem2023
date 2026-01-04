@@ -1,0 +1,159 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.OathCeremonyDetailsViewModel
+@{
+    ViewBag.Title = "تفاصيل حفل اليمين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm"><i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm"><i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="row g-4">
+        <!-- البيانات والطباعة -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-info-circle me-2"></i> بيانات الحفل
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between px-0"><span>التاريخ:</span> <strong>@Model.CeremonyDate.ToString("yyyy-MM-dd")</strong></li>
+                        <li class="list-group-item d-flex justify-content-between px-0"><span>المكان:</span> <span>@Model.Location</span></li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span>الحالة:</span>
+                            @if (Model.IsActive)
+                            {<span class="badge bg-success">مفتوح للتسجيل</span> }
+                            else
+                            { <span class="badge bg-secondary">مغلق</span>}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-printer me-2"></i> كشوفات الطباعة
+                </div>
+                <div class="card-body d-grid gap-2">
+                    <a href="@Url.Action("PrintAttendeesList", new { id = Model.CeremonyId })" target="_blank" class="btn btn-dark">
+                        <i class="bi bi-list-check me-2"></i> كشف الحضور والتوقيع
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- قائمة المتدربين -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-people-fill me-2"></i> المسجلين للحلف (@Model.AssignedAttendees.Count)</h5>
+
+                    @if (Model.IsActive)
+                    {
+                        <button class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#assignModal">
+                            <i class="bi bi-person-plus-fill me-1"></i> إضافة / ترقية متدربين
+                        </button>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">الاسم</th>
+                                    <th>الهوية</th>
+                                    <th>الحالة الحالية</th>
+                                    <th>رقم العضوية (بعد الترقية)</th>
+                                    <th class="text-end pe-4">طباعة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.AssignedAttendees)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold">@item.ArabicName</td>
+                                        <td>@item.NationalIdNumber</td>
+                                        <td>
+                                            @if (item.ApplicationStatus != null && item.ApplicationStatus.Name == "محامي مزاول")
+                                            {
+                                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> تم الحلف (مزاول)</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">متدرب (بانتظار الحلف)</span>
+                                            }
+                                        </td>
+                                        <td class="font-monospace fw-bold text-primary">@(item.MembershipId ?? "---")</td>
+                                        <td class="text-end pe-4">
+                                            @if (item.ApplicationStatus.Name == "محامي مزاول")
+                                            {
+                                                <div class="btn-group">
+                                                    <a href="@Url.Action("PrintLicenseCertificate", new { id = item.Id })" target="_blank" class="btn btn-sm btn-outline-dark" title="شهادة الإجازة"><i class="bi bi-award"></i></a>
+                                                    <a href="@Url.Action("PrintPracticingCard", new { id = item.Id })" target="_blank" class="btn btn-sm btn-outline-primary" title="بطاقة المزاولة"><i class="bi bi-person-badge"></i></a>
+                                                </div>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!Model.AssignedAttendees.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center py-5 text-muted">لا يوجد مسجلين في هذا الموعد.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: إضافة وترقية المتدربين -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            @using (Html.BeginForm("AssignTrainees", "OathCeremony", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.CeremonyId)
+
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-patch-check-fill me-2"></i> اعتماد المتدربين وترقيتهم</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning small border-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>تنبيه هام:</strong> الضغط على "تنفيذ" سيقوم فوراً بترقية المتدربين المختارين إلى حالة <strong>"محامي مزاول"</strong> ومنحهم أرقام عضوية دائمة في النظام.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اختر المتدربين (الجاهزين للحلف):</label>
+                        @if (Model.AvailableTrainees != null && Model.AvailableTrainees.Any())
+                        {
+                            @Html.ListBoxFor(m => m.SelectedTraineeIds, Model.AvailableTrainees, new { @class = "form-select shadow-sm", size = "10", multiple = "multiple" })
+                            <div class="form-text mt-2">اضغط Ctrl لتحديد أكثر من اسم. تظهر هنا فقط الأسماء التي أتمت جميع المتطلبات ودفعت رسوم اليمين.</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-secondary text-center py-4">لا يوجد متدربين بانتظار تحديد الموعد حالياً.</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4" @(Model.AvailableTrainees == null || !Model.AvailableTrainees.Any() ? "disabled" : "")>
+                        <i class="bi bi-check2-all me-1"></i> تنفيذ الترقية والحفظ
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

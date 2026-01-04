@@ -1,0 +1,279 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+@{
+    //  Layout = null; // لا نستخدم أي تصميم رئيسي لهذه الصفحة
+
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml";
+    var councilMembers = ViewBag.CouncilMembers as List<BarManegment.Models.CouncilMember>;
+    var highSchool = Model.Qualifications.FirstOrDefault(q => q.QualificationType != null && q.QualificationType.Name == "شهادة ثانوية عامة");
+    var universityDegree = Model.Qualifications.FirstOrDefault(q => q.QualificationType != null && (q.QualificationType.Name == "بكالوريوس" || q.QualificationType.Name == "ليسانس"));
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>نموذج تسجيل في سجل المحامين المتدربين</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #eee;
+        }
+
+        .page {
+            width: 21cm;
+            min-height: 29.7cm;
+            padding: 1.5cm;
+            margin: 1cm auto;
+            border: 1px #D3D3D3 solid;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            page-break-after: always;
+            position: relative; /* Added for footer positioning */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-img {
+            width: 100%;
+        }
+
+        .footer-img {
+            width: 100%;
+            margin-top: auto; /* Pushes footer to the bottom */
+        }
+
+        .underline {
+            border-bottom: 1px dotted #000;
+            display: inline-block;
+            min-width: 150px;
+            text-align: center;
+            padding: 0 5px;
+        }
+
+        table td, table th {
+            border: 1px solid #dee2e6;
+        }
+
+        @@media print {
+            body, .page {
+                margin: 0;
+                box-shadow: none;
+                border: none;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Page 1 -->
+    <div class="page">
+        <img src="@Url.Content("~/Content/Images/LetterheadUp.png")" class="header-img" alt="Header" />
+
+
+        <h4 class="text-center my-4" style="text-decoration: underline;">طلب موافقة على التسجيل في سجل المحامين المتدربين</h4>
+        <p class="fs-5">السادة / نقيب وأعضاء مجلس نقابة المحامين الفلسطينيين المحترمين،،،</p>
+        <p>تحية الحق والعدل وبعد،،،</p>
+        <p>مقدم الطلب / <span class="underline">@Model.ArabicName</span></p>
+        <p>أرجو التكرم بالعلم بأنني حاصل على شهادة <span class="underline">@(universityDegree?.QualificationType.Name ?? "غير محدد")</span> بتقدير <span class="underline">@(universityDegree?.GradePercentage.HasValue == true ? universityDegree.GradePercentage.Value.ToString("0.##") + "%" : "غير محدد")</span> من جامعة <span class="underline">@(universityDegree?.UniversityName ?? "غير محدد")</span> لعام <span class="underline">@(universityDegree?.GraduationYear.ToString() ?? "غير محدد")</span>.</p>
+        <p>وأرغب بالتدرب لدى مكتب الأستاذ/ <span class="underline">@(Model.Supervisor?.ArabicName ?? "_________________")</span>.</p>
+        <p>لذا، أرجو الموافقة على تسجيل اسمي في سجل المتدربين ومرفق الأوراق المطلوبة حسب الأصول.</p>
+        <p class="mt-4">وتفضلوا بقبول فائق الاحترام والتقدير،</p>
+        <div class="row mt-5">
+            <div class="col">
+                <p>حرر في: <span class="underline">@DateTime.Now.ToString("yyyy/MM/dd")</span></p>
+            </div>
+            <div class="col text-end">
+                <p class="underline">توقيع مقدم الطلب</p>
+            </div>
+        </div>
+        <hr />
+        <h5><u>مرفقات الطلب:</u></h5>
+        <ol>
+            <li>صورة عن بطاقة الهوية.</li>
+            <li>صورة عن شهادة الميلاد.</li>
+            <li>عدد 4 صور شخصية بربط العنق.</li>
+            <li>صورة عن شهادة الثانوية العامة مصدقة من وزارة التعليم العالي.</li>
+            <li>صورة عن الشهادة الجامعية وكشف الدرجات مصدقة من وزارة التعليم العالي.</li>
+            <li>إفادتين من وزارة المالية تاليا لإنهاء التعليم وعدم وجود قيد له في الكادر العسكري والمدني الأصل.</li>
+            <li>شهادة حسن سير وسلوك من وزارة الداخلية الأصل.</li>
+            <li>شهادة عدم محكومية من وزارة العدل الأصل.</li>
+        </ol>
+
+    </div>
+
+    <!-- Page 2 -->
+    <div class="page">
+        <img src="@Url.Content("~/Content/Images/LetterheadUp.png")" class="header-img" alt="Header" />
+        <h4 class="text-center my-4" style="text-decoration: underline;">شهادة ابتداء تدريب وتعهد</h4>
+        <p>أنا المحامي / <span class="underline">@(Model.Supervisor?.ArabicName ?? "_________________")</span></p>
+        <p>مارست مهنة المحاماة لمدة أكثر من خمس سنوات ومجاز لممارسة مهنة المحاماة في فلسطين ويحق لي أن أكون أستاذاً للمحامين المتدربين الذين يقضون مدة التدريب.</p>
+        <p>ولي مكتب في / <span class="underline">@(Model.Supervisor?.ContactInfo?.City ?? "_________________")</span></p>
+        <p>أعلن أنني سأقوم بتدريب الأستاذ/ة / <span class="underline">@Model.ArabicName</span></p>
+        <p>اعتباراً من يوم <span class="underline">____ /____ /________</span> الموافق: <span class="underline">_________________</span></p>
+        <p>بمقتضى أحكام قانون المحامين النظاميين الفلسطينيين رقم "3" لسنة 1999م وتعديلاته والأنظمة الصادرة بمقتضاه وذلك بتاريخه.</p>
+        <p>وأتعهد بأن أعلم مجلس النقابة بمدينة غزة بما يلي:</p>
+        <ol>
+            <li>إعلام يلتزم المتدرب المذكور أعلاه على الحضور بانتظام إلى مكتبي.</li>
+            <li>إذا ترك المتدرب مكتبي.</li>
+            <li>إذا رغب بإنهاء تدريبه فإنني أتعهد بأن أعلم مجلس النقابة عن الأسباب التي تدعوني إلى ذلك.</li>
+        </ol>
+        <div class="row mt-5">
+            <div class="col">
+                <p>حرر في: <span class="underline">@DateTime.Now.ToString("yyyy/MM/dd")</span></p>
+            </div>
+            <div class="col text-end">
+                <p class="underline">توقيع مقدم الطلب</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Page 3 -->
+    <div class="page">
+        <img src="@Url.Content("~/Content/Images/LetterheadUp.png")" class="header-img" alt="Header" />
+        <h4 class="text-center my-4" style="text-decoration: underline;">إقرار وتعهد والتزام</h4>
+        <p>أنا الموقع أدناه / <span class="underline">@Model.ArabicName</span></p>
+        <p>من سكان / <span class="underline">@Model.ContactInfo.Governorate</span> وأحمل رقم هوية / <span class="underline">@Model.NationalIdNumber</span></p>
+        <p>أقر بأنني غير موظف لدى أي جهة رسمية أو غير رسمية أو أهلية ولا أعمل حالياً في أي وظيفة مدنية أو عسكرية دائمة أو مؤقتة براتب أو بمكافأة وأتعهد بإعلام النقابة إذا توظفت في أي وظيفة خلال أسبوع من تاريخ وقوعه وإذا ثبت خلاف ما ذكر فإنني أتحمل المسؤولية القانونية الكاملة بما في ذلك إلغاء وسحب إجازة ممارسة المحاماة واعتبارها كأن لم تكن وكذلك اعتبار فترة التدريب كأن لم تكن ويتم شطب اسمي من سجلات النقابة علاوة على توقيع العقوبات المقررة في قانون المحامين النظاميين الفلسطينيين رقم "3" لسنة 1999 وتعديلاته وإذا ثبت لمجلس النقابة أنني حصلت على إجازة المحاماة دون وجه حق، يحق لمجلس النقابة أن تلغي إجازة ممارسة المحاماة واعتبارها كأن لم تكن دون أن ترتب لي أي أثر قانوني، وإحالة الملف إلى الأستاذ النائب العام إذا استلزم الأمر ذلك وهذا إقرار مني بما ذكر أعلاه.</p>
+        <p>وقد وقعت على هذا القرار بعد أن تفهمت مضمونه حرفياً وأنا بإرادة حرة ومعتبرة شرعياً وقانونياً.</p>
+        <div class="row mt-5">
+            <div class="col">
+                <p>حرر في: <span class="underline">@DateTime.Now.ToString("yyyy/MM/dd")</span></p>
+            </div>
+            <div class="col text-end">
+                <p class="underline">المقر بما فيه</p>
+                <p>التوقيع</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Page 4 -->
+    <div class="page">
+        <img src="@Url.Content("~/Content/Images/LetterheadUp.png")" class="header-img" alt="Header" />
+        <h4 class="text-center my-4" style="text-decoration: underline;">تصريح مشفوع بالقسم</h4>
+        <p>أنا الموقع أدناه / <span class="underline">@Model.ArabicName</span></p>
+        <p>أصرح بما يلي:</p>
+        <ol>
+            <li>أنني أقيم في فلسطين وأنوي الإقامة فيها أثناء فترة التدريب على مهنة المحاماة في فلسطين.</li>
+            <li>أنني لا أمارس في أي حرفة ولا أعمل في أي محل تجاري، ولا أنوي أن أعمل بصورة مباشرة أو غير مباشرة في أي عمل تجاري أو أية مهنة أو حرفة ما دام اسمي مسجلاً في سجل المحامين المتدربين.</li>
+            <li>أنني لا أمارس أي عمل أو حرفة ولا اشتغل أي وظيفة في أي مؤسسة خاصة أو عامة وأنني متفرغ تفرغاً كاملاً لفترة التدريب.</li>
+            <li>أنني لست مفلساً ولم يرد لي اعتباري.</li>
+            <li>لم يصدر بحقي أي قرار من أي محكمة يقضي بارتكابي أي جرم.</li>
+        </ol>
+        <div class="row mt-5">
+            <div class="col">
+                <p>حرر في: <span class="underline">@DateTime.Now.ToString("yyyy/MM/dd")</span></p>
+                <p class="mt-5 underline">معطي التصريح</p>
+            </div>
+            <div class="col text-end">
+                <p class="mt-5 underline">القاضي المحلف</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Page 5 -->
+    <div class="page">
+        <img src="@Url.Content("~/Content/Images/LetterheadUp.png")" class="header-img" alt="Header" />
+        <h4 class="text-center my-4" style="text-decoration: underline;">نموذج تسجيل في سجل المحامين المتدربين</h4>
+
+        @* === بداية الجدول المنسق === *@
+        <table class="table table-bordered">
+            <tr>
+                <th>الاسم رباعي</th>
+                <td>@Model.ArabicName</td>
+                <th>تاريخ الميلاد</th>
+                <td>@Model.BirthDate.ToString("yyyy-MM-dd")</td>
+            </tr>
+            <tr>
+                <th>مكان الميلاد</th>
+                <td>@Model.BirthPlace</td>
+                <th>الجنس</th>
+                <td>@Model.Gender.Name</td>
+            </tr>
+            <tr>
+                <th>رقم جوال</th>
+                <td>@Model.ContactInfo.MobileNumber</td>
+                <th>البريد الإلكتروني</th>
+                <td>@Model.ContactInfo.Email</td>
+            </tr>
+            <tr>
+                <th>عنوان المنزل</th>
+                <td colspan="3">@($"{Model.ContactInfo.Governorate}, {Model.ContactInfo?.City}, {Model.ContactInfo.Street}")</td>
+            </tr>
+            <tr>
+                <th>الجامعة</th>
+                <td>@(universityDegree.UniversityName)</td>
+                <th>سنة التخرج</th>
+                <td>@(universityDegree.GraduationYear)</td>
+            </tr>
+            <tr>
+                <th>الأستاذ المدرب</th>
+                <td>@(Model.Supervisor?.ArabicName)</td>
+                <th>تاريخ الطباعة</th>
+                <td>@DateTime.Now.ToString("yyyy-MM-dd")</td>
+            </tr>
+        </table>
+        @* === نهاية الجدول المنسق === *@
+
+        <h5 class="text-center my-3"><u>لاستخدام نقابة المحامين</u></h5>
+        <p>تم استلام النموذج في يوم <span class="underline"></span> الموافق: <span class="underline"></span> وتم تدقيق الطلب حسب الأصول.</p>
+        <p class="text-end">مدير عام النقابة</p>
+        <hr />
+        <h5 class="text-center my-3"><u>قرار المجلس</u></h5>
+        <p>يتم إدراج اسم الخريج/ة مقدم/ة الطلب في سجل المحامين المتدربين وفقًا للقانون والنظام على اسم مكتب الأستاذ المذكور أعلاه وبعد دفع الرسوم وحسب الأصول.</p>
+
+        <div class="row text-center mt-5">
+            @if (councilMembers != null)
+            {
+                foreach (var member in councilMembers)
+                {
+                    <div class="col-4 mb-4">
+                        <strong style="font-size:14px">الأستاذ/ @member.Name</strong>
+                        <p class="mb-0">@member.Title</p>
+                    </div>
+                }
+            }
+        </div>
+
+    </div>
+
+    <!-- Page 6 -->
+    <div class="page">
+        <img src="@Url.Content("~/Content/Images/LetterheadUp.png")" class="header-img" alt="Header" />
+        <h4 class="text-center my-4" style="text-decoration: underline;">تعهد والتزام خاص</h4>
+        <p class="fs-5">أتعهد أنا الموقع أدناه،</p>
+        <p>الاسم: <span class="underline">@Model.ArabicName</span></p>
+        <p>بأنني لن أزاول مهنة المحاماة أو أي عمل من أعمالها سواء بشكل مباشر أو غير مباشر أمام المحاكم أو أية جهة أخرى قبل الحصول على إذن مزاولة المهنة من نقابة المحامين. كما أتعهد بعدم استخدام لقب "محامي" أو أي مصطلح يوحي بذلك قبل استكمال متطلبات التدريب وأداء اليمين القانونية.</p>
+        <p>وأقر بأنني على علم تام بأن مخالفة هذا التعهد تعرضني للمساءلة القانونية والتأديبية وفقاً لقانون النقابة.</p>
+        <div class="row" style="margin-top: 100px;">
+
+
+            <div class="row mt-5">
+                <div class="col">
+                    <p>حرر في: <span class="underline">@DateTime.Now.ToString("yyyy/MM/dd")</span></p>
+                </div>
+                <div class="col text-end">
+                    <p class="underline">توقيع المتعهد:</p>
+                    <div class="signature-line"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="no-print text-center my-4">
+        <button onclick="window.print();" class="btn btn-primary">طباعة</button>
+    </div>
+
+</body>
+</html>
+

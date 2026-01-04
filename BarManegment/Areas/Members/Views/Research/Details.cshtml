@@ -1,0 +1,68 @@
+﻿@model BarManegment.Models.LegalResearch
+@{
+    ViewBag.Title = "تفاصيل البحث";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+@if (TempData["ErrorMessage"] != null)
+{<div class="alert alert-danger">@TempData["ErrorMessage"]</div>}
+
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i> @ViewBag.Title</h4>
+    </div>
+    <div class="card-body">
+
+        <dl class="row">
+            <dt class="col-sm-3">عنوان البحث:</dt>
+            <dd class="col-sm-9"><h5>@Model.Title</h5></dd>
+
+            <dt class="col-sm-3">تاريخ التقديم:</dt>
+            <dd class="col-sm-9">@Model.SubmissionDate.ToString("yyyy/MM/dd")</dd>
+
+            <dt class="col-sm-3">الحالة:</dt>
+            <dd class="col-sm-9"><span class="badge bg-primary fs-6">@Model.Status</span></dd>
+        </dl>
+
+        <hr />
+
+        @* --- قسم رفع الملف --- *@
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">تسليم البحث</h5>
+            </div>
+            <div class="card-body">
+                @using (Html.BeginForm("UploadResearch", "Research", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("researchId", Model.Id)
+
+                    <div class="mb-3">
+                        <label for="researchFile" class="form-label">اختر ملف البحث (PDF):</label>
+                        <input type="file" name="researchFile" id="researchFile" class="form-control" accept=".pdf" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-upload me-1"></i> رفع الملف
+                    </button>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.FinalDocumentPath))
+                {
+                    <hr />
+                    <p class="mb-1 fw-bold">الملف الذي تم تسليمه حالياً:</p>
+                    <a href="@Url.Content(Model.FinalDocumentPath)" target="_blank" class="btn btn-outline-info">
+                        <i class="bi bi-eye me-1"></i> عرض الملف المرفوع
+                    </a>
+                }
+            </div>
+        </div>
+
+    </div>
+    <div class="card-footer">
+        @Html.ActionLink("العودة إلى لوحة التحكم", "Index", "Dashboard", null, new { @class = "btn btn-secondary" })
+    </div>
+</div>

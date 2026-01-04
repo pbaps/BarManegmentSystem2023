@@ -1,0 +1,335 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+@{
+    ViewBag.Title = "تقرير شامل للمتدرب: " + Model.ArabicName;
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml"; // استخدام تخطيط الطباعة
+
+    int suspensionDays = ViewBag.TotalSuspensionDays != null ? (int)ViewBag.TotalSuspensionDays : 0;
+}
+
+<style>
+    .report-section {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+        page-break-inside: avoid;
+    }
+
+    .report-header {
+        background-color: #f8f9fa;
+        padding: 8px 15px;
+        border-bottom: 1px solid #ddd;
+        font-weight: bold;
+        color: #003366;
+        font-size: 14px;
+    }
+
+    .report-body {
+        padding: 15px;
+    }
+
+    .info-table {
+        width: 100%;
+        font-size: 12px;
+    }
+
+        .info-table td {
+            padding: 5px;
+            vertical-align: top;
+        }
+
+    .label-col {
+        width: 140px;
+        font-weight: bold;
+        color: #555;
+        background-color: #fafafa;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        margin-top: 10px;
+    }
+
+        .data-table th {
+            background-color: #0d6efd;
+            color: white;
+            padding: 5px;
+            border: 1px solid #0b5ed7;
+        }
+
+        .data-table td {
+            padding: 5px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+    .status-active {
+        color: green;
+        font-weight: bold;
+    }
+
+    .status-stopped {
+        color: red;
+        font-weight: bold;
+    }
+
+    h2.doc-title {
+        text-align: center;
+        margin-bottom: 20px;
+        text-decoration: underline;
+        font-family: 'Amiri', serif;
+    }
+
+    .meta-info {
+        text-align: left;
+        font-size: 10px;
+        color: #777;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="page">
+    <!-- الترويسة الرسمية -->
+    <div style="text-align: center; margin-bottom: 30px;">
+        <img src="@Url.Content("~/Content/Images/logo.png")" style="height: 80px;" alt="Logo" />
+        <h3 style="margin: 10px 0 5px 0;">نقابة المحامين الفلسطينيين</h3>
+        <h5 style="color: #666;">تقرير السجل التدريبي الشامل</h5>
+    </div>
+
+    <div class="meta-info">
+        تاريخ الطباعة: @DateTime.Now.ToString("yyyy/MM/dd HH:mm") <br />
+        طبع بواسطة: @(Session["FullName"] ?? "System")
+    </div>
+
+    <!-- 1. البيانات الشخصية والأساسية -->
+    <div class="report-section">
+        <div class="report-header">البيانات الشخصية والتدريبية</div>
+        <div class="report-body">
+            <table class="info-table">
+                <tr>
+                    <td class="label-col">الاسم الرباعي:</td>
+                    <td style="font-size: 16px; font-weight: bold;">@Model.ArabicName</td>
+                    <td class="label-col">الرقم النقابي:</td>
+                    <td style="font-weight: bold;">@(Model.TraineeSerialNo ?? "غير محدد")</td>
+                </tr>
+                <tr>
+                    <td class="label-col">رقم الهوية:</td>
+                    <td>@Model.NationalIdNumber</td>
+                    <td class="label-col">الحالة الحالية:</td>
+                    <td>
+                        @if (Model.Status == "متدرب مقيد")
+                        {<span class="status-active">@Model.Status</span> }
+                    else
+                    { <span class="status-stopped">@Model.Status</span>}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label-col">تاريخ الميلاد:</td>
+                    <td>@Model.BirthDate.ToString("yyyy/MM/dd") (@Model.BirthPlace)</td>
+                    <td class="label-col">الجنسية:</td>
+                    <td>@Model.Nationality</td>
+                </tr>
+                <tr>
+                    <td class="label-col">العنوان:</td>
+                    <td>@Model.ContactInfo.Governorate - @Model.ContactInfo.City @Model.ContactInfo.Street</td>
+                    <td class="label-col">معلومات الاتصال:</td>
+                    <td dir="ltr">@Model.ContactInfo.MobileNumber | @Model.ContactInfo.Email</td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="border-top: 1px solid #eee;">تاريخ بدء التدريب:</td>
+                    <td style="border-top: 1px solid #eee;">@(Model.TrainingStartDate?.ToString("yyyy/MM/dd") ?? "-")</td>
+                    <td class="label-col" style="border-top: 1px solid #eee;">المشرف الحالي:</td>
+                    <td style="border-top: 1px solid #eee;">@(Model.Supervisor?.ArabicName ?? "لا يوجد")</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. المؤهلات العلمية -->
+    <div class="report-section">
+        <div class="report-header">المؤهلات العلمية</div>
+        <div class="report-body" style="padding: 0;">
+            <table class="data-table" style="margin-top: 0; border: none;">
+                <thead>
+                    <tr>
+                        <th>المؤهل</th>
+                        <th>الجامعة</th>
+                        <th>الكلية</th>
+                        <th>التخصص</th>
+                        <th>سنة التخرج</th>
+                        <th>التقدير</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var q in Model.Qualifications)
+                    {
+                        <tr>
+                            <td>@q.QualificationType.Name</td>
+                            <td>@q.UniversityName</td>
+                            <td>@q.Faculty</td>
+                            <td>@q.Specialization</td>
+                            <td>@q.GraduationYear</td>
+                            <td>@(q.GradePercentage?.ToString() ?? "-")</td>
+                        </tr>
+                    }
+                    @if (!Model.Qualifications.Any())
+                    {
+                        <tr><td colspan="6">لا يوجد مؤهلات مسجلة.</td></tr>
+}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. سجل التنقلات والإيقافات -->
+    <div class="report-section">
+        <div class="report-header">السجل التاريخي (النقل والإيقاف)</div>
+        <div class="report-body">
+            @if (Model.SupervisorChangeRequests != null && Model.SupervisorChangeRequests.Any())
+            {
+                <h6>سجل تغيير المشرفين:</h6>
+                <table class="data-table mb-3">
+                    <thead><tr><th>تاريخ الطلب</th><th>النوع</th><th>المشرف الجديد</th><th>القرار</th><th>تاريخ القرار</th></tr></thead>
+                    <tbody>
+                        @foreach (var req in Model.SupervisorChangeRequests)
+                        {
+                            <tr>
+                                <td>@req.RequestDate.ToString("yyyy/MM/dd")</td>
+                                <td>@req.RequestType</td>
+                                <td>@(req.NewSupervisor?.ArabicName ?? "-")</td>
+                                <td>@req.Status</td>
+                                <td>@req.DecisionDate?.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            @if (Model.CouncilSuspensions != null && Model.CouncilSuspensions.Any())
+            {
+                <h6 style="color: #d9534f;">سجل الإيقافات والانقطاع (مجموع الأيام: @suspensionDays):</h6>
+                <table class="data-table">
+                    <thead><tr><th>تاريخ البدء</th><th>تاريخ الانتهاء</th><th>السبب</th><th>الحالة</th></tr></thead>
+                    <tbody>
+                        @foreach (var sus in Model.CouncilSuspensions)
+                        {
+                            <tr>
+                                <td>@sus.SuspensionStartDate.ToString("yyyy/MM/dd")</td>
+                                <td>@(sus.SuspensionEndDate?.ToString("yyyy/MM/dd") ?? "مستمر")</td>
+                                <td>@sus.Reason</td>
+                                <td>@sus.Status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            @if (!Model.SupervisorChangeRequests.Any() && !Model.CouncilSuspensions.Any())
+            {
+                <p class="text-muted text-center">سجل التدريب نظيف (لا يوجد تنقلات أو إيقافات).</p>
+            }
+        </div>
+    </div>
+
+    <!-- 4. السجل المالي -->
+    <div class="report-section">
+        <div class="report-header">السجل المالي</div>
+        <div class="report-body" style="padding: 0;">
+            <table class="data-table" style="margin-top: 0; border: none;">
+                <thead>
+                    <tr>
+                        <th>رقم الإيصال</th>
+                        <th>تاريخ الدفع</th>
+                        <th>المبلغ</th>
+                        <th>البيان</th>
+                        <th>الموظف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.PaymentHistory != null)
+                    {
+                        foreach (var pay in Model.PaymentHistory)
+                        {
+                            <tr>
+                                <td>@pay.ReceiptNumber</td>
+                                <td>@pay.BankPaymentDate.ToString("yyyy/MM/dd")</td>
+                                <td>@pay.PaymentVoucher.TotalAmount</td>
+                                <td style="text-align: right;">
+                                    @foreach (var d in pay.PaymentVoucher.VoucherDetails)
+                                    {<span>- @d.FeeType.Name</span><br />}
+                                </td>
+                                <td>@pay.IssuedByUserName</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. الامتحانات والتدريب -->
+    <div class="report-section">
+        <div class="report-header">الامتحانات وسجلات التدريب</div>
+        <div class="report-body">
+            @if (Model.ExamHistory != null && Model.ExamHistory.Any())
+            {
+                <table class="data-table mb-3">
+                    <thead><tr><th>الامتحان</th><th>التاريخ</th><th>النتيجة</th><th>الدرجة</th></tr></thead>
+                    <tbody>
+                        @foreach (var ex in Model.ExamHistory)
+                        {
+                            <tr>
+                                <td>@ex.Exam.ExamType.Name</td>
+                                <td>@ex.Exam.StartTime.ToString("yyyy/MM/dd")</td>
+                                <td>@ex.Result</td>
+                                <td>@ex.Score</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            { <p>لا يوجد سجل امتحانات.</p>}
+
+            @if (Model.TrainingLogs != null && Model.TrainingLogs.Any())
+            {
+                <h6>التقارير الدورية:</h6>
+                <table class="data-table">
+                    <thead><tr><th>السنة</th><th>الشهر</th><th>المشرف</th><th>الحالة</th></tr></thead>
+                    <tbody>
+                        @foreach (var log in Model.TrainingLogs)
+                        {
+                            <tr>
+                                <td>@log.Year</td>
+                                <td>@log.Month</td>
+                                <td>@(log.Supervisor?.ArabicName ?? "-")</td>
+                                <td>@log.Status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <!-- التذييل -->
+    <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align: center;">
+        <div>
+            <strong>مدقق الملف</strong>
+            <br /><br />
+            ___________________
+        </div>
+        <div>
+            <strong>أمين السر</strong>
+            <br /><br />
+            ___________________
+        </div>
+        <div>
+            <strong>ختم النقابة</strong>
+            <br /><br />
+
+        </div>
+    </div>
+</div>

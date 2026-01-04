@@ -1,0 +1,60 @@
+﻿@model BarManegment.Areas.Members.ViewModels.AttachmentEditViewModel
+@{
+    ViewBag.Title = "تعديل المرفق";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4 class="mb-0">@ViewBag.Title</h4>
+    </div>
+    <div class="card-body">
+
+        @using (Html.BeginForm("EditAttachment", "Profile", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            @Html.HiddenFor(model => model.Id)
+            @Html.HiddenFor(model => model.GraduateApplicationId)
+
+        <div class="mb-3">
+            <label class="form-label">الملف الحالي:</label>
+            <br />
+            @if (!string.IsNullOrEmpty(Model.FilePath))
+            {
+ 
+                <a href="@Url.Action("GetAttachmentFile", "Profile", new { area = "Members", id = Model.Id })" target="_blank" class="btn btn-info btn-sm" title="فتح الملف">
+                    <i class="bi bi-eye-fill"></i>
+                    عرض (@Model.OriginalFileName)
+                </a>
+            }
+            else
+            {
+                <span class="text-muted">لا يوجد ملف حالي</span>
+            }
+        </div>
+
+            <hr />
+
+            <div class="mb-3">
+                @Html.LabelFor(model => model.AttachmentTypeId, new { @class = "form-label fw-bold" })
+                @Html.DropDownListFor(model => model.AttachmentTypeId, Model.AttachmentTypes, "--- اختر نوع المرفق ---", new { @class = "form-select" })
+                @Html.ValidationMessageFor(model => model.AttachmentTypeId, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(model => model.NewFile, new { @class = "form-label fw-bold" })
+                <input type="file" name="NewFile" id="NewFile" class="form-control" />
+                @Html.ValidationMessageFor(model => model.NewFile, "", new { @class = "text-danger" })
+                <small class="text-muted">اترك هذا الحقل فارغاً إذا كنت لا ترغب في استبدال الملف الحالي.</small>
+            </div>
+
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> حفظ التعديلات
+                </button>
+                @Html.ActionLink("إلغاء", "Edit", "Profile", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

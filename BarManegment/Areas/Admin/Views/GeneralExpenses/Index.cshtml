@@ -1,0 +1,88 @@
+﻿@model IEnumerable<BarManegment.Models.GeneralExpense>
+
+@{
+    ViewBag.Title = "سندات الصرف";
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">سجل المصروفات (سندات الصرف)</h6>
+        @if (BarManegment.Helpers.PermissionHelper.HasPermission("FinancialReports")) // أو الصلاحية المناسبة للإضافة
+        {
+            <a href="@Url.Action("Create")" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle"></i> سند صرف جديد
+            </a>
+        }
+    </div>
+    <div class="card-body">
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover" id="expensesTable" width="100%" cellspacing="0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم السند</th>
+                        <th>تاريخ الصرف</th>
+                        <th>المستفيد (المدفوع له)</th>
+                        <th>المبلغ</th>
+                        <th>حساب المصروف</th>
+                        <th>طريقة الدفع</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold">@item.VoucherNumber</td>
+                            <td>@item.ExpenseDate.ToString("yyyy-MM-dd")</td>
+                            <td>@item.PayeeName</td>
+                            <td class="text-danger fw-bold">@item.Amount.ToString("N2")</td>
+                            <td>
+                                @if (item.ExpenseAccount != null)
+                                {
+                                    <span class="badge bg-secondary">@item.ExpenseAccount.Code</span> @item.ExpenseAccount.Name
+                                }
+                            </td>
+                            <td>
+                                @item.PaymentMethod
+                                @if (!string.IsNullOrEmpty(item.ReferenceNumber))
+                                {
+                                    <small class="text-muted d-block">(@item.ReferenceNumber)</small>
+                                }
+                            </td>
+                            <td>
+                                <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-info btn-sm" title="تفاصيل وطباعة">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info text-center mt-3">
+                لا توجد سندات صرف مدخلة حتى الآن.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // كود اختياري لتفعيل DataTables إذا كنت تستخدمه
+            // $('#expensesTable').DataTable();
+        });
+    </script>
+}

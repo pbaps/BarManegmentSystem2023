@@ -1,0 +1,74 @@
+﻿@model BarManegment.Models.PaymentVoucher
+@{
+    ViewBag.Title = "تفاصيل قسيمة الدفع رقم: " + Model.Id;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>@ViewBag.Title</h4>
+            <div>
+                @Html.ActionLink("طباعة القسيمة", "PrintVoucher", new { id = Model.Id }, new { @class = "btn btn-secondary", target = "_blank" })
+            </div>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">الاسم  </dt>
+                <dd class="col-sm-9">@Model.GraduateApplication.ArabicName</dd>
+
+                <dt class="col-sm-3">تاريخ الإصدار</dt>
+                <dd class="col-sm-9">@Model.IssueDate.ToString("g")</dd>
+
+                <dt class="col-sm-3">تاريخ انتهاء الصلاحية</dt>
+                <dd class="col-sm-9">@Model.ExpiryDate.ToString("D")</dd>
+
+                <dt class="col-sm-3">المبلغ الإجمالي</dt>
+                <dd class="col-sm-9">@Model.TotalAmount.ToString("N2")</dd>
+
+                <dt class="col-sm-3">الحالة</dt>
+                <dd class="col-sm-9"><span class="badge bg-primary">@Model.Status</span></dd>
+            </dl>
+            <hr />
+            <h5>تفاصيل الرسوم</h5>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>اسم الرسم</th>
+                        <th>الحساب البنكي</th>
+                        <th>رقم الحساب (IBAN)</th>
+                        <th>المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detail in Model.VoucherDetails)
+                    {
+                    <tr>
+                        <td>@detail.FeeType.Name</td>
+ 
+
+                        <td>
+                            @if (detail.BankAccount != null)
+                            {
+                                @detail.BankAccount.BankName <text> - </text> @detail.BankAccount.AccountName
+                            }
+                            else
+                            {
+                                <span class="text-muted">غير محدد</span>
+                            }
+                        </td>
+                        <td>@(detail.BankAccount?.Iban ?? "-")</td>
+                        <td>
+                            @detail.Amount.ToString("N2")
+                            @(detail.BankAccount?.Currency?.Symbol ?? detail.FeeType?.Currency?.Symbol ?? "")
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-end">
+            @Html.ActionLink("العودة إلى القائمة", "Index", null, new { @class = "btn btn-dark" })
+        </div>
+    </div>
+</div>

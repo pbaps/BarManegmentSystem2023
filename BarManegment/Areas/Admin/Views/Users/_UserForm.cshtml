@@ -1,0 +1,95 @@
+﻿@model BarManegment.ViewModels.UserViewModel
+
+@Html.AntiForgeryToken()
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<div class="row g-4">
+    <!-- Main Details Column -->
+    <div class="col-lg-8">
+        <h5><i class="bi bi-info-circle-fill me-2 text-primary"></i> البيانات الأساسية</h5>
+        <hr class="mt-2 mb-4">
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                @Html.LabelFor(model => model.FullNameArabic, htmlAttributes: new { @class = "form-label" })
+                @Html.EditorFor(model => model.FullNameArabic, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.FullNameArabic, "", new { @class = "text-danger" })
+            </div>
+            <div class="col-md-6 mb-3">
+                @Html.LabelFor(model => model.Username, htmlAttributes: new { @class = "form-label" })
+                @Html.EditorFor(model => model.Username, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Username, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="mb-3">
+            @Html.LabelFor(model => model.IdentificationNumber, htmlAttributes: new { @class = "form-label" })
+            @Html.EditorFor(model => model.IdentificationNumber, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.IdentificationNumber, "", new { @class = "text-danger" })
+        </div>
+        <div class="mb-3">
+            @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "form-label" })
+            @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control", type = "email" } })
+            @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+        </div>
+
+        <h5 class="mt-4"><i class="bi bi-key-fill me-2 text-primary"></i> بيانات الدخول</h5>
+        <hr class="mt-2 mb-4">
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "form-label" })
+                @Html.EditorFor(model => model.Password, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
+            </div>
+            <div class="col-md-6 mb-3">
+                @Html.LabelFor(model => model.ConfirmPassword, htmlAttributes: new { @class = "form-label" })
+                @Html.EditorFor(model => model.ConfirmPassword, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.ConfirmPassword, "", new { @class = "text-danger" })
+            </div>
+            @if (Model.Id > 0)
+            {
+                <div class="form-text text-muted mb-3">اترك حقول كلمة المرور فارغة إذا كنت لا تريد تغييرها.</div>
+            }
+        </div>
+
+        <div class="mb-3">
+            @Html.LabelFor(model => model.UserTypeId, "دور المستخدم", htmlAttributes: new { @class = "form-label" })
+            @Html.DropDownListFor(model => model.UserTypeId, Model.UserTypes, "--- اختر الدور ---", new { @class = "form-select" })
+            @Html.ValidationMessageFor(model => model.UserTypeId, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-check form-switch mb-3">
+            @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input", role = "switch" })
+            @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label" })
+        </div>
+
+    </div>
+
+    <!-- Profile Picture Column -->
+    <div class="col-lg-4">
+        <div class="card bg-light h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="text-muted mb-3"><i class="bi bi-person-bounding-box me-2"></i> الصورة الشخصية</h5>
+
+                <div class="position-relative d-inline-block mb-3">
+                    <img id="profile-pic-preview"
+                         src="@(Model.ProfilePicturePath ?? "/Content/Images/default-avatar.png")"
+                         class="img-thumbnail rounded-circle shadow-sm"
+                         style="width: 180px; height: 180px; object-fit: cover;"
+                         onerror="this.src='/Content/Images/default-avatar.png';" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="ProfilePictureFile" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-camera-fill me-1"></i> تغيير الصورة
+                    </label>
+                    @Html.TextBoxFor(model => model.ProfilePictureFile, new { type = "file", @class = "d-none", id = "ProfilePictureFile", onchange = "previewImage(event)" })
+                    @Html.ValidationMessageFor(model => model.ProfilePictureFile, "", new { @class = "text-danger small d-block mt-1" })
+                </div>
+
+                <small class="text-muted">يفضل استخدام صورة مربعة (1:1)</small>
+            </div>
+        </div>
+    </div>
+</div>

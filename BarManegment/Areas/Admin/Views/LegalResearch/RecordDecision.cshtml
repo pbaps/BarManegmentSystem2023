@@ -1,0 +1,57 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.RecordDecisionViewModel
+@{
+    ViewBag.Title = "تسجيل قرار اللجنة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0 fw-bold">تسجيل نتيجة المناقشة</h5>
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6"><strong>البحث:</strong> @Model.ResearchTitle</div>
+                        <div class="col-md-6"><strong>المتدرب:</strong> @Model.TraineeName</div>
+                    </div>
+                    <hr />
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.ResearchId)
+                        @Html.HiddenFor(m => m.ResearchTitle)
+                        @Html.HiddenFor(m => m.TraineeName)
+                        @Html.HiddenFor(m => m.CommitteeId)
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.Result, new { @class = "form-label fw-bold" })
+                                @Html.DropDownListFor(m => m.Result, new SelectList(new[] { "ناجح", "راسب", "تعديلات طفيفة", "تعديلات جوهرية" }), "اختر النتيجة...", new { @class = "form-select" })
+                                @Html.ValidationMessageFor(m => m.Result, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.DecisionDate, new { @class = "form-label fw-bold" })
+                                @Html.EditorFor(m => m.DecisionDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                @Html.ValidationMessageFor(m => m.DecisionDate, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-12">
+                                @Html.LabelFor(m => m.Notes, new { @class = "form-label fw-bold" })
+                                @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "4", placeholder = "تفاصيل القرار والملاحظات..." })
+                                @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <a href="@Url.Action("Details", new { id = Model.ResearchId })" class="btn btn-secondary me-2">إلغاء</a>
+                            <button type="submit" class="btn btn-success px-4 fw-bold">حفظ القرار</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

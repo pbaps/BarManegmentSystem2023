@@ -1,0 +1,70 @@
+﻿@model BarManegment.ViewModels.UserViewModel
+
+@{
+    ViewBag.Title = "إضافة مستخدم جديد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <!-- رأس الصفحة -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary fw-bold mb-0">
+            <i class="bi bi-person-plus-fill me-2"></i> @ViewBag.Title
+        </h4>
+        <a href="@Url.Action("Index", "Users", new { area = "Admin" })" class="btn btn-light text-secondary shadow-sm border">
+            <i class="bi bi-arrow-right me-1"></i> عودة للقائمة
+        </a>
+    </div>
+
+    <!-- رسائل الخطأ -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- نموذج الإضافة -->
+    <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-white py-3 border-bottom-0">
+            <h6 class="text-muted fw-bold mb-0">يرجى تعبئة بيانات المستخدم الجديد بدقة</h6>
+        </div>
+        <div class="card-body p-4">
+            @using (Html.BeginForm("Create", "Users", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                <!-- استدعاء الفورم المشترك -->
+                @Html.Partial("_UserForm", Model)
+
+                <!-- أزرار التحكم -->
+                <div class="row mt-5">
+                    <div class="col-12 border-top pt-4 d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("Index", "Users", new { area = "Admin" })" class="btn btn-light border text-secondary px-4">
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">
+                            <i class="bi bi-check-lg me-2"></i> حفظ وإضافة
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        // دالة معاينة الصورة (مطلوبة لأن عنصر الإدخال في _UserForm يستدعيها)
+        function previewImage(event) {
+            var output = document.getElementById('profile-pic-preview');
+            if (event.target.files && event.target.files[0]) {
+                output.src = URL.createObjectURL(event.target.files[0]);
+                output.onload = function () {
+                    URL.revokeObjectURL(output.src) // تحرير الذاكرة
+                }
+            }
+        };
+    </script>
+}

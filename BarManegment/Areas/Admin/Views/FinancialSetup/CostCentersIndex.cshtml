@@ -1,0 +1,76 @@
+﻿@model IEnumerable<BarManegment.Models.CostCenter>
+
+@{
+    ViewBag.Title = "مراكز التكلفة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-diagram-3-fill me-2"></i> دليل مراكز التكلفة</h5>
+            <a href="@Url.Action("CreateCostCenter")" class="btn btn-light text-primary fw-bold btn-sm">
+                <i class="bi bi-plus-lg"></i> إضافة مركز جديد
+            </a>
+        </div>
+        <div class="card-body">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 15%">رمز المركز (Code)</th>
+                            <th style="width: 40%">اسم المركز</th>
+                            <th style="width: 25%">يتبع لـ (الرئيسي)</th>
+                            <th class="text-end">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-secondary font-monospace">@item.Code</span></td>
+                                    <td class="fw-bold text-dark">@item.Name</td>
+                                    <td class="text-muted">
+                                        @if (item.Parent != null)
+                                        {
+                                            <small><i class="bi bi-arrow-return-left"></i> @item.Parent.Name</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-dark border">رئيسي</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="@Url.Action("EditCostCenter", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
+                                    لا توجد مراكز تكلفة معرفة حتى الآن.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

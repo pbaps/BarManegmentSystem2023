@@ -1,0 +1,67 @@
+﻿@model IEnumerable<BarManegment.Models.StampSale>
+@using System.Linq
+
+@{
+    ViewBag.Title = "أرشيف حصص الطوابع (المرسلة للبنك)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h5 class="m-0 font-weight-bold text-primary">@ViewBag.Title</h5>
+            @Html.ActionLink("عودة للتقرير الرئيسي", "Index", null, new { @class = "btn btn-secondary btn-sm" })
+        </div>
+        <div class="card-body">
+
+            @using (Html.BeginForm("History", "StampFinancials", new { area = "Admin" }, FormMethod.Get, new { @class = "row g-3 mb-3 p-3 bg-light rounded border" }))
+            {
+                <div class="col-md-4">
+                    <label for="from" class="form-label">من تاريخ (الإرسال للبنك)</label>
+                    <input type="date" name="from" id="from" class="form-control" value="@ViewBag.FromDate" />
+                </div>
+                <div class="col-md-4">
+                    <label for="to" class="form-label">إلى تاريخ (الإرسال للبنك)</label>
+                    <input type="date" name="to" id="to" class="form-control" value="@ViewBag.ToDate" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-info w-100">
+                        <i class="bi bi-filter"></i> تصفية
+                    </button>
+                </div>
+            }
+
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>تاريخ الإرسال</th>
+                            <th>اسم المحامي</th>
+                            <th>قيمة الطابع</th>
+                            <th>حصة المحامي</th>
+                            <th>رقم الطابع التسلسلي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">لا توجد سجلات مؤرشفة في هذه الفترة.</td>
+                            </tr>
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@(item.BankSendDate.HasValue ? item.BankSendDate.Value.ToString("yyyy/MM/dd") : "-")</td>
+                                <td>@item.Lawyer.ArabicName</td>
+                                <td>@item.StampValue.ToString("N2") ₪</td>
+                                <td>@item.AmountToLawyer.ToString("N2") ₪</td>
+                                <td>@(item.Stamp?.SerialNumber ?? 0)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

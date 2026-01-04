@@ -1,0 +1,43 @@
+﻿@model BarManegment.Models.Qualification
+@{
+    ViewBag.Title = "تعديل مؤهل علمي";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header"><h4>@ViewBag.Title</h4></div>
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.Id)
+            @Html.HiddenFor(model => model.GraduateApplicationId)
+
+            <div class="card-body">
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                <div class="form-floating mb-3">
+                    @Html.DropDownListFor(model => model.QualificationTypeId, (SelectList)ViewBag.QualificationTypeId, "--- اختر نوع المؤهل ---", new { @class = "form-select" })
+                    @Html.LabelFor(model => model.QualificationTypeId)
+                </div>
+                <div class="form-floating mb-3">
+                    @Html.EditorFor(model => model.UniversityName, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                    @Html.LabelFor(model => model.UniversityName)
+                </div>
+                <div class="form-floating mb-3">
+                    @Html.EditorFor(model => model.GraduationYear, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number" } })
+                    @Html.LabelFor(model => model.GraduationYear)
+                </div>
+                <div class="form-floating mb-3">
+                    @Html.EditorFor(model => model.GradePercentage, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number", step = "0.01" } })
+                    @Html.LabelFor(model => model.GradePercentage)
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="حفظ التعديلات" class="btn btn-primary" />
+                @Html.ActionLink("العودة", "Edit", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>
+

@@ -1,0 +1,133 @@
+﻿@model BarManegment.Models.Item
+
+@{
+    ViewBag.Title = "تعديل بيانات الصنف";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-pencil-square me-2"></i> تعديل بيانات الصنف</h5>
+                    <span class="badge bg-secondary">#@Model.Code</span>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+                        @* نحتفظ بالقيم الحالية للكمية والتكلفة حتى لا تضيع عند الحفظ إذا لم تكن في الفورم *@
+                        @Html.HiddenFor(model => model.CurrentQuantity)
+                        @Html.HiddenFor(model => model.AverageCost)
+
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">@Html.ValidationSummary()</div>
+                        }
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">اسم الصنف <span class="text-danger">*</span></label>
+                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">كود الصنف</label>
+                                @Html.EditorFor(model => model.Code, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">التصنيف <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    @Html.DropDownList("ItemCategoryId", null, "اختر التصنيف...", new { @class = "form-select select2", id = "ItemCategoryId" })
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal" title="إضافة تصنيف جديد">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </div>
+                                @Html.ValidationMessageFor(model => model.ItemCategoryId, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">حد الطلب</label>
+                                @Html.EditorFor(model => model.ReorderLevel, new { htmlAttributes = new { @class = "form-control", type = "number" } })
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 bg-light p-3 rounded mx-1 border">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">الكمية الحالية بالمخزن</label>
+                                <input type="text" class="form-control bg-white" value="@Model.CurrentQuantity" disabled readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">متوسط التكلفة</label>
+                                <input type="text" class="form-control bg-white" value="@Model.AverageCost.ToString("N2")" disabled readonly />
+                            </div>
+                            <div class="col-12 mt-2">
+                                <small class="text-info"><i class="bi bi-info-circle me-1"></i> لا يمكن تعديل الكمية أو التكلفة يدوياً من هنا. يرجى استخدام فواتير الشراء أو أذونات الصرف.</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-4">
+                                    @Html.EditorFor(model => model.IsActive, new { htmlAttributes = new { @class = "form-check-input" } })
+                                    <label class="form-check-label fw-bold" for="IsActive">صنف نشط</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold">حفظ التعديلات</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fs-6">إضافة تصنيف جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="newCategoryName" class="form-control" placeholder="اسم التصنيف" />
+                <div id="catError" class="text-danger small mt-1"></div>
+            </div>
+            <div class="modal-footer p-1">
+                <button type="button" class="btn btn-sm btn-primary w-100" id="btnSaveCategory">حفظ وإضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({ theme: "bootstrap-5", width: '100%', dir: "rtl" });
+
+            $('#btnSaveCategory').click(function () {
+                var name = $('#newCategoryName').val();
+                if (!name) { $('#catError').text('يرجى إدخال الاسم'); return; }
+
+                $.post('@Url.Action("AddCategoryJson", "Items")', { name: name }, function (response) {
+                    if (response.success) {
+                        var newOption = new Option(response.name, response.id, true, true);
+                        $('#ItemCategoryId').append(newOption).trigger('change');
+                        $('#addCategoryModal').modal('hide');
+                        $('#newCategoryName').val('');
+                    } else {
+                        $('#catError').text(response.message);
+                    }
+                });
+            });
+        });
+    </script>
+}

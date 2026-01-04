@@ -1,0 +1,89 @@
+﻿@model IEnumerable<dynamic>
+@{
+    ViewBag.Title = "إدارة: " + ViewBag.LookupTypeName;
+    string lookupType = ViewBag.LookupType;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>@ViewBag.Title</h4>
+            @Html.ActionLink("إضافة عنصر جديد", "Create", new { type = lookupType }, new { @class = "btn btn-primary" })
+        </div>
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+            @if (TempData["ErrorMessage"] != null)
+            {<div class="alert alert-danger">@TempData["ErrorMessage"]</div>}
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            @* === بداية التعديل: تغيير العناوين === *@
+                            @if (lookupType == "UserTypes")
+                            {
+                                <th>الاسم بالعربية</th>
+                                <th>الاسم بالإنجليزية (للنظام)</th>
+                            }
+                            else
+                            {
+                                <th>الاسم</th>
+                            }
+                            @* === نهاية التعديل === *@
+
+                            @if (lookupType == "Currencies")
+                            {
+                                <th>الرمز</th>
+}
+                            @if (lookupType == "QualificationTypes")
+                            {
+                                <th>النسبة الدنيا</th>
+}
+                            <th></th> @* للأزرار *@
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+
+                                @* === بداية التعديل: تغيير طريقة العرض === *@
+                                @if (lookupType == "UserTypes")
+                                {
+                                    <td>@item.NameArabic</td>
+                                    <td>@item.NameEnglish</td>
+                                }
+                                else
+                                {
+                                    <td>@item.Name</td>
+                                }
+                                @* === نهاية التعديل === *@
+
+                                @if (lookupType == "Currencies")
+                                {
+                                    <td>@item.Symbol</td>
+}
+                                @if (lookupType == "QualificationTypes")
+                                {
+                                    <td>@item.MinimumAcceptancePercentage</td>
+}
+                                <td class="text-end">
+                                    @Html.ActionLink("تعديل", "Edit", new { type = lookupType, id = item.Id }, new { @class = "btn btn-sm btn-secondary" })
+                                    @Html.ActionLink("حذف", "Delete", new { type = lookupType, id = item.Id }, new { @class = "btn btn-sm btn-danger" })
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="5" class="text-center">لا توجد بيانات لعرضها.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @Html.ActionLink("العودة لقائمة الجداول", "Index", null, new { @class = "btn btn-outline-secondary mt-3" })
+        </div>
+    </div>
+</div>

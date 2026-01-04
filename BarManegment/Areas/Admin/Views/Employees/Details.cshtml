@@ -1,0 +1,313 @@
+﻿@model BarManegment.Models.Employee
+
+@{
+    ViewBag.Title = "ملف الموظف - " + Model.FullName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h4 class="text-primary fw-bold mb-0">
+                <i class="bi bi-person-vcard-fill me-2"></i> الملف الوظيفي والمالي
+            </h4>
+        </div>
+        <div class="btn-group shadow-sm">
+            <a href="@Url.Action("Print", new { id = Model.Id })" target="_blank" class="btn btn-outline-secondary">
+                <i class="bi bi-printer me-1"></i> طباعة رسمية (PDF)
+            </a>
+            <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-primary fw-bold">
+                <i class="bi bi-pencil-square me-1"></i> تعديل البيانات
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i> عودة
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body">
+                    <div class="mb-3 position-relative d-inline-block">
+                        @if (!string.IsNullOrEmpty(Model.ProfilePicturePath))
+                        {
+                            <img src="@Url.Content(Model.ProfilePicturePath)" class="img-thumbnail rounded-circle" style="width: 160px; height: 160px; object-fit: cover; border: 4px solid #f8f9fa;" />
+                        }
+                        else
+                        {
+                            <img src="https://placehold.co/160x160/e9ecef/6c757d?text=No+Photo" class="img-thumbnail rounded-circle" style="width: 160px; height: 160px; object-fit: cover;" />
+                        }
+
+                        <div class="position-absolute bottom-0 end-0">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success border border-white rounded-pill p-2" title="على رأس عمله"><i class="bi bi-check-lg"></i> نشط</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger border border-white rounded-pill p-2" title="غير نشط"><i class="bi bi-x-lg"></i> موقوف</span>
+                            }
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-1">@Model.FullName</h5>
+                    <p class="text-muted small mb-3">
+                        @(Model.JobTitle != null ? Model.JobTitle.Name : "غير محدد")
+                    </p>
+
+                    <hr />
+
+                    <div class="text-start px-2">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small fw-bold text-muted">رقم الهوية:</span>
+                            <span class="small">@Model.NationalId</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small fw-bold text-muted">القسم:</span>
+                            <span class="small">
+                                @(Model.Department != null ? Model.Department.Name : "غير محدد")
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small fw-bold text-muted">تاريخ التعيين:</span>
+                            <span class="small">@Model.HireDate.ToString("yyyy/MM/dd")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-cash-stack me-2"></i> هيكل الراتب والعلاوات</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="p-3 border rounded bg-light text-center h-100">
+                                <small class="d-block text-muted fw-bold mb-1">الراتب الأساسي</small>
+                                <h4 class="text-primary fw-bold mb-0">@Model.BasicSalary.ToString("N0")</h4>
+                                <small class="text-muted">شيكل</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-9">
+                            <div class="row row-cols-2 row-cols-md-4 g-2">
+                                <div class="col">
+                                    <div class="p-2 border rounded text-center">
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">إدارة</small>
+                                        <span class="fw-bold">@Model.ManagerAllowance.ToString("N0")</span>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-2 border rounded text-center">
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">رئاسة قسم</small>
+                                        <span class="fw-bold">@Model.HeadOfDeptAllowance.ToString("N0")</span>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-2 border rounded text-center">
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">ماجستير</small>
+                                        <span class="fw-bold">@Model.MasterDegreeAllowance.ToString("N0")</span>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-2 border rounded text-center">
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">دكتوراه</small>
+                                        <span class="fw-bold">@Model.PhdDegreeAllowance.ToString("N0")</span>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-2 border rounded text-center">
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">تخصص/مهنة</small>
+                                        <span class="fw-bold">@Model.SpecializationAllowance.ToString("N0")</span>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-2 border rounded text-center">
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">مواصلات</small>
+                                        <span class="fw-bold">@Model.TransportAllowance.ToString("N0")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 mt-3">
+                        <div class="alert alert-success d-flex align-items-center mb-0" role="alert">
+                            <i class="bi bi-graph-up-arrow fs-3 me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">الزيادة السنوية (الأقدمية)</h6>
+                                <span class="d-block small">
+                                    سنوات الخدمة المحسوبة:
+                                    <strong>
+                                        @{
+                                            var today = DateTime.Now;
+                                            int yearsOfService = today.Year - Model.HireDate.Year;
+                                            if (Model.HireDate.Date > today.AddYears(-yearsOfService)) { yearsOfService--; }
+                                            if (yearsOfService < 0) { yearsOfService = 0; }
+                                        }
+                                        @yearsOfService
+                                    </strong>
+                                    (الحد الأقصى: @Model.MaxIncrementYears سنة)
+                                </span>
+                                <span class="d-block small">
+                                    قيمة الزيادة الحالية (@Model.AnnualIncrementPercent%):
+                                    <strong>@Model.CalculatedAnnualIncrementAmount.ToString("N2") شيكل</strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="d-flex justify-content-between align-items-center bg-success bg-opacity-10 p-3 rounded">
+                        <span class="fw-bold text-success fs-5">إجمالي الراتب (Gross Salary):</span>
+                        <span class="fw-bold text-success fs-4">@Model.TotalSalary.ToString("N2") <small class="fs-6">شيكل</small></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold text-danger"><i class="bi bi-shield-lock me-2"></i> التأمين والمعاشات</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                    <td class="text-muted small">الوعاء التأميني (أساسي + مؤهل + تخصص):</td>
+                                    <td class="text-end fw-bold text-dark">@Model.PensionBasisSalary.ToString("N2")</td>
+                                </tr>
+                                <tr><td colspan="2"><hr class="my-1" /></td></tr>
+                                <tr>
+                                    <td class="text-muted">حصة الموظف (@Model.EmployeePensionPercent%):</td>
+                                    <td class="text-end fw-bold text-danger">@Model.PensionAmountEmployee.ToString("N2")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">مساهمة النقابة (@Model.EmployerPensionPercent%):</td>
+                                    <td class="text-end fw-bold text-success">@Model.PensionAmountEmployer.ToString("N2")</td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td class="pt-2 fw-bold">الإجمالي المحول للهيئة:</td>
+                                    <td class="pt-2 text-end fw-bold text-dark">@Model.TotalToPensionAuthority.ToString("N2")</td>
+                                </tr>
+                                @if (Model.OtherMonthlyDeduction > 0)
+                                {
+                                    <tr>
+                                        <td class="text-muted pt-3">خصومات شهرية أخرى:</td>
+                                        <td class="text-end fw-bold text-danger pt-3">@Model.OtherMonthlyDeduction.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold text-secondary"><i class="bi bi-bank2 me-2"></i> الحساب البنكي</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <span class="d-block text-muted small">اسم البنك:</span>
+                                    <span class="fw-bold">@(string.IsNullOrEmpty(Model.BankName) ? "---" : Model.BankName)</span>
+                                </li>
+                                <li class="mb-2">
+                                    <span class="d-block text-muted small">الفرع:</span>
+                                    <span class="fw-bold">@(string.IsNullOrEmpty(Model.BankBranch) ? "---" : Model.BankBranch)</span>
+                                </li>
+                                <li class="mb-2">
+                                    <span class="d-block text-muted small">رقم الحساب:</span>
+                                    <span class="fw-bold font-monospace text-primary">@(string.IsNullOrEmpty(Model.BankAccountNumber) ? "---" : Model.BankAccountNumber)</span>
+                                </li>
+                                <li>
+                                    <span class="d-block text-muted small">IBAN:</span>
+                                    <span class="fw-bold font-monospace small text-break">@(string.IsNullOrEmpty(Model.IBAN) ? "---" : Model.IBAN)</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mt-4 no-print">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i> سجل التدرج المالي والراتب</h6>
+                </div>
+                <div class="card-body">
+                    @{
+                        var history = ViewBag.FinancialHistory as List<BarManegment.Models.EmployeeFinancialHistory>;
+                    }
+
+                    @if (history != null && history.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm text-center">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>تاريخ التغيير</th>
+                                        <th>السبب</th>
+                                        <th>بواسطة</th>
+                                        <th>الأساسي السابق</th>
+                                        <th>إجمالي الراتب السابق</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var rec in history)
+                                    {
+                                        <tr>
+                                            <td>@rec.ChangeDate.ToString("yyyy/MM/dd HH:mm")</td>
+                                            <td>@rec.ChangeReason</td>
+                                            <td>@rec.ChangedBy</td>
+                                            <td>@rec.BasicSalary.ToString("N0")</td>
+                                            <td class="fw-bold text-primary">@rec.TotalSalarySnapshot.ToString("N0")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center my-3">لا يوجد سجل تعديلات سابقة (هذا هو الراتب الأول).</p>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        @@media print {
+            .no-print, .btn, #sidebar, header, footer {
+                display: none !important;
+            }
+
+            body, .container-fluid, .row {
+                background-color: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .card {
+                border: 1px solid #ddd !important;
+                break-inside: avoid;
+            }
+
+            .bg-light {
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+}

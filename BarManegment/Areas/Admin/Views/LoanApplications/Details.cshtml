@@ -1,0 +1,185 @@
+﻿@model BarManegment.Models.LoanApplication
+@{
+    ViewBag.Title = "تفاصيل طلب القرض رقم " + Model.Id;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2>@ViewBag.Title</h2>
+<p>
+    <strong>المحامي:</strong> @Model.Lawyer.ArabicName (@Model.Lawyer.MembershipId) <br />
+    <strong>الحالة:</strong> <span class="badge bg-info fs-6">@Model.Status</span>
+</p>
+
+@* --- أزرار الإجراءات --- *@
+<div class="d-flex gap-2 mb-3">
+    @if (Model.Status == "تحت المراجعة" && Model.Installments.Count == 0)
+    {
+        using (Html.BeginForm("GenerateInstallments", "LoanApplications", new { id = Model.Id }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success" onclick="return confirm('هل أنت متأكد من الموافقة على الطلب وإنشاء جدول الأقساط؟ لا يمكن التراجع عن هذا الإجراء.');">
+                <i class="bi bi-check-circle-fill me-1"></i> موافقة وإنشاء جدول الأقساط
+            </button>
+        }
+    }
+
+    @if (Model.Status.Contains("بانتظار الصرف") && !Model.IsDisbursed)
+    {
+        using (Html.BeginForm("DisburseLoan", "LoanApplications", new { id = Model.Id }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success" onclick="return confirm('هل أنت متأكد من تأكيد صرف المبلغ للمحامي؟');">
+                <i class="bi bi-cash-coin me-1"></i> تأكيد صرف القرض
+            </button>
+        }
+    }
+
+    @Html.ActionLink("العودة للقائمة", "Index", null, new { @class = "btn btn-outline-secondary" })
+</div>
+<hr />
+
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="alert alert-success">@ViewBag.SuccessMessage</div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+}
+
+
+<div class="row g-3">
+    @* --- 1. تفاصيل الطلب --- *@
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header"><h5 class="mb-0">تفاصيل الطلب</h5></div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">نوع القرض</dt>
+                    <dd class="col-sm-8">@Model.LoanType.Name</dd>
+                    <dt class="col-sm-4">المبلغ</dt>
+                    <dd class="col-sm-8">@Model.Amount.ToString("N2")</dd>
+                    <dt class="col-sm-4">عدد الأقساط</dt>
+                    <dd class="col-sm-8">@Model.InstallmentCount</dd>
+                    <dt class="col-sm-4">قيمة القسط</dt>
+                    <dd class="col-sm-8">@Model.InstallmentAmount.ToString("N2")</dd>
+                    <dt class="col-sm-4">تاريخ أول قسط</dt>
+                    <dd class="col-sm-8">@Model.StartDate.ToString("yyyy-MM-dd")</dd>
+
+                    @* (تصحيح خطأ Null) *@
+                    <dt class="col-sm-4">تم الصرف؟</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.IsDisbursed)
+                        {
+                            <span>نعم (بتاريخ: @(Model.DisbursementDate.HasValue ? Model.DisbursementDate.Value.ToString("yyyy-MM-dd") : "غير مسجل"))</span>
+                        }
+                        else
+                        {
+                            <span>لا</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    @* --- 2. الكفلاء --- *@
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header"><h5 class="mb-0">الكفلاء (@Model.Guarantors.Count)</h5></div>
+            <div class="card-body">
+                @foreach (var guarantor in Model.Guarantors)
+                {
+                    <div class="border-bottom mb-2 pb-2">
+                        @if (guarantor.GuarantorType == "Lawyer")
+                        {
+                            <strong>@guarantor.LawyerGuarantor.ArabicName</strong> <span class="badge bg-info">محامي مزاول</span>
+                            <br /><small class="text-muted">رقم العضوية: @guarantor.LawyerGuarantor.MembershipId</small>
+                            if (guarantor.IsOverride)
+                            { <span class="badge bg-warning">تم التجاوز</span> }
+                        }
+                        else
+                        {
+                            <strong>@guarantor.ExternalName</strong> <span class="badge bg-secondary">موظف خارجي</span>
+                            <br /><small class="text-muted">الوظيفة: @guarantor.JobTitle في @guarantor.Workplace</small>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* 💡💡 === بداية التعديل: قسم المرفقات الجديد === 💡💡 *@
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><h5 class="mb-0">مرفقات الطلب (للطباعة والرفع)</h5></div>
+            <div class="card-body p-0">
+                @* (استدعاء الواجهة الجزئية للمرفقات) *@
+                @Html.Partial("_LoanAttachments", Model)
+            </div>
+        </div>
+    </div>
+    @* 💡💡 === نهاية التعديل === 💡💡 *@
+
+
+    @* --- 3. جدول الأقساط (الكمبيالات) --- *@
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><h5 class="mb-0">جدول الأقساط (الكمبيالات)</h5></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>رقم القسط</th>
+                                <th>تاريخ الاستحقاق</th>
+                                <th>المبلغ</th>
+                                <th>رقم القسيمة</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Installments.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted p-4">
+                                        لم يتم إنشاء جدول الأقساط بعد.
+                                        <br />(يجب الضغط على زر "موافقة وإنشاء جدول الأقساط" أعلاه)
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var installment in Model.Installments.OrderBy(i => i.InstallmentNumber))
+                            {
+                                string statusClass = "";
+                                if (installment.Status == "مدفوع") { statusClass = "table-success"; }
+                                if (installment.Status == "متأخر") { statusClass = "table-danger"; }
+
+                                <tr class="@statusClass">
+                                    <td>@installment.InstallmentNumber</td>
+                                    <td>@installment.DueDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@installment.Amount.ToString("N2")</td>
+                                    <td>
+                                        @if (installment.PaymentVoucherId.HasValue)
+                                        {
+                                            @Html.ActionLink(installment.PaymentVoucherId.Value.ToString(), "PrintVoucher", "PaymentVouchers", new { id = installment.PaymentVoucherId }, new { target = "_blank" })
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (installment.Status == "مدفوع")
+                                        {
+                                            <span class="badge bg-success">مدفوع (إيصال: @installment.ReceiptId)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">@installment.Status</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

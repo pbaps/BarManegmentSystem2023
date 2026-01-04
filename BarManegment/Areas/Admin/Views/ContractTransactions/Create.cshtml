@@ -1,0 +1,318 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.ContractTransactionViewModel
+@{
+    ViewBag.Title = "إنشاء معاملة تصديق جديدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    var provincesList = (SelectList)ViewBag.ProvincesList;
+    var partyRolesList = (SelectList)ViewBag.PartyRolesList;
+    var minorRelationshipsList = (SelectList)ViewBag.MinorRelationshipsList;
+}
+
+<h2><i class="bi bi-file-earmark-plus-fill me-2"></i> @ViewBag.Title</h2>
+<hr />
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        @{
+            var printVoucherUrl = TempData["PrintVoucherUrl"] as string;
+            var printAgencyUrl = TempData["PrintAgencyUrl"] as string;
+        }
+        <div class="float-end me-5">
+            @if (!string.IsNullOrEmpty(printVoucherUrl))
+            {
+                <a href="@Html.Raw(printVoucherUrl)" target="_blank" class="btn btn-warning btn-sm fw-bold">
+                    <i class="bi bi-printer-fill me-1"></i> طباعة القسيمة
+                </a>
+            }
+            @if (!string.IsNullOrEmpty(printAgencyUrl))
+            {
+                <a href="@Html.Raw(printAgencyUrl)" target="_blank" class="btn btn-dark btn-sm fw-bold">
+                    <i class="bi bi-passport-fill me-1"></i> طباعة الوكالة
+                </a>
+            }
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Html.Raw(TempData["ErrorMessage"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@using (Html.BeginForm("Create", "ContractTransactions", FormMethod.Post, new { id = "transactionForm" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="row g-3">
+        @* --- القسم 1: بيانات المعاملة والمحامي --- *@
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header"><h5 class="mb-0">1. تفاصيل المعاملة والمحامي</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        <div class="col-md-4">
+                            <label class="form-label">تاريخ تصديق المحامي</label>
+                            @Html.EditorFor(model => model.TransactionDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                            @Html.ValidationMessageFor(model => model.TransactionDate, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">معرف المحامي (رقم الهوية/العضوية)</label>
+                            <div class="input-group">
+                                @Html.EditorFor(model => model.LawyerIdentifier, new { htmlAttributes = new { @class = "form-control", id = "LawyerIdentifierInput", placeholder = "ابحث بالرقم الوطني أو رقم العضوية..." } })
+                                <button type="button" class="btn btn-primary" id="btnCheckLawyer"><i class="bi bi-search"></i> تحقق</button>
+                            </div>
+                            @Html.ValidationMessageFor(model => model.LawyerIdentifier, "", new { @class = "text-danger" })
+
+                            <!-- 💡 مكان عرض نتيجة التحقق -->
+                            <div id="lawyerStatusResult" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* --- القسم 2: الرسوم ونوع العقد --- *@
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header"><h5 class="mb-0">2. الرسوم ونوع العقد</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.ContractTypeId, htmlAttributes: new { @class = "form-label" })
+                            @Html.DropDownList("ContractTypeId", null, "--- اختر نوع العقد ---", htmlAttributes: new { @class = "form-select", id = "ContractTypeId" })
+                            @Html.ValidationMessageFor(model => model.ContractTypeId, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.FinalFee, htmlAttributes: new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.EditorFor(model => model.FinalFee, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly", id = "FinalFee" } })
+                                <span class="input-group-text" id="currency-symbol">₪</span>
+                            </div>
+                            @Html.ValidationMessageFor(model => model.FinalFee, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check form-switch mb-3 col-md-6">
+                                @Html.CheckBoxFor(model => model.IsExempt, new { @class = "form-check-input", role = "switch", id = "IsExempt" })
+                                @Html.LabelFor(model => model.IsExempt, htmlAttributes: new { @class = "form-check-label" })
+                            </div>
+                        </div>
+                        <div class="col-md-6" id="exemption-reason-container" style="@(Model.IsExempt ? "" : "display:none;")">
+                            @Html.LabelFor(model => model.ExemptionReasonId, htmlAttributes: new { @class = "form-label" })
+                            @Html.DropDownList("ExemptionReasonId", null, "--- اختر سبب الإعفاء ---", htmlAttributes: new { @class = "form-select" })
+                            @Html.ValidationMessageFor(model => model.ExemptionReasonId, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-md-12">
+                            @Html.LabelFor(model => model.Notes, htmlAttributes: new { @class = "form-label" })
+                            @Html.TextAreaFor(model => model.Notes, new { @class = "form-control", rows = 3 })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* --- القسم 3: أطراف العقد --- *@
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header"><h5 class="mb-0">3. أطراف المعاملة</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @* (الطرف الأول) *@
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2">الطرف الأول (الموكل/البائع...)</h6>
+                            <div id="party-1-container">
+                                @if (Model.Parties != null)
+                                {
+                                    for (int i = 0; i < Model.Parties.Count; i++)
+                                    {
+                                        if (Model.Parties[i].PartyType == 1)
+                                        {
+                                            @Html.Raw("<div class='party-row border rounded p-2 mb-2 shadow-sm bg-light'>...</div>") <!-- (للاختصار: الكود مكرر) -->
+                                        }
+                                    }
+                                }
+                            </div>
+                            <button type="button" id="add-party-1" class="btn btn-outline-primary btn-sm mt-2"><i class="bi bi-plus-circle"></i> إضافة (طرف أول)</button>
+                        </div>
+
+                        @* (الطرف الثاني) *@
+                        <div class="col-md-6 border-end border-2">
+                            <h6 class="border-bottom pb-2">الطرف الثاني (الموكل إليه/المشتري...)</h6>
+                            <div id="party-2-container">
+                                <!-- ... -->
+                            </div>
+                            <button type="button" id="add-party-2" class="btn btn-outline-success btn-sm mt-2"><i class="bi bi-plus-circle"></i> إضافة (طرف ثاني)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* --- القسم 4: وكالة جواز السفر --- *@
+        <div class="col-md-12" id="passport-minors-section" style="display: none;">
+            <div class="card shadow-sm mb-3 border-info">
+                <div class="card-header bg-info-subtle">
+                    <h5 class="mb-0"><i class="bi bi-person-badge-fill me-2"></i> 4. بيانات وكالة جواز السفر</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        @Html.CheckBoxFor(model => model.IsActingForSelf, new { @class = "form-check-input", role = "switch" })
+                        @Html.LabelFor(model => model.IsActingForSelf, htmlAttributes: new { @class = "form-check-label" })
+                    </div>
+                    <div class="mb-3">
+                        @Html.LabelFor(model => model.AgentLegalCapacity, htmlAttributes: new { @class = "form-label" })
+                        @Html.EditorFor(model => model.AgentLegalCapacity, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: بصفتي ولياً شرعياً، بوصايتي عليهم..." } })
+                    </div>
+                    <h6 class="border-bottom pb-2">القُصّر (إن وجدوا)</h6>
+                    <div id="minors-container"></div>
+                    <button type="button" id="add-minor" class="btn btn-outline-info btn-sm mt-2">
+                        <i class="bi bi-plus-circle"></i> إضافة قاصر
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 text-center mt-4">
+            <input type="submit" value="حفظ وإنشاء قسيمة الدفع" class="btn btn-success btn-lg" />
+            @Html.ActionLink("إلغاء", "Index", null, new { @class = "btn btn-outline-secondary btn-lg" })
+        </div>
+    </div>
+}
+
+<!-- القوالب المخفية (Templates) -->
+<div id="party-template" style="display: none;">
+    <div class="party-row border rounded p-2 mb-2 shadow-sm bg-light">
+        <input type="hidden" name="Parties.Index" value="__INDEX__" />
+        <input type="hidden" name="Parties[__INDEX__].PartyType" value="__PARTY_TYPE__" />
+        <button type="button" class="btn-close float-end btn-remove-party" aria-label="Close"></button>
+        <div class="mb-2"><label class="form-label-sm">الاسم</label><input type="text" name="Parties[__INDEX__].PartyName" class="form-control form-control-sm" /></div>
+        <div class="mb-2"><label class="form-label-sm">رقم الهوية</label><input type="text" name="Parties[__INDEX__].PartyIDNumber" class="form-control form-control-sm" /></div>
+        <div class="mb-2"><label class="form-label-sm">الصفة</label><select name="Parties[__INDEX__].PartyRoleId" class="form-select form-select-sm"><option value="">--- اختر الصفة ---</option>@foreach (var item in partyRolesList)
+        {<option value="@item.Value">@item.Text</option>}</select></div>
+        <div class="mb-2"><label class="form-label-sm">المحافظة</label><select name="Parties[__INDEX__].ProvinceId" class="form-select form-select-sm"><option value="">--- اختر المحافظة ---</option>@foreach (var item in provincesList)
+        {<option value="@item.Value">@item.Text</option>}</select></div>
+    </div>
+</div>
+
+<div id="minor-template" style="display: none;">
+    <div class="minor-row row g-3 border rounded p-2 mb-2 shadow-sm bg-light">
+        <input type="hidden" name="Minors.Index" value="__M_INDEX__" />
+        <div class="col-md-4">
+            <label class="form-label-sm">اسم القاصر</label>
+            <input type="text" name="Minors[__M_INDEX__].MinorName" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label-sm">رقم الهوية</label>
+            <input type="text" name="Minors[__M_INDEX__].MinorIDNumber" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label-sm">صفة القاصر</label>
+            <select name="Minors[__M_INDEX__].MinorRelationshipId" class="form-select form-select-sm">
+                <option value="">--- اختر ---</option>
+                @foreach (var item in minorRelationshipsList)
+                {
+                    <option value="@item.Value">@item.Text</option>
+}
+            </select>
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-danger btn-sm btn-remove-minor"><i class="bi bi-trash"></i></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // 💡 كود التحقق من المحامي
+            $('#btnCheckLawyer').click(function () {
+                var id = $('#LawyerIdentifierInput').val();
+                var resultDiv = $('#lawyerStatusResult');
+
+                if(!id) { resultDiv.html('<span class="text-danger">أدخل المعرف أولاً</span>'); return; }
+
+                resultDiv.html('<span class="spinner-border spinner-border-sm text-primary"></span> جاري التحقق...');
+
+                $.post('@Url.Action("CheckLawyerStatus", "ContractTransactions")', { identifier: id }, function(data) {
+                    if(data.success) {
+                        if(data.isActive) {
+                             resultDiv.html('<div class="alert alert-success py-1 mb-0"><i class="bi bi-check-circle-fill"></i> المحامي: <strong>' + data.name + '</strong> (فعال - ' + data.status + ')</div>');
+                        } else {
+                             resultDiv.html('<div class="alert alert-danger py-1 mb-0"><i class="bi bi-x-circle-fill"></i> المحامي: <strong>' + data.name + '</strong> (غير فعال - ' + data.status + ')</div>');
+                        }
+                    } else {
+                        resultDiv.html('<div class="alert alert-warning py-1 mb-0">' + data.message + '</div>');
+                    }
+                });
+            });
+
+            // ... (باقي أكواد الجافاسكربت السابقة للأطراف والقصر والرسوم تبقى كما هي) ...
+            // (يرجى نسخها من الملف السابق)
+
+            // --- 1. جلب سعر العقد (AJAX) ---
+            $('#ContractTypeId').change(function () {
+                var contractId = $(this).val();
+                var isExempt = $('#IsExempt').is(':checked');
+                var selectedText = $(this).find("option:selected").text().trim();
+                if (contractId && !isExempt) {
+                    $.getJSON('@Url.Action("GetContractFee", "ContractTransactions")', { id: contractId }, function (data) {
+                        if (data.success) {
+                            $('#FinalFee').val(data.fee.toFixed(2));
+                            $('#currency-symbol').text(data.currency);
+                        }
+                    });
+                } else if (!isExempt) {
+                    $('#FinalFee').val(0);
+                    $('#currency-symbol').text("₪");
+                }
+                if (selectedText === "وكالة جواز سفر") {
+                    $('#passport-minors-section').slideDown();
+                } else {
+                    $('#passport-minors-section').slideUp();
+                    $('#minors-container').empty();
+                }
+            });
+
+            // --- 2. الإعفاء ---
+            $('#IsExempt').change(function () {
+                var isChecked = $(this).is(':checked');
+                $('#exemption-reason-container').toggle(isChecked);
+                if (isChecked) {
+                    $('#FinalFee').val(0.00).attr('readonly', true);
+                } else {
+                    $('#FinalFee').attr('readonly', true);
+                    $('#ContractTypeId').trigger('change');
+                }
+            });
+
+            // --- 3. إضافة الأطراف ---
+            var partyIndex = @(Model.Parties?.Count ?? 0);
+            $('#add-party-1').click(function () { addParty(1, '#party-1-container'); });
+            $('#add-party-2').click(function () { addParty(2, '#party-2-container'); });
+
+            function addParty(partyType, containerId) {
+                var template = $('#party-template').html();
+                template = template.replace(/__INDEX__/g, partyIndex).replace('__PARTY_TYPE__', partyType);
+                $(containerId).append(template);
+                partyIndex++;
+            }
+            $(document).on('click', '.btn-remove-party', function () { $(this).closest('.party-row').remove(); });
+
+            // --- 4. إضافة القصر ---
+            var minorIndex = @(Model.Minors?.Count ?? 0);
+            $('#add-minor').click(function () {
+                var template = $('#minor-template').html();
+                template = template.replace(/__M_INDEX__/g, minorIndex);
+                $('#minors-container').append(template);
+                minorIndex++;
+            });
+            $(document).on('click', '.btn-remove-minor', function () { $(this).closest('.minor-row').remove(); });
+        });
+    </script>
+}

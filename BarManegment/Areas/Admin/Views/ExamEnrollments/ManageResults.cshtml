@@ -1,0 +1,286 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.ExamResultsViewModel
+
+@{
+    ViewBag.Title = "رصد درجات الامتحان: " + Model.ExamTitle;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // جلب نسبة النجاح من السيرفر أو افتراض 50%
+    double passingPercentage = ViewBag.PassingPercentage != null ? Convert.ToDouble(ViewBag.PassingPercentage) : 50;
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- بطاقة معلومات الامتحان -->
+    <div class="card shadow-sm mb-4 border-primary">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 fw-bold"><i class="bi bi-clipboard-data me-2"></i> @Model.ExamTitle</h5>
+                <div class="mt-1 opacity-75 small">
+                    <span><i class="bi bi-calendar me-1"></i> @Model.ExamDate.ToString("yyyy-MM-dd")</span>
+                    <span class="mx-2">|</span>
+                    <span><i class="bi bi-star me-1"></i> الدرجة العظمى: <strong id="displayMaxScore" class="text-warning">@Model.TotalPossibleScore</strong></span>
+                    <span class="mx-2">|</span>
+                    <span><i class="bi bi-percent me-1"></i> النجاح من: <strong>@passingPercentage%</strong></span>
+                </div>
+            </div>
+            <a href="@Url.Action("Index", "Exams", new { area = "Admin" })" class="btn btn-light btn-sm text-primary fw-bold shadow-sm">
+                <i class="bi bi-arrow-right"></i> عودة للقائمة
+            </a>
+        </div>
+        <div class="card-body bg-light">
+            <div class="d-flex align-items-start">
+                <i class="bi bi-info-circle-fill fs-4 text-info me-3"></i>
+                <div>
+                    <h6 class="fw-bold text-dark">آلية الاحتساب التلقائي:</h6>
+                    <ul class="mb-0 small text-muted ps-3">
+                        <li>أدخل درجة الطالب (من <strong>@Model.TotalPossibleScore</strong>) في الحقل المخصص.</li>
+                        <li>سيتم حساب النسبة المئوية: <code>(الدرجة / المجموع) × 100</code>.</li>
+                        <li>إذا كانت النسبة <strong>@passingPercentage%</strong> فأكثر يعتبر <span class="text-success fw-bold">ناجح</span>، وإلا <span class="text-danger fw-bold">راسب</span>.</li>
+                        <li>اضغط <strong>"حفظ واعتماد"</strong> لتثبيت النتائج في ملفات الطلاب.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @using (Html.BeginForm("ManageResults", "ExamEnrollments", new { area = "Admin" }, FormMethod.Post, new { id = "gradesForm" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.ExamId)
+
+        <!-- حقول مخفية أساسية للعمليات الحسابية في JavaScript -->
+        @Html.HiddenFor(m => m.TotalPossibleScore, new { id = "totalScoreInput" })
+        <input type="hidden" id="passingPercentageInput" value="@passingPercentage" />
+
+        <!-- شريط الأدوات -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="btn-group shadow-sm" role="group">
+                <button type="submit" name="command" value="SendResultNotifications" class="btn btn-light border text-secondary" onclick="return confirm('هل أنت متأكد من إرسال النتائج عبر البريد الإلكتروني للمحددين؟')">
+                    <i class="bi bi-envelope me-1"></i> إيميل
+                </button>
+                <button type="submit" name="command" value="SendTelegram" class="btn btn-light border text-info" onclick="return confirm('هل أنت متأكد من إرسال النتائج عبر تليجرام للمحددين؟')">
+                    <i class="bi bi-telegram me-1"></i> تليجرام
+                </button>
+                <button type="submit" name="command" value="DeleteSelected" class="btn btn-light border text-danger" onclick="return confirm('تحذير: سيتم حذف سجلات المتقدمين المحددين نهائياً من هذا الامتحان. هل أنت متأكد؟')">
+                    <i class="bi bi-trash me-1"></i> حذف
+                </button>
+            </div>
+
+            <button type="submit" name="command" value="SaveGrades" class="btn btn-success px-5 py-2 fw-bold shadow">
+                <i class="bi bi-save me-2"></i> حفظ واعتماد النتائج
+            </button>
+        </div>
+
+        <!-- جدول الطلاب -->
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-bordered">
+                    <thead class="table-light text-center text-secondary small text-uppercase">
+                        <tr>
+                            <th style="width: 50px;" class="bg-light">
+                                <input class="form-check-input" type="checkbox" id="selectAll" style="cursor: pointer;">
+                            </th>
+                            <th class="text-start">بيانات المتقدم</th>
+                            <th style="width: 150px;">رقم الهوية</th>
+                            <th>التواصل</th>
+                            <th style="width: 140px;" class="bg-warning bg-opacity-10">الدرجة (@Model.TotalPossibleScore)</th>
+                            <th style="width: 100px;">النسبة %</th>
+                            <th style="width: 120px;">النتيجة</th>
+                            <th style="width: 80px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Candidates.Count; i++)
+                        {
+                            // حساب القيم الأولية للعرض (Server Side Rendering)
+                            double? score = Model.Candidates[i].Score;
+                            double percent = 0;
+                            string rowClass = "";
+                            string badgeClass = "bg-secondary";
+                            string resultText = "غير مرصود";
+
+                            if (score.HasValue && Model.TotalPossibleScore > 0)
+                            {
+                                percent = (score.Value / Model.TotalPossibleScore) * 100;
+
+                                // استخدام هامش خطأ بسيط للمقارنة
+                                if (percent >= (passingPercentage - 0.001))
+                                {
+                                    rowClass = "table-success bg-opacity-10";
+                                    badgeClass = "bg-success";
+                                    resultText = "ناجح";
+                                }
+                                else
+                                {
+                                    rowClass = "table-danger bg-opacity-10";
+                                    badgeClass = "bg-danger";
+                                    resultText = "راسب";
+                                }
+                            }
+
+                            <tr class="@rowClass result-row">
+                                <td class="text-center bg-light">
+                                    @Html.HiddenFor(m => m.Candidates[i].EnrollmentId)
+                                    @Html.HiddenFor(m => m.Candidates[i].ApplicantName)
+                                    @Html.HiddenFor(m => m.Candidates[i].ContactEmail)
+                                    @Html.HiddenFor(m => m.Candidates[i].TelegramChatId)
+
+                                    @Html.CheckBoxFor(m => m.Candidates[i].IsSelected, new { @class = "form-check-input candidate-check", style = "cursor: pointer;" })
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center me-2 text-secondary" style="width: 35px; height: 35px;">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold text-dark d-block">@Model.Candidates[i].ApplicantName</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center font-monospace text-secondary">
+                                    @Model.Candidates[i].ApplicantIdentifier
+                                </td>
+
+                                <!-- أيقونات التواصل -->
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(Model.Candidates[i].ContactEmail))
+                                    {
+                                        <i class="bi bi-envelope-fill text-secondary me-2" title="بريد متاح" data-bs-toggle="tooltip"></i>
+                                    }
+                                    @if (Model.Candidates[i].TelegramChatId.HasValue)
+                                    {
+                                        <i class="bi bi-telegram text-info" title="تليجرام متاح" data-bs-toggle="tooltip"></i>
+                                    }
+                                </td>
+
+                                <!-- حقل إدخال الدرجة -->
+                                <td class="bg-warning bg-opacity-10 p-2">
+                                    @Html.TextBoxFor(m => m.Candidates[i].Score, new
+                                    {
+                                        @class = "form-control text-center fw-bold score-input border-warning",
+                                        type = "number",
+                                        min = "0",
+                                        max = Model.TotalPossibleScore,
+                                        step = "0.5",
+                                        placeholder = "-"
+                                    })
+                                </td>
+
+                                <!-- النسبة المئوية (تحديث تلقائي) -->
+                                <td class="text-center percentage-cell text-muted fw-bold align-middle">
+                                    @(score.HasValue ? percent.ToString("0.0") + "%" : "-")
+                                </td>
+
+                                <!-- النتيجة (تحديث تلقائي) -->
+                                <td class="text-center result-cell align-middle">
+                                    <span class="badge @badgeClass w-100 py-2">@resultText</span>
+                                </td>
+
+                                <td class="text-center">
+                                    <a href="@Url.Action("Delete", new { id = Model.Candidates[i].EnrollmentId })" class="btn btn-sm btn-light text-danger border-0" onclick="return confirm('هل أنت متأكد من حذف هذا الطالب من قائمة الامتحان؟')" title="حذف">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Candidates.Any())
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-people text-muted opacity-25" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="text-muted">لا يوجد متقدمين مسجلين في هذا الامتحان.</h5>
+                    <a href="@Url.Action("Index", "ExamEnrollments", new { examId = Model.ExamId, area="Admin" })" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-circle me-1"></i> الذهاب للتسجيل
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // 1. قراءة الإعدادات من الحقول المخفية
+            // نستخدم قيمة افتراضية 100 في حال كانت 0 لتجنب القسمة على صفر
+            var totalScoreVal = parseFloat($('#totalScoreInput').val());
+            var totalScore = (totalScoreVal > 0) ? totalScoreVal : 100;
+
+            var passingPercentage = parseFloat($('#passingPercentageInput').val()) || 50;
+
+            // 2. دالة الحساب والتحديث الفوري
+            function updateRowCalculation(input) {
+                var row = input.closest('tr');
+                var scoreVal = parseFloat(input.val());
+
+                var percentageCell = row.find('.percentage-cell');
+                var resultCell = row.find('.result-cell');
+
+                if (!isNaN(scoreVal)) {
+                    // أ. حساب النسبة
+                    var percentage = (scoreVal / totalScore) * 100;
+                    percentageCell.text(percentage.toFixed(1) + '%');
+
+                    // ب. تحديد الحالة وتغيير الألوان
+                    // استخدام هامش خطأ بسيط جداً لتجنب مشاكل الأرقام العشرية
+                    if (percentage >= (passingPercentage - 0.001)) {
+                        // حالة النجاح
+                        resultCell.html('<span class="badge bg-success w-100 py-2"><i class="bi bi-check-circle me-1"></i> ناجح</span>');
+                        row.removeClass('table-danger').addClass('table-success bg-opacity-10');
+
+                        // إزالة لون الخطر القديم إن وجد
+                        if (row.hasClass('table-danger')) row.removeClass('table-danger bg-opacity-10');
+                    } else {
+                        // حالة الرسوب (هذا هو الجزء الذي تم إصلاحه لضمان التغيير العكسي)
+                        resultCell.html('<span class="badge bg-danger w-100 py-2"><i class="bi bi-x-circle me-1"></i> راسب</span>');
+                        row.removeClass('table-success').addClass('table-danger bg-opacity-10');
+
+                        // إزالة لون النجاح القديم إن وجد
+                        if (row.hasClass('table-success')) row.removeClass('table-success bg-opacity-10');
+                    }
+                } else {
+                    // ج. في حال مسح الرقم (تفريغ الحقل)
+                    percentageCell.text('-');
+                    resultCell.html('<span class="badge bg-secondary w-100 py-2">غير مرصود</span>');
+                    row.removeClass('table-success table-danger bg-opacity-10');
+                }
+            }
+
+            // 3. تفعيل التحديث عند الكتابة (Input Event)
+            $('.score-input').on('input', function () {
+                updateRowCalculation($(this));
+            });
+
+            // 4. تحديد الكل (Select All Checkbox)
+            $('#selectAll').on('change', function () {
+                $('.candidate-check').prop('checked', $(this).is(':checked'));
+            });
+
+            // تفعيل التلميحات (Tooltips)
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        });
+    </script>
+}

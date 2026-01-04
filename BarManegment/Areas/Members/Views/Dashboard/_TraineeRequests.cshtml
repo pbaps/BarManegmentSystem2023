@@ -1,0 +1,36 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.ServiceRequestViewModel>
+
+<div class="card-body p-0">
+    @if (!Model.Any())
+    {
+        <div class="alert alert-light text-center mb-0">
+            لم تقم بتقديم أي طلبات بعد.
+        </div>
+    }
+    else
+    {
+        <table class="table table-hover small mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>نوع الطلب</th>
+                    <th>تاريخ التقديم</th>
+                    <th>الحالة</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var req in Model)
+                {
+                    <tr>
+                        <td>@req.RequestType</td>
+                        <td>@req.SubmissionDate.ToShortDateString()</td>
+                        <td><span class="badge bg-info">@req.Status</span></td>
+                        <td class="text-end">
+                            @* @Html.ActionLink("متابعة", "Details", "ServiceRequests", new { id = req.Id }, new { @class = "btn btn-outline-secondary btn-sm" }) *@
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

@@ -1,0 +1,221 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TrialBalanceViewModel
+
+@{
+    Layout = null;
+
+    decimal tOpenDr = Model.Rows.Sum(r => r.OpeningDebit);
+    decimal tOpenCr = Model.Rows.Sum(r => r.OpeningCredit);
+    decimal tPeriodDr = Model.Rows.Sum(r => r.PeriodDebit);
+    decimal tPeriodCr = Model.Rows.Sum(r => r.PeriodCredit);
+    decimal tEndDr = Model.Rows.Sum(r => r.EndingDebit);
+    decimal tEndCr = Model.Rows.Sum(r => r.EndingCredit);
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>ميزان المراجعة - طباعة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #fff;
+            color: #000;
+            font-size: 12px;
+        }
+
+        .header-box {
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .report-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: underline;
+            text-underline-offset: 5px;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .report-table th, .report-table td {
+                border: 1px solid #444;
+                padding: 4px 6px;
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            .report-table thead th {
+                background-color: #e9ecef !important;
+                color: #000;
+                font-weight: 800;
+                -webkit-print-color-adjust: exact;
+            }
+
+        .text-start {
+            text-align: right !important;
+        }
+
+        .fw-bold {
+            font-weight: 700 !important;
+        }
+
+        .footer-row td {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+            border-top: 2px solid #000;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .currency-note {
+            font-size: 11px;
+            font-style: italic;
+            margin-top: 5px;
+            color: #555;
+            text-align: left;
+        }
+
+        .signatures {
+            margin-top: 50px;
+            page-break-inside: avoid;
+        }
+
+        .sig-box {
+            text-align: center;
+            border-top: 1px dashed #000;
+            width: 80%;
+            margin: 0 auto;
+            padding-top: 5px;
+        }
+
+        @@page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="container-fluid">
+
+        <div class="header-box row align-items-center">
+            <div class="col-3 text-center">
+                <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" style="height: 70px;" />
+            </div>
+            <div class="col-6 text-center">
+                <h2 class="mb-0 fw-bold">نقابة المحامين الفلسطينيين</h2>
+                <div class="report-title mt-2">ميزان المراجعة العام</div>
+                <p class="mb-0 mt-2">
+                    عن الفترة من: <strong>@(Model.FromDate?.ToString("yyyy/MM/dd"))</strong>
+                    إلى: <strong>@(Model.ToDate?.ToString("yyyy/MM/dd"))</strong>
+                </p>
+            </div>
+            <div class="col-3 text-start small">
+                <div><strong>تاريخ الطباعة:</strong> @DateTime.Now.ToString("yyyy/MM/dd HH:mm")</div>
+                <div><strong>طبع بواسطة:</strong> @Session["FullName"]</div>
+                <div class="border p-1 mt-1 text-center bg-light fw-bold">العملة المعتمدة: شيكل (ILS)</div>
+            </div>
+        </div>
+
+        <div class="currency-note mb-2">
+            * جميع الأرصدة مقومة بالشيكل الإسرائيلي (NIS) بناءً على أسعار الصرف المثبتة في تاريخ كل عملية.
+        </div>
+
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" width="10%">رقم الحساب</th>
+                    <th rowspan="2" width="25%">اسم الحساب</th>
+                    <th colspan="2">الرصيد الافتتاحي</th>
+                    <th colspan="2">حركة الفترة</th>
+                    <th colspan="2">الرصيد الختامي</th>
+                </tr>
+                <tr>
+                    <th width="10%">مدين</th>
+                    <th width="10%">دائن</th>
+                    <th width="10%">مدين</th>
+                    <th width="10%">دائن</th>
+                    <th width="10%">مدين</th>
+                    <th width="10%">دائن</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td class="fw-bold bg-light">@row.AccountCode</td>
+                        <td class="text-start">
+                            @row.AccountName
+                            @if (row.AccountName.Contains("دولار"))
+                            {<span style="font-size:10px; color:#666;">($)</span>}
+                            @if (row.AccountName.Contains("دينار"))
+                            {<span style="font-size:10px; color:#666;">(JD)</span>}
+                        </td>
+
+                        <td>@(row.OpeningDebit != 0 ? row.OpeningDebit.ToString("N2") : "-")</td>
+                        <td>@(row.OpeningCredit != 0 ? row.OpeningCredit.ToString("N2") : "-")</td>
+
+                        <td>@(row.PeriodDebit != 0 ? row.PeriodDebit.ToString("N2") : "-")</td>
+                        <td>@(row.PeriodCredit != 0 ? row.PeriodCredit.ToString("N2") : "-")</td>
+
+                        <td style="background-color: #fdfdfe;">@(row.EndingDebit != 0 ? row.EndingDebit.ToString("N2") : "-")</td>
+                        <td style="background-color: #fdfdfe;">@(row.EndingCredit != 0 ? row.EndingCredit.ToString("N2") : "-")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="footer-row">
+                    <td colspan="2" class="text-start pe-3">الإجمالي العام (شيكل)</td>
+
+                    <td>@tOpenDr.ToString("N2")</td>
+                    <td>@tOpenCr.ToString("N2")</td>
+
+                    <td>@tPeriodDr.ToString("N2")</td>
+                    <td>@tPeriodCr.ToString("N2")</td>
+
+                    <td>@tEndDr.ToString("N2")</td>
+                    <td>@tEndCr.ToString("N2")</td>
+                </tr>
+                @if (Math.Abs(tPeriodDr - tPeriodCr) > 0.01m) // سماحية لكسور الهللات
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-danger fw-bold py-2 border border-danger">
+                            ⚠️ تنبيه هام: الميزان غير متوازن! يوجد فرق قدره @Math.Abs(tPeriodDr - tPeriodCr).ToString("N2") شيكل
+                        </td>
+                    </tr>
+                }
+            </tfoot>
+        </table>
+
+        <div class="row signatures">
+            <div class="col-4">
+                <div class="text-center">
+                    <strong>إعداد (المحاسب)</strong>
+                    <div class="sig-box mt-5"></div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="text-center">
+                    <strong>تدقيق (المدير المالي)</strong>
+                    <div class="sig-box mt-5"></div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="text-center">
+                    <strong>اعتماد (أمين الصندوق)</strong>
+                    <div class="sig-box mt-5"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

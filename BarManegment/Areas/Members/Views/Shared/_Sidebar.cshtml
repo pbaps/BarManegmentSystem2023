@@ -1,0 +1,25 @@
+﻿@* هذا الجزء يظهر للمحامين المزاولين فقط *@
+@if (Session["UserType"] != null && Session["UserType"].ToString() == "Advocate")
+{
+    <li class="nav-item mt-3">
+        <span class="nav-link text-muted small fw-bold text-uppercase px-3">خدمات المحامي</span>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="@Url.Action("Index", "Contracts", new { area = "Members" })">
+            <i class="bi bi-pen me-2"></i> أرشيف العقود
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="@Url.Action("Index", "Loans", new { area = "Members" })">
+            <i class="bi bi-cash-coin me-2"></i> القروض المالية
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="@Url.Action("Dashboard", "CommitteePortal", new { area = "Members" })">
+            <i class="bi bi-clipboard-check me-2"></i> بوابة اللجان
+        </a>
+    </li>
+}

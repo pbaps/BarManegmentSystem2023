@@ -1,0 +1,419 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.ContractPrintViewModel
+@using BarManegment.Helpers
+
+@{
+    ViewBag.Title = "إيصال قبض معاملة رقم " + Model.ReceiptFullNumber;
+    Layout = "~/Areas/Admin/Views/Shared/_PrintWaselLayout.cshtml";
+
+    // جلب اسم الطرف الثاني (المستلم/الدافع)
+    var partyTwo = Model.Parties.FirstOrDefault(p => p.PartyType == 2);
+    string partyTwoName = partyTwo?.PartyName ?? "غير محدد";
+
+    // تجهيز التفقيط
+    string tafqeetResult = Model.TotalAmountInWords;
+}
+
+<div class="container-fluid p-0">
+    <div class="page-content">
+
+        @RenderReceiptBody("النسخة الأصلية - (للدافع)", partyTwoName, tafqeetResult)
+
+        <div class="cut-line">
+            <span class="cut-icon"><i class="bi bi-scissors"></i> قص من هنا</span>
+        </div>
+
+        @RenderReceiptBody("نسخة ثانية - (للمحاسبة)", partyTwoName, tafqeetResult)
+
+        <div class="cut-line">
+            <span class="cut-icon"><i class="bi bi-scissors"></i> قص من هنا</span>
+        </div>
+
+        @RenderReceiptBody("نسخة ثالثة - (للملف)", partyTwoName, tafqeetResult)
+
+    </div>
+</div>
+
+@* === دالة رسم الإيصال الواحد === *@
+@helper RenderReceiptBody(string copyName, string partyTwoName, string tafqeetText)
+{
+    <div class="receipt-box">
+        <div class="receipt-header">
+            <div class="logo-section">
+                <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" />
+            </div>
+            <div class="title-section">
+                <h2>نقابة المحامين الفلسطينيين</h2>
+                <h5>إيصال قبض (تصديق عقود)</h5>
+            </div>
+            <div class="meta-section">
+                <div class="meta-row">
+                    <span class="meta-label">رقم الإيصال:</span>
+                    <span class="meta-value text-danger">@Model.ReceiptFullNumber</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">التاريخ:</span>
+                    <span class="meta-value">@(Model.PaymentDate.HasValue ? Model.PaymentDate.Value.ToString("yyyy/MM/dd") : DateTime.Now.ToString("yyyy/MM/dd"))</span>
+                </div>
+                <div class="copy-badge">@copyName</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-cell">
+                <span class="label">استلمنا من السيد/ة:</span>
+                <span class="value">@partyTwoName</span>
+            </div>
+            <div class="info-cell">
+                <span class="label">طريقة الدفع:</span>
+                <span class="value">
+                    @if (!string.IsNullOrEmpty(Model.BankReceiptNumber))
+                    {
+                        <span>إيداع بنكي (وصل: @Model.BankReceiptNumber)</span>
+                    }
+                    else
+                    {
+                        <span>نقدي (صندوق النقابة)</span>
+                    }
+                </span>
+            </div>
+        </div>
+
+        <div class="amount-section">
+            <div class="amount-digits">
+                مبلغاً وقدره:
+                <span class="number">@Model.TotalAmount.ToString("N2")</span>
+                <span class="currency">@Model.CurrencySymbol</span>
+            </div>
+            <div class="amount-words">
+                (@tafqeetText لا غير)
+            </div>
+        </div>
+
+        <div class="details-section">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="label">وذلك عن الرسوم التالية (معاملة رقم @Model.TransactionId):</span>
+                <span class="badge bg-light text-dark border">@Model.ContractTypeName</span>
+            </div>
+
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>البيان</th>
+                        <th width="25%">القيمة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Details.Take(3))
+                    {
+                        <tr>
+                            <td class="text-start">
+                                <span class="fw-bold">@item.FeeType.Name</span>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <span class="text-muted small"> - @item.Description</span>
+                                }
+                            </td>
+                            <td class="text-center fw-bold">@item.Amount.ToString("N2")</td>
+                        </tr>
+                    }
+                    @if (Model.Details.Count > 3)
+                    {
+                        <tr>
+                            <td class="text-start fst-italic small">... باقي التفاصيل في الكشف المرفق</td>
+                            <td class="text-center">--</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-grid mt-1 mb-1">
+            <div class="info-cell border-0">
+                <span class="label">المحامي المنظم:</span>
+                <span class="value">@Model.LawyerName</span>
+                <span class="small text-muted">(@Model.LawyerMembershipId)</span>
+            </div>
+        </div>
+
+        <div class="footer-section">
+            <div class="signatures">
+                <div class="sig-box">
+                    <p>توقيع المستلم (الطرف الثاني)</p>
+                    <div class="line"></div>
+                </div>
+                <div class="sig-box">
+                    <p>أمين الصندوق / المحاسب</p>
+                    <div class="line"></div>
+                    <small>المنظم: @Model.EmployeeName</small>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section styles {
+    <style>
+        /* === تنسيقات الطباعة العامة === */
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #525659;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page-content {
+            width: 210mm; /* A4 width */
+            min-height: 297mm; /* A4 height */
+            background: white;
+            margin: 10mm auto;
+            padding: 8mm 10mm; /* هوامش متوازنة */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* === تنسيق الإيصال الواحد === */
+        .receipt-box {
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 6px 12px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            margin-bottom: 2mm;
+          
+            background-color: #fff;
+            max-height: 92mm; /* تحديد ارتفاع أقصى لضمان عدم الترحيل */
+            overflow: hidden;
+        }
+
+            .receipt-box:last-child {
+                margin-bottom: 0;
+            }
+
+        /* === الرأس === */
+        .receipt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px double #ccc;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
+
+        .logo-section img {
+            height: 40px;
+        }
+
+        .title-section {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+            .title-section h2 {
+                margin: 0;
+                font-size: 14px;
+                font-weight: 800;
+                color: #198754;
+                font-family: 'Amiri', serif;
+            }
+
+            .title-section h5 {
+                margin: 0;
+                font-size: 11px;
+                color: #555;
+                font-weight: 600;
+            }
+
+        .meta-section {
+            text-align: left;
+            font-size: 10px;
+            min-width: 100px;
+        }
+
+        .meta-row {
+            margin-bottom: 1px;
+        }
+
+        .meta-label {
+            font-weight: bold;
+        }
+
+        .copy-badge {
+            background: #eee;
+            border: 1px solid #ccc;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 9px;
+            display: inline-block;
+            margin-top: 2px;
+            font-weight: bold;
+        }
+
+        /* === شبكة المعلومات === */
+        .info-grid {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+            font-size: 10px;
+        }
+
+        .info-cell {
+            flex: 1;
+            border-bottom: 1px dotted #999;
+            padding-bottom: 1px;
+        }
+
+            .info-cell .label {
+                font-weight: bold;
+                color: #444;
+                margin-left: 5px;
+            }
+
+            .info-cell .value {
+                font-weight: 700;
+                color: #000;
+            }
+
+        /* === مربع المبلغ === */
+        .amount-section {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 3px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .amount-digits {
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+            .amount-digits .number {
+                font-size: 13px;
+                color: #000;
+                margin: 0 5px;
+            }
+
+        .amount-words {
+            font-size: 9px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* === الجدول === */
+        .details-section {
+            margin-bottom: 5px;
+            flex-grow: 1;
+        }
+
+            .details-section .label {
+                font-size: 10px;
+                font-weight: bold;
+                text-decoration: underline;
+            }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-top: 2px;
+        }
+
+            .details-table th {
+                background: #f0f0f0;
+                border: 1px solid #ccc;
+                padding: 2px 5px;
+                text-align: center;
+                font-weight: bold;
+            }
+
+            .details-table td {
+                border: 1px solid #ccc;
+                padding: 2px 5px;
+                vertical-align: middle;
+            }
+
+        /* === التذييل === */
+        .footer-section {
+            margin-top: auto;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 2px;
+        }
+
+        .sig-box {
+            text-align: center;
+            width: 40%;
+        }
+
+            .sig-box p {
+                margin: 0 0 10px 0;
+                font-size: 9px;
+                font-weight: bold;
+            }
+
+            .sig-box .line {
+                border-bottom: 1px dashed #000;
+                margin-bottom: 2px;
+            }
+
+            .sig-box small {
+                font-size: 8px;
+                color: #555;
+            }
+
+        /* === خط القص === */
+        .cut-line {
+            height: 8px;
+            border-top: 1px dashed #999;
+            margin: 2mm 0;
+            text-align: center;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cut-icon {
+            background: white;
+            padding: 0 5px;
+            font-size: 8px;
+            color: #777;
+        }
+
+        /* === إعدادات الطباعة === */
+        @@media print {
+            body {
+                background-color: white;
+            }
+
+            .page-content {
+                width: 100%;
+                height: 100vh;
+                margin: 0;
+                padding: 5mm;
+                border: none;
+                box-shadow: none;
+            }
+
+            .receipt-box {
+                border: 2px solid #000;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        window.onload = function () {
+            setTimeout(function () { window.print(); }, 500);
+        }
+    </script>
+}

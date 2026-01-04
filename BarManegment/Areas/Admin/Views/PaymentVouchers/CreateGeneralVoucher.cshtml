@@ -1,0 +1,145 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CreateGeneralVoucherViewModel
+@using BarManegment.ViewModels  @* 👈 أضف هذا السطر هنا *@
+
+@{
+    ViewBag.Title = "إصدار قسيمة عامة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-plus me-2"></i> إصدار قسيمة دفع عامة</h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+                            </div>
+                        }
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">اسم المستفيد / الجهة <span class="text-danger">*</span></label>
+                                    @Html.EditorFor(model => model.PayerName, new { htmlAttributes = new { @class = "form-control", placeholder = "أدخل اسم الشخص أو المؤسسة" } })
+                                    @Html.ValidationMessageFor(model => model.PayerName, "", new { @class = "text-danger small" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">تاريخ انتهاء القسيمة</label>
+                                    @Html.EditorFor(model => model.ExpiryDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">طريقة الدفع المتوقعة</label>
+                                    @Html.DropDownListFor(model => model.PaymentMethod, new SelectList(new[] { "نقدي", "شيك", "إيداع بنكي" }), new { @class = "form-select" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">ملاحظات إضافية</label>
+                                    @Html.EditorFor(model => model.Notes, new { htmlAttributes = new { @class = "form-control", placeholder = "بيان إضافي..." } })
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-list-check me-2"></i> اختر الرسوم المطلوبة:</h6>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 50px;" class="text-center">#</th>
+                                        <th>نوع الرسم</th>
+                                        <th>المبلغ</th>
+                                        <th>الحساب البنكي</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Fees.Count; i++)
+                                    {
+                                        <tr>
+                                            <td class="text-center">
+                                                @Html.CheckBoxFor(m => m.Fees[i].IsSelected, new { @class = "form-check-input fee-checkbox", data_amount = Model.Fees[i].Amount })
+                                                @Html.HiddenFor(m => m.Fees[i].FeeTypeId)
+                                                @Html.HiddenFor(m => m.Fees[i].FeeTypeName)
+                                                @Html.HiddenFor(m => m.Fees[i].BankAccountId)
+                                            </td>
+                                            <td>
+                                                <label class="form-check-label w-100 cursor-pointer" for="Fees_@i.ToString()__IsSelected">
+                                                    @Model.Fees[i].FeeTypeName
+                                                </label>
+                                            </td>
+                                            <td>
+                                                @Html.EditorFor(m => m.Fees[i].Amount, new { htmlAttributes = new { @class = "form-control form-control-sm fee-amount", style = "width: 100px", type = "number", step = "0.01" } })
+                                                <span class="small text-muted">@Model.Fees[i].CurrencySymbol</span>
+                                            </td>
+                                            <td class="small text-muted">
+                                                @Model.Fees[i].BankName - @Model.Fees[i].BankAccountNumber
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="2" class="text-end fw-bold">الإجمالي الكلي:</td>
+                                        <td colspan="2" class="fw-bold text-success fs-5">
+                                            <span id="totalAmount">0.00</span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                            <button type="submit" class="btn btn-success px-5 fw-bold">
+                                <i class="bi bi-save me-2"></i> إصدار القسيمة
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function calculateTotal() {
+                var total = 0;
+                $('.fee-checkbox:checked').each(function () {
+                    var row = $(this).closest('tr');
+                    var amount = parseFloat(row.find('.fee-amount').val()) || 0;
+                    total += amount;
+                });
+                $('#totalAmount').text(total.toFixed(2));
+            }
+
+            $('.fee-checkbox, .fee-amount').on('change input', function () {
+                if ($(this).hasClass('fee-amount')) {
+                    var row = $(this).closest('tr');
+                    var checkbox = row.find('.fee-checkbox');
+                    if ($(this).val() > 0) {
+                        checkbox.prop('checked', true);
+                    }
+                }
+                calculateTotal();
+            });
+
+            calculateTotal();
+        });
+    </script>
+}

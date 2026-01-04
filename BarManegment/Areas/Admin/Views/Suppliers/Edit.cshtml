@@ -1,0 +1,65 @@
+﻿@model BarManegment.Models.Supplier
+
+@{
+    ViewBag.Title = "تعديل بيانات المورد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-pencil-square me-2"></i> تعديل بيانات المورد</h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">اسم المورد <span class="text-danger">*</span></label>
+                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">رقم الهاتف</label>
+                                @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">العنوان</label>
+                            @Html.EditorFor(model => model.Address, new { htmlAttributes = new { @class = "form-control" } })
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الحساب المالي (الأستاذ) <span class="text-danger">*</span></label>
+                            @Html.DropDownList("AccountId", null, "اختر حساب المورد...", new { @class = "form-select select2" })
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            @Html.EditorFor(model => model.IsActive, new { htmlAttributes = new { @class = "form-check-input" } })
+                            <label class="form-check-label fw-bold" for="IsActive">مورد نشط</label>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold">حفظ التعديلات</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({ theme: "bootstrap-5", width: '100%', dir: "rtl" });
+        });
+    </script>
+}

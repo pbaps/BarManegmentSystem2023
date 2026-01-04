@@ -1,0 +1,55 @@
+﻿@model IEnumerable<BarManegment.Models.PracticingLawyerRenewal>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>سنة التجديد</th>
+                <th>تاريخ الدفع</th>
+                <th>رقم الإيصال</th>
+                <th>ملاحظات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var renewal in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@renewal.RenewalYear</td>
+                        <td>
+                            @* 💡 الإصلاح: التعامل مع التاريخ القابل للفراغ *@
+                            @if (renewal.PaymentDate.HasValue)
+                            {
+                                <span class="text-success">@renewal.PaymentDate.Value.ToString("yyyy-MM-dd")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">غير محدد</span>
+                            }
+                        </td>
+                        <td>
+                            @if (renewal.Receipt != null)
+                            {
+                                <a href="@Url.Action("PrintReceipt", "Dashboard", new { area = "Members", id = renewal.Receipt.Id })" target="_blank" class="text-decoration-none font-monospace">
+                                    @renewal.Receipt.ReceiptNumber <i class="bi bi-printer small"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">---</span>
+                            }
+                        </td>
+                        <td>@renewal.Notes</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">لا توجد سجلات تجديد سابقة.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

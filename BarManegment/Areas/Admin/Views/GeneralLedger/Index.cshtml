@@ -1,0 +1,124 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.GeneralLedgerViewModel
+
+@{
+    ViewBag.Title = "كشف حساب تفصيلي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="m-0 text-primary fw-bold"><i class="bi bi-search me-2"></i> استخراج كشف حساب</h5>
+        </div>
+        <div class="card-body bg-light">
+            @using (Html.BeginForm("Index", "GeneralLedger", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">اختر الحساب <span class="text-danger">*</span></label>
+                    @Html.DropDownList("accountId", null, "--- ابحث عن الحساب ---", new { @class = "form-select select2", required = "required" })
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">من تاريخ</label>
+                    <input type="date" name="from" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">إلى تاريخ</label>
+                    <input type="date" name="to" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">
+                        <i class="bi bi-eye me-1"></i> عرض
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.AccountId > 0)
+    {
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">كشف حساب: <span class="text-warning">@Model.AccountName</span></h5>
+                    <small class="opacity-75">الكود: @Model.AccountCode | الفترة: @Model.FromDate?.ToString("yyyy/MM/dd") - @Model.ToDate?.ToString("yyyy/MM/dd")</small>
+                </div>
+                <div>
+                    <a href="@Url.Action("Print", new { accountId = Model.AccountId, from = Model.FromDate, to = Model.ToDate })" target="_blank" class="btn btn-light btn-sm fw-bold">
+                        <i class="bi bi-printer me-1"></i> طباعة رسمية
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0 text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="12%">التاريخ</th>
+                                <th width="10%">المستند</th>
+                                <th width="10%">الرقم المرجعي</th>
+                                <th width="30%">البيان / الشرح</th>
+                                <th width="12%" class="text-success">مدين</th>
+                                <th width="12%" class="text-danger">دائن</th>
+                                <th width="14%" class="bg-light">الرصيد</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-warning bg-opacity-10 fw-bold">
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td class="text-end">رصيد سابق (ما قبل الفترة)</td>
+                                <td>@(Model.OpeningBalance > 0 ? Model.OpeningBalance.ToString("N2") : "-")</td>
+                                <td>@(Model.OpeningBalance < 0 ? Math.Abs(Model.OpeningBalance).ToString("N2") : "-")</td>
+                                <td class="bg-warning bg-opacity-25">@Model.OpeningBalance.ToString("N2")</td>
+                            </tr>
+
+                            @if (Model.Transactions.Any())
+                            {
+                                foreach (var item in Model.Transactions)
+                                {
+                                    <tr>
+                                        <td>@item.Date.ToString("yyyy/MM/dd")</td>
+                                        <td><span class="badge bg-secondary">@item.DocumentType</span></td>
+                                        <td class="font-monospace">@item.ReferenceNumber</td>
+                                        <td class="text-end text-muted small">@item.Description</td>
+                                        <td class="text-success">@(item.Debit > 0 ? item.Debit.ToString("N2") : "-")</td>
+                                        <td class="text-danger">@(item.Credit > 0 ? item.Credit.ToString("N2") : "-")</td>
+                                        <td class="fw-bold bg-light" dir="ltr">@item.Balance.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="py-4 text-muted">لا توجد حركات خلال هذه الفترة.</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-dark">
+                            <tr>
+                                <td colspan="4" class="text-end fw-bold">المجاميع والرصيد الختامي</td>
+                                <td class="text-success">@Model.TotalDebit.ToString("N2")</td>
+                                <td class="text-danger">@Model.TotalCredit.ToString("N2")</td>
+                                <td class="bg-warning text-dark fw-bold" dir="ltr">@Model.ClosingBalance.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                dir: "rtl"
+            });
+        });
+    </script>
+}

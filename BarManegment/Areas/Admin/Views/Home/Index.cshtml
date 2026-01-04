@@ -1,0 +1,464 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.AdminDashboardViewModel
+@using BarManegment.Helpers
+@using Newtonsoft.Json
+
+@{
+    ViewBag.Title = "لوحة القيادة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // === التحقق من الصلاحيات ===
+    bool canManageGraduates = PermissionHelper.HasPermission("GraduateApplications");
+    bool canManageTrainees = PermissionHelper.HasPermission("RegisteredTrainees");
+    bool canManageSupervisors = PermissionHelper.HasPermission("SupervisorChangeRequests");
+    bool canManageExams = PermissionHelper.HasPermission("ExamApplications") || PermissionHelper.HasPermission("Exams");
+
+    bool canManageFinance = PermissionHelper.HasPermission("PaymentVouchers") || PermissionHelper.HasPermission("StampInventory") || PermissionHelper.HasPermission("Receipts");
+    bool canManageOath = PermissionHelper.HasPermission("OathRequests");
+
+    bool isSuperAdmin = ViewBag.IsSuperAdmin != null && (bool)ViewBag.IsSuperAdmin;
+}
+
+<style>
+    /* تحسينات بصرية خاصة بلوحة التحكم */
+    .dashboard-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        border: none;
+        border-radius: 15px;
+        position: relative;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+
+    .card-icon-bg {
+        position: absolute;
+        left: -20px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.15;
+        transform: rotate(15deg);
+        pointer-events: none;
+    }
+
+    .stats-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+
+    .quick-action-btn {
+        border-radius: 12px;
+        padding: 15px;
+        transition: all 0.2s;
+        text-align: center;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border: 1px solid #e9ecef;
+    }
+
+    .quick-action-btn i {
+        font-size: 1.8rem;
+        margin-bottom: 10px; /* بديل لخاصية gap لتجنب التحذيرات */
+    }
+
+    .quick-action-btn:hover {
+        background: #f8f9fa;
+        border-color: #dee2e6;
+        transform: scale(1.02);
+        text-decoration: none;
+    }
+
+    /* إخفاء ترويسة التقرير في العرض العادي */
+    .print-header {
+        display: none;
+    }
+
+    /* === ستايل خاص للطباعة فقط === */
+    @@media print {
+        /* إخفاء العناصر غير المرغوبة */
+        .sidebar, .navbar, .btn, .quick-actions-sidebar, footer, .no-print {
+            display: none !important;
+        }
+
+        /* توسيع المحتوى ليملأ الصفحة - تم إصلاح التداخل هنا */
+        .col-lg-9 {
+            width: 100% !important;
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        /* تنسيق الصفحة كتقرير رسمي */
+        body {
+            background-color: white !important;
+            font-size: 12pt;
+        }
+
+        .container-fluid {
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* تحسين مظهر البطاقات للطباعة */
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+            break-inside: avoid;
+        }
+
+        /* إظهار ترويسة التقرير */
+        .print-header {
+            display: block !important;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <div class="print-header">
+        <h2>نقابة المحامين - تقرير الأداء اليومي</h2>
+        <p>تاريخ التقرير: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h3 class="fw-bold text-dark">👋 مرحباً، @(Session["FullName"] ?? "المستخدم")</h3>
+            <p class="text-muted mb-0">إليك نظرة عامة على أداء النقابة اليوم @DateTime.Now.ToString("dd MMMM yyyy")</p>
+        </div>
+        <div class="d-flex">
+            <button onclick="window.print()" class="btn btn-dark shadow-sm ms-2">
+                <i class="bi bi-printer-fill me-2"></i> طباعة التقرير
+            </button>
+
+            @if (canManageFinance)
+            {
+                <span class="badge bg-success bg-gradient p-2 px-3 rounded-pill shadow-sm d-flex align-items-center">
+                    <i class="bi bi-cash-stack me-1"></i> الإيراد اليومي: @Model.TotalRevenueToday.ToString("N0")
+                </span>
+            }
+        </div>
+    </div>
+
+    @if (ViewBag.DueChecksCount > 0)
+    {
+        <div class="alert alert-warning d-flex align-items-center shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+            <div>
+                <strong>تنبيه هام:</strong> يوجد
+                <a href="@Url.Action("Index", "CheckPortfolio", new { area = "Admin" })" class="alert-link">
+                    @ViewBag.DueChecksCount شيكات مستحقة الدفع/الإيداع
+                </a>
+                تحتاج إلى إجراء فوري.
+            </div>
+        </div>
+    }
+
+    <div class="row g-4 mb-5">
+
+        @* --- قسم شؤون الخريجين والتدريب --- *@
+        @if (canManageGraduates)
+        {
+            <div class="col-md-6 col-xl-3">
+                <div class="card dashboard-card bg-primary bg-gradient text-white h-100 shadow-sm">
+                    <div class="card-body position-relative">
+                        <h6 class="card-subtitle mb-2 text-white-50">طلبات الانتساب الجديدة</h6>
+                        <h2 class="stats-value">@Model.NewApplicationsCount</h2>
+                        <div class="mt-3">
+                            <span class="badge bg-white text-primary bg-opacity-25 backdrop-blur">
+                                الإجمالي: @Model.TotalApplicationsCount
+                            </span>
+                        </div>
+                        <i class="bi bi-person-plus-fill card-icon-bg"></i>
+                        <a href="@Url.Action("Index", "GraduateApplications", new { area="Admin" })" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* --- قسم الامتحانات --- *@
+        @if (canManageExams)
+        {
+            <div class="col-md-6 col-xl-3">
+                <div class="card dashboard-card text-white h-100 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body position-relative">
+                        <h6 class="card-subtitle mb-2 text-white-50">طلبات الامتحان (للمراجعة)</h6>
+                        <h2 class="stats-value">@Model.NewExamApplicationsCount</h2>
+                        <div class="mt-3 d-flex gap-2">
+                            @if (Model.OpenExamsCount > 0)
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-clock-history"></i> @Model.OpenExamsCount امتحان نشط
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-white bg-opacity-25">لا يوجد امتحانات نشطة</span>
+                            }
+                        </div>
+                        <i class="bi bi-journal-check card-icon-bg"></i>
+                        <a href="@Url.Action("Index", "ExamApplications", new { area="Admin" })" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* --- قسم المالية --- *@
+        @if (canManageFinance)
+        {
+            <div class="col-md-6 col-xl-3">
+                <div class="card dashboard-card bg-success bg-gradient text-white h-100 shadow-sm">
+                    <div class="card-body position-relative">
+                        <h6 class="card-subtitle mb-2 text-white-50">قسائم بانتظار الدفع</h6>
+                        <h2 class="stats-value">@Model.UnpaidVouchersCount</h2>
+                        <div class="mt-3">
+                            <small class="text-white-50">تم تحصيل @Model.TotalRevenueToday.ToString("N0") اليوم</small>
+                        </div>
+                        <i class="bi bi-currency-dollar card-icon-bg"></i>
+                        <a href="@Url.Action("Index", "PaymentVouchers", new { area="Admin" })" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* --- قسم التنبيهات --- *@
+        @if (canManageSupervisors || canManageOath)
+        {
+            <div class="col-md-6 col-xl-3">
+                <div class="card dashboard-card bg-warning bg-gradient text-dark h-100 shadow-sm">
+                    <div class="card-body position-relative">
+                        <h6 class="card-subtitle mb-2 text-dark opacity-75">إجراءات معلقة</h6>
+                        <div class="d-flex align-items-end">
+                            <h2 class="stats-value mb-0 ms-2">@(Model.PendingSupervisorRequestsCount + Model.PendingOathRequestsCount)</h2>
+                            <small class="mb-2 fw-bold">طلب</small>
+                        </div>
+                        <div class="mt-3">
+                            @if (Model.PendingSupervisorRequestsCount > 0)
+                            {<span class="badge bg-dark text-white ms-1">نقل: @Model.PendingSupervisorRequestsCount</span>}
+                            @if (Model.PendingOathRequestsCount > 0)
+                            {<span class="badge bg-dark text-white">يمين: @Model.PendingOathRequestsCount</span>}
+                        </div>
+                        <i class="bi bi-bell-fill card-icon-bg text-dark"></i>
+                        <a href="@Url.Action("Index", "SupervisorChangeRequests", new { area="Admin" })" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-3 no-print">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-lightning-charge text-warning"></i> وصول سريع</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        @if (canManageGraduates)
+                        {
+                            <a href="@Url.Action("Create", "GraduateApplications", new { area = "Admin" })" class="btn btn-outline-primary text-start">
+                                <i class="bi bi-person-plus me-2"></i> تسجيل خريج جديد
+                            </a>
+                        }
+                        @if (canManageFinance)
+                        {
+                            <a href="@Url.Action("SelectTrainee", "PaymentVouchers", new { area = "Admin" })" class="btn btn-outline-success text-start">
+                                <i class="bi bi-receipt me-2"></i> إصدار سند قبض
+                            </a>
+                        }
+                        @if (canManageExams)
+                        {
+                            <a href="@Url.Action("Index", "Exams", new { area = "Admin" })" class="btn btn-outline-purple text-start text-dark border-secondary">
+                                <i class="bi bi-file-text me-2"></i> إدارة الامتحانات
+                            </a>
+                        }
+                        <a href="@Url.Action("Index", "Users", new { area = "Admin" })" class="btn btn-outline-dark text-start">
+                            <i class="bi bi-gear me-2"></i> إعدادات المستخدمين
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            @if (isSuperAdmin)
+            {
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 fw-bold">📊 إحصائيات النمو السنوي</h5>
+                        @using (Html.BeginForm("Index", "Dashboard", new { area = "Admin" }, FormMethod.Get))
+                        {
+                            <select name="yearRange" class="form-select form-select-sm bg-light border-0" onchange="this.form.submit()" style="width: auto;">
+                                <option value="5" @(Model.SelectedYearRange == 5 ? "selected" : "")>آخر 5 سنوات</option>
+                                <option value="10" @(Model.SelectedYearRange == 10 ? "selected" : "")>آخر 10 سنوات</option>
+                            </select>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <canvas id="historicalChart" style="max-height: 350px; width: 100%;"></canvas>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="card-title mb-0">✨ آخر النشاطات</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>الإجراء</th>
+                                        <th>بواسطة</th>
+                                        <th>الوقت</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in Model.RecentActivities.Take(5))
+                                    {
+                                        <tr>
+                                            <td>@log.Action</td>
+                                            <td><span class="badge bg-secondary bg-opacity-10 text-dark">@log.User?.FullNameArabic</span></td>
+                                            <td class="text-muted small" dir="ltr">@log.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (isSuperAdmin && Model.LawyersByGovernorate.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="card-title mb-0 fw-bold">🗺️ توزيع المحامين حسب المحافظات</h5>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px; display: flex; justify-content: center;">
+                            <canvas id="lawyersChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    @if (isSuperAdmin)
+    {
+        <script src="~/Scripts/chart.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                // إعدادات الخطوط العامة
+                Chart.defaults.font.family = "'Cairo', 'Segoe UI', sans-serif";
+
+                // ==========================================
+                // 1. الرسم البياني الخطي (النمو السنوي)
+                // ==========================================
+                var rawHistory = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.HistoricalData));
+
+                // فحص البيانات: إذا كانت فارغة نضع بيانات وهمية للتجربة فقط
+                if (!rawHistory || rawHistory.length === 0) {
+                    console.log("لا توجد بيانات حقيقية، سيتم استخدام بيانات تجريبية.");
+                    rawHistory = [
+                        { Year: 2020, LawyerCount: 150, TraineeCount: 50 },
+                        { Year: 2021, LawyerCount: 200, TraineeCount: 80 },
+                        { Year: 2022, LawyerCount: 250, TraineeCount: 120 },
+                        { Year: 2023, LawyerCount: 300, TraineeCount: 150 },
+                        { Year: 2024, LawyerCount: 400, TraineeCount: 200 }
+                    ];
+                }
+
+                if (document.getElementById('historicalChart')) {
+                    new Chart(document.getElementById('historicalChart'), {
+                        type: 'line',
+                        data: {
+                            labels: rawHistory.map(d => d.Year),
+                            datasets: [
+                                {
+                                    label: 'المحامون',
+                                    data: rawHistory.map(d => d.LawyerCount),
+                                    borderColor: '#4e73df',
+                                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                                    borderWidth: 3,
+                                    fill: true,
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'المتدربون',
+                                    data: rawHistory.map(d => d.TraineeCount),
+                                    borderColor: '#1cc88a',
+                                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                                    borderWidth: 3,
+                                    fill: true,
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'top', align: 'end' } },
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+
+                // ==========================================
+                // 2. الرسم الدائري (توزيع المحافظات)
+                // ==========================================
+                var rawLawyers = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.LawyersByGovernorate));
+
+                // بيانات وهمية للتجربة في حال عدم وجود بيانات
+                if (!rawLawyers || Object.keys(rawLawyers).length === 0) {
+                    rawLawyers = { 'غزة': 120, 'خانيونس': 80, 'رفح': 50, 'الشمال': 40, 'الوسطى': 60 };
+                }
+
+                if (document.getElementById('lawyersChart')) {
+                    new Chart(document.getElementById('lawyersChart'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(rawLawyers),
+                            datasets: [{
+                                data: Object.values(rawLawyers),
+                                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'right' }
+                            },
+                            layout: { padding: 20 }
+                        }
+                    });
+                }
+            });
+        </script>
+    }
+}

@@ -1,0 +1,33 @@
+﻿@model IEnumerable<BarManegment.Models.ExamType>
+@{
+    ViewBag.Title = "إدارة أنواع الامتحانات";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+            @Html.ActionLink("إضافة نوع جديد", "Create", null, new { @class = "btn btn-primary" })
+        </div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.Name)</th>
+                        <th style="width: 100px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                            <td>@Html.ActionLink("تعديل", "Edit", new { id = item.Id }, new { @class = "btn btn-sm btn-warning" })</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

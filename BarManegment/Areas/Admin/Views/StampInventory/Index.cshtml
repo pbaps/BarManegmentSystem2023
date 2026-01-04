@@ -1,0 +1,472 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.StampDashboardViewModel
+@{
+    ViewBag.Title = "إدارة الطوابع والمتعهدين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .modal {
+            z-index: 1055;
+        }
+    </style>
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning">@TempData["WarningMessage"]</div>
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <ul class="nav nav-tabs card-header-tabs" id="stampTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link" id="issuance-tab" data-bs-toggle="tab" data-bs-target="#issuance" type="button" role="tab">
+                    <i class="bi bi-box-arrow-up-right"></i> 1. صرف الدفاتر
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" type="button" role="tab">
+                    <i class="bi bi-archive-fill"></i> 2. إدارة المخزون
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="contractors-tab" data-bs-toggle="tab" data-bs-target="#contractors" type="button" role="tab">
+                    <i class="bi bi-person-video3"></i> 3. إدارة المتعهدين
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body text-dark">
+        <div class="tab-content" id="stampTabsContent">
+
+            <div class="tab-pane fade" id="issuance" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm border-success">
+                            <div class="card-body text-center">
+                                <i class="bi bi-cash-coin fs-1 text-success"></i>
+                                <h5 class="card-title mt-3">صرف نقدي فوري</h5>
+                                <p class="card-text">للمتعهد الذي يدفع "كاش" الآن...</p>
+                                <a href="@Url.Action("Index", "StampIssuance", new { area = "Admin" })" class="btn btn-success btn-lg">
+                                    الذهاب إلى شاشة الصرف النقدي
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm border-primary">
+                            <div class="card-body text-center">
+                                <i class="bi bi-bank fs-1 text-primary"></i>
+                                <h5 class="card-title mt-3">صرف بإيصال بنكي</h5>
+                                <p class="card-text">للمتعهد الذي دفع في البنك مسبقاً...</p>
+                                <a href="@Url.Action("CreateContractorVoucher", "PaymentVouchers", new { area = "Admin" })" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> 1. إنشاء قسيمة دفع (بنكي)
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-4" />
+                <h5 class="text-primary">قسائم مدفوعة بانتظار الصرف</h5>
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم القسيمة</th>
+                            <th>تاريخ الدفع (الإيصال)</th>
+                            <th>المبلغ المدفوع</th>
+                            <th>رقم وصل البنك</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model.PaidVouchersAwaitingIssuance)
+                        {
+                            <tr>
+                                <td>@v.Id.ToString("D5")</td>
+                                <td>@v.Receipt.BankPaymentDate.ToString("yyyy/MM/dd")</td>
+                                <td>@v.TotalAmount.ToString("N2")</td>
+                                <td>@v.Receipt.BankReceiptNumber</td>
+                                <td>
+                                    <button class="btn btn-success btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#issueBookModal"
+                                            data-voucher-id="@v.Id"
+                                            data-voucher-amount="@v.TotalAmount.ToString("N2")">
+                                        <i class="bi bi-check-circle-fill"></i> صرف الدفاتر
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.PaidVouchersAwaitingIssuance.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">لا توجد قسائم مدفوعة جاهزة للصرف حالياً.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-pane fade" id="inventory" role="tabpanel">
+                <div class="d-flex justify-content-between mb-3">
+                    <h5>المخزون المتوفر</h5>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                        <i class="bi bi-plus-lg"></i> إدخال دفاتر جديدة للمخزن
+                    </button>
+                </div>
+                <table class="table table-sm table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>من رقم</th>
+                            <th>إلى رقم</th>
+                            <th>الكمية</th>
+                            <th>قيمة الطابع</th>
+                            <th>قرار المجلس</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var book in Model.AvailableBooks)
+                        {
+                            <tr class="table-success">
+                                <td>@book.StartSerial</td>
+                                <td>@book.EndSerial</td>
+                                <td>@book.Quantity</td>
+                                <td>@book.ValuePerStamp.ToString("N2")</td>
+                                <td>@book.CouncilDecisionRef</td>
+                                <td><span class="badge bg-success">@book.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <hr />
+                <h5>الدفاتر قيد الصرف أو المصروفة</h5>
+                <table class="table table-sm table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>من رقم</th>
+                            <th>إلى رقم</th>
+                            <th>الكمية</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var book in Model.IssuedBooks)
+                        {
+                            <tr>
+                                <td>@book.StartSerial</td>
+                                <td>@book.EndSerial</td>
+                                <td>@book.Quantity</td>
+                                <td>
+                                    @if (book.Status == "تم صرفه")
+                                    {
+                                        <span class="badge bg-secondary">@book.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">@book.Status</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-pane fade" id="contractors" role="tabpanel">
+                <div class="d-flex justify-content-between mb-3">
+                    <h5>المتعهدين المسجلين</h5>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addContractorModal">
+                        <i class="bi bi-person-plus"></i> إضافة متعهد جديد
+                    </button>
+                </div>
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الموقع/المكان</th>
+                            <th>الجوال</th>
+                            <th>الهوية</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Contractors)
+                        {
+                            <tr>
+                                <td>@c.Name</td>
+                                <td>@c.Location (@c.Governorate)</td>
+                                <td>@c.Phone</td>
+                                <td>@c.NationalId</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-warning edit-contractor-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editContractorModal"
+                                            data-id="@c.Id"
+                                            data-name="@c.Name"
+                                            data-phone="@c.Phone"
+                                            data-nationalid="@c.NationalId"
+                                            data-governorate="@c.Governorate"
+                                            data-location="@c.Location">
+                                        <i class="bi bi-pencil-fill"></i> تعديل
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="issueBookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("IssueBook", "StampInventory", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.VoucherId, new { id = "modalVoucherId" })
+
+                <div class="modal-header">
+                    <h5 class="modal-title">صرف دفاتر مقابل قسيمة <span id="modalVoucherIdText" class="text-danger"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">المبلغ المدفوع: <strong id="modalVoucherAmountText"></strong></div>
+                    <hr />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">1. اختر المتعهد (لمن سيتم الصرف)</label>
+                        @Html.DropDownListFor(m => m.SelectedContractorId, new SelectList(Model.Contractors, "Id", "Name"), "-- اختر المتعهد --", new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">2. اختر الدفتر (الذي سيتم تسليمه)</label>
+                        <select id="SelectedBookId" name="SelectedBookId" class="form-select" required>
+                            <option value="">-- اختر الدفتر --</option>
+                            @foreach (var book in Model.AvailableBooks)
+                            {
+                                <option value="@book.Id">
+                                    (من @book.StartSerial إلى @book.EndSerial) - [فئة: @book.ValuePerStamp.ToString("N0")]
+                                </option>
+                            }
+                        </select>
+                        <small class="text-muted">تأكد من مطابقة قيمة الدفتر للمبلغ المدفوع في القسيمة.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle-fill"></i> تأكيد الصرف
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("CreateStampBook", "StampInventory", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إدخال دفاتر طوابع جديدة للمخزن</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">رقم قرار المجلس (للتوريد)</label>
+                        <input type="text" name="CouncilDecisionRef" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">قيمة الطابع الواحد</label>
+                        <input type="number" step="0.1" name="ValuePerStamp" class="form-control" required />
+                    </div>
+                    <hr />
+                    <div class="mb-3">
+                        <label class="form-label">عدد الدفاتر (الكمية المطلوبة)</label>
+                        <input type="number" name="NumberOfBooks" class="form-control" value="1" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الكمية (عدد الطوابع في الدفتر *الواحد*)</label>
+                        <input type="number" name="StampsPerBook" class="form-control" required placeholder="مثال: 50" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الرقم التسلسلي للبداية (لأول دفتر)</label>
+                        <input type="number" name="StartSerial" class="form-control" required placeholder="مثال: 10001" />
+                    </div>
+                    <div class="alert alert-info small">
+                        <strong>إجراء آلي:</strong> سيقوم النظام بإنشاء [عدد الدفاتر] × [عدد الطوابع] بشكل تسلسلي.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ وإدخال للمخزن</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addContractorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("CreateContractor", "StampInventory", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة متعهد جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم المتعهد</label>
+                        <input type="text" name="Name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الجوال</label>
+                        <input type="tel" name="Phone" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الهوية</label>
+                        <input type="text" name="NationalId" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">المحافظة</label>
+                        <input type="text" name="Governorate" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الموقع (المحكمة/النيابة)</label>
+                        <input type="text" name="Location" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">حفظ المتعهد</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="editContractorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("EditContractor", "StampInventory", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("Id", "", new { id = "edit_Id" })
+
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل بيانات المتعهد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم المتعهد</label>
+                        <input type="text" name="Name" id="edit_Name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الجوال</label>
+                        <input type="tel" name="Phone" id="edit_Phone" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الهوية</label>
+                        <input type="text" name="NationalId" id="edit_NationalId" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">المحافظة</label>
+                        <input type="text" name="Governorate" id="edit_Governorate" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الموقع (المحكمة/النيابة)</label>
+                        <input type="text" name="Location" id="edit_Location" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning">حفظ التعديلات</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // (كود مودال صرف الدفاتر - يبقى كما هو)
+            var issueBookModal = document.getElementById('issueBookModal');
+            if (issueBookModal) {
+                issueBookModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var voucherId = button.getAttribute('data-voucher-id');
+                    var voucherAmount = button.getAttribute('data-voucher-amount');
+                    var modalVoucherIdInput = issueBookModal.querySelector('#modalVoucherId');
+                    var modalVoucherIdText = issueBookModal.querySelector('#modalVoucherIdText');
+                    var modalVoucherAmountText = issueBookModal.querySelector('#modalVoucherAmountText');
+                    modalVoucherIdInput.value = voucherId;
+                    modalVoucherIdText.textContent = '#' + voucherId;
+                    modalVoucherAmountText.textContent = voucherAmount;
+                });
+            }
+
+            // --- (كود JavaScript لتعبئة مودال التعديل - يبقى كما هو) ---
+            var editModal = document.getElementById('editContractorModal');
+            if (editModal) {
+                editModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var id = button.getAttribute('data-id');
+                    var name = button.getAttribute('data-name');
+                    var phone = button.getAttribute('data-phone');
+                    var nationalid = button.getAttribute('data-nationalid');
+                    var governorate = button.getAttribute('data-governorate');
+                    var location = button.getAttribute('data-location');
+
+                    var modal = $(this);
+                    modal.find('#edit_Id').val(id);
+                    modal.find('#edit_Name').val(name);
+                    modal.find('#edit_Phone').val(phone);
+                    modal.find('#edit_NationalId').val(nationalid);
+                    modal.find('#edit_Governorate').val(governorate);
+                    modal.find('#edit_Location').val(location);
+                });
+            }
+
+            // --- ✅ (تحسين) كود التحكم في التبويبات النشطة ---
+            var urlParams = new URLSearchParams(window.location.search);
+            var activeTabId = urlParams.get('tab');
+
+            // 1. إزالة التفعيل من الجميع أولاً
+            $('#stampTabs .nav-link').removeClass('active');
+            $('#stampTabsContent .tab-pane').removeClass('show active');
+
+            if (activeTabId === 'contractors') {
+                // 2. تفعيل تبويب المتعهدين
+                $('#contractors-tab').addClass('active');
+                $('#contractors').addClass('show active');
+            } else if (activeTabId === 'inventory') {
+                // 3. تفعيل تبويب المخزون
+                $('#inventory-tab').addClass('active');
+                $('#inventory').addClass('show active');
+            } else {
+                // 4. تفعيل التبويب الافتراضي (صرف الدفاتر)
+                $('#issuance-tab').addClass('active');
+                $('#issuance').addClass('show active');
+            }
+        });
+    </script>
+}

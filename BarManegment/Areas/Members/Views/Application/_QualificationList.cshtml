@@ -1,0 +1,44 @@
+﻿@model IEnumerable<BarManegment.Models.Qualification>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>نوع المؤهل</th>
+                <th>اسم الجامعة</th>
+                <th>الكلية</th>
+                <th>التخصص</th>
+                <th>سنة التخرج</th>
+                <th style="width: 50px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.QualificationType.Name</td>
+                        <td>@item.UniversityName</td>
+                        <td>@item.Faculty</td>
+                        <td>@item.Specialization</td>
+                        <td>@item.GraduationYear</td>
+                        <td>
+                            @using (Html.BeginForm("DeleteQualification", "Application", new { area = "Members", qualificationId = item.Id }, FormMethod.Post, new { @class = "d-inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد؟');" title="حذف">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="6" class="text-center text-muted">لم يتم إضافة أي مؤهلات بعد.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

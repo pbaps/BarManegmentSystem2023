@@ -1,0 +1,106 @@
+﻿@model IEnumerable<BarManegment.Models.StockIssue>
+
+@{
+    ViewBag.Title = "سجل الصرف المخزني";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="text-warning text-dark fw-bold"><i class="bi bi-box-arrow-right me-2"></i> سجل الصرف المخزني</h4>
+            <p class="text-muted small mb-0">حركات خروج المواد للأقسام والموظفين (العهدة والاستهلاك)</p>
+        </div>
+        <a href="@Url.Action("Create")" class="btn btn-warning fw-bold shadow-sm">
+            <i class="bi bi-box-arrow-up-right me-1"></i> صرف جديد
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم الإذن</th>
+                            <th>تاريخ الصرف</th>
+                            <th>القسم / الجهة المستفيدة</th>
+                            <th>الموظف المستلم</th>
+                            <th>عدد الأصناف</th>
+                            <th>القيد المالي (المصاريف)</th>
+                            <th class="text-end" style="width: 120px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="font-monospace fw-bold">#@item.Id</td>
+                                <td>@item.IssueDate.ToString("yyyy/MM/dd")</td>
+                                <td class="fw-bold text-dark">@item.DepartmentName</td>
+                                <td>
+                                    @if (item.EmployeeId.HasValue)
+                                    {
+                                        <span class="badge bg-info text-dark"><i class="bi bi-person me-1"></i> User: @item.EmployeeId</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">---</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary rounded-pill">@(item.Items?.Count ?? 0)</span>
+                                </td>
+                                <td>
+                                    @if (item.JournalEntryId.HasValue)
+                                    {
+                                        <a href="@Url.Action("Details", "JournalEntries", new { id = item.JournalEntryId })" class="badge bg-light text-dark border text-decoration-none" target="_blank">
+                                            قيد #@item.JournalEntryId
+                                        </a>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-secondary" title="عرض السند">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+
+                                        <form action="@Url.Action("Delete", new { id = item.Id })" method="post" style="display:inline;" onsubmit="return confirm('تحذير هام:\nسيتم إلغاء عملية الصرف، وإرجاع المواد للمخزن (زيادة الكمية)، وإلغاء قيد المصروفات.\n\nهل أنت متأكد؟');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="إرجاع للمخزن">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-box fs-1 d-block mb-3 opacity-25"></i>
+                    <h5>لا توجد حركات صرف مسجلة</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>

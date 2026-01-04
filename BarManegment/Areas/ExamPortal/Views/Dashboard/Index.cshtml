@@ -1,0 +1,196 @@
+﻿@model BarManegment.Areas.ExamPortal.ViewModels.ExamDashboardViewModel
+@{
+    ViewBag.Title = "لوحة التحكم";
+    Layout = "~/Areas/ExamPortal/Views/Shared/_ExamLayout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white text-center">
+                    <h4 class="mb-0">مرحباً, @Model.TraineeName</h4>
+                </div>
+            </div>
+
+            @* --- 1. قسم الامتحانات الفعالة --- *@
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">الاختبارات الفعالة والقادمة</h5>
+                </div>
+                <div class="card-body p-4">
+                    @if (!Model.ActiveExams.Any())
+                    {
+                        <div class="alert alert-info text-center">لا توجد اختبارات فعالة أو قادمة مسجل بها حاليًا.</div>
+                    }
+                    else
+                    {
+                        foreach (var enrollment in Model.ActiveExams)
+                        {
+                            // 1. حساب الثواني كرقم صحيح (بدون كسور لتجنب مشاكل الفاصلة)
+                            int secondsRemaining = (int)(enrollment.Exam.StartTime - DateTime.Now).TotalSeconds;
+
+                            // 2. تحديد الحالة الأولية من السيرفر
+                            bool isExamStarted = secondsRemaining <= 0;
+                            string buttonClass = isExamStarted ? "btn-primary" : "btn-secondary disabled";
+                            string alertClass = isExamStarted ? "alert-success" : "alert-info";
+                            string initialText = isExamStarted ? "الامتحان متاح الآن" : "جارٍ تحميل الوقت...";
+
+                            <div class="border rounded p-3 mb-3">
+                                <h5 class="card-title">@enrollment.Exam.Title</h5>
+                                <hr>
+
+                                @* --- تفاصيل الوقت --- *@
+                                <div class="row text-center my-3">
+                                    <div class="col-6">
+                                        <p class="mb-0 text-muted small">موعد البدء</p>
+                                        <p class="fw-bold">@enrollment.Exam.StartTime.ToString("yyyy/MM/dd HH:mm")</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p class="mb-0 text-muted small">المدة</p>
+                                        <p class="fw-bold">@enrollment.Exam.DurationInMinutes دقيقة</p>
+                                    </div>
+                                </div>
+
+                                @* --- العداد (نرسل رقم صحيح int فقط) --- *@
+                                <div id="cnt_@enrollment.Id"
+                                     class="alert @alertClass fs-6 fw-bold countdown-timer text-center"
+                                     data-seconds="@secondsRemaining"
+                                     data-id="@enrollment.Id">
+
+                                    @if (isExamStarted)
+                                    {
+                                        <i class="bi bi-check-circle-fill me-2"></i> <span>الامتحان متاح الآن</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span> <span>@initialText</span>
+                                    }
+                                </div>
+
+                                @* --- زر البدء (يتم تفعيله من السيرفر إذا بدأ الوقت) --- *@
+                                <a href="@Url.Action("StartExam", "TakeExam", new { enrollmentId = enrollment.Id })"
+                                   id="btn_@enrollment.Id"
+                                   class="btn btn-lg w-100 fw-bold shadow-sm @buttonClass">
+                                    <i class="bi bi-play-circle-fill me-2"></i> بدء الامتحان
+                                </a>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            @* --- 2. قسم الامتحانات المنتهية --- *@
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">الاختبارات السابقة</h5>
+                </div>
+                <div class="card-body p-4">
+                    @if (!Model.FinishedExams.Any())
+                    {
+                        <div class="alert alert-secondary text-center">لا يوجد سجل اختبارات سابقة.</div>
+                    }
+                    else
+                    {
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الامتحان</th>
+                                    <th>تاريخ التقديم</th>
+                                    <th>النتيجة</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var enrollment in Model.FinishedExams)
+                                {
+                                    <tr>
+                                        <td>@enrollment.Exam.Title</td>
+                                        <td>@enrollment.Exam.StartTime.ToString("yyyy/MM/dd")</td>
+                                        <td>
+                                            @if (enrollment.Result == "ناجح")
+                                            {<span class="badge bg-success">@enrollment.Result</span> }
+                                        else if (enrollment.Result == "راسب")
+                                        { <span class="badge bg-danger">@enrollment.Result</span> }
+                                    else
+                                    { <span class="badge bg-warning text-dark">@(enrollment.Result ?? "منتهي")</span>}
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="@Url.Action("Result", "TakeExam", new { enrollmentId = enrollment.Id })" class="btn btn-secondary btn-sm">
+                                                عرض النتيجة
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            // دالة لتحديث عداد واحد
+            function tickTimer(element) {
+                var el = $(element);
+                var id = el.data('id');
+                var seconds = parseInt(el.data('seconds')); // قراءة الرقم كعدد صحيح
+                var btn = $('#btn_' + id);
+
+                // إنقاص ثانية واحدة
+                seconds = seconds - 1;
+                el.data('seconds', seconds); // حفظ القيمة الجديدة
+
+                // الحالة 1: الامتحان بدأ
+                if (seconds <= 0) {
+                    // نمنع التحديث المتكرر للنص إذا كان الزر مفعلاً بالفعل
+                    if (btn.hasClass('disabled')) {
+                        el.removeClass('alert-info').addClass('alert-success');
+                        el.html('<i class="bi bi-check-circle-fill me-2"></i> الامتحان متاح الآن');
+
+                        btn.removeClass('btn-secondary disabled').addClass('btn-primary');
+                        btn.removeAttr('disabled'); // هام جداً للمتصفحات القديمة
+                    }
+                    return;
+                }
+
+                // الحالة 2: حساب الوقت المتبقي
+                var days = Math.floor(seconds / (3600 * 24));
+                var hours = Math.floor((seconds % (3600 * 24)) / 3600);
+                var minutes = Math.floor((seconds % 3600) / 60);
+                var sec = Math.floor(seconds % 60);
+
+                var timeStr = seconds + " ثانية"; // نص احتياطي
+
+                if (days > 0) {
+                    timeStr = days + " يوم " + hours + " س " + minutes + " د";
+                } else if (hours > 0) {
+                    timeStr = hours + " س " + minutes + " د " + sec + " ث";
+                } else {
+                    timeStr = minutes + " د " + sec + " ث";
+                }
+
+                el.html('<i class="bi bi-hourglass-split me-2"></i> متبقي: <span dir="ltr">' + timeStr + '</span>');
+            }
+
+            // تشغيل العداد كل ثانية
+            setInterval(function () {
+                $('.countdown-timer').each(function () {
+                    tickTimer(this);
+                });
+            }, 1000);
+
+            // تشغيل أولي (لتحديث النص فوراً بدلاً من انتظار ثانية)
+            $('.countdown-timer').each(function () {
+                tickTimer(this);
+            });
+
+        });
+    </script>
+}

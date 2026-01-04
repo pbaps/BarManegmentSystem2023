@@ -1,0 +1,38 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.MemberReceiptViewModel>
+
+<div class="card-body p-0">
+    @if (!Model.Any())
+    {
+        <div class="alert alert-light text-center mb-0">
+            لا يوجد أي إيصالات مسجلة باسمك حتى الآن.
+        </div>
+    }
+    else
+    {
+        <table class="table table-hover small mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>رقم الإيصال</th>
+                    <th>تاريخ الدفع</th>
+                    <th>المبلغ</th>
+                    <th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var receipt in Model)
+                {
+                    <tr>
+                        <td><strong>@receipt.ReceiptFullNumber</strong></td>
+                        <td>@receipt.PaymentDate.ToString("yyyy/MM/dd")</td>
+                        <td>@receipt.TotalAmount.ToString("N2") @receipt.CurrencySymbol</td>
+                        <td class="text-end">
+                            <a href="@Url.Action("PrintReceipt", "Dashboard", new { area = "Members", id = receipt.Id })" class="btn btn-info btn-sm" target="_blank">
+                                <i class="bi bi-printer"></i> طباعة
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

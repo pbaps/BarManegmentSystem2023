@@ -1,0 +1,50 @@
+﻿@{
+    ViewBag.Title = "تقديم طلب جديد للمجلس";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml"; // تأكد من المسار الصحيح
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>نموذج طلب لمجلس النقابة</h5>
+            </div>
+            <div class="card-body">
+                @using (Html.BeginForm("Create", "CouncilRequests", new { Area = "Members" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                    <div class="mb-3">
+                        <label class="form-label">نوع الطلب <span class="text-danger">*</span></label>
+                        <select name="RequestType" class="form-select">
+                            <option value="طلب إداري">طلب إداري</option>
+                            <option value="طلب مالي">طلب مالي (قرض/مساعدة)</option>
+                            <option value="شكوى">شكوى</option>
+                            <option value="استرحام">استرحام</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">عنوان الطلب <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">تفاصيل الطلب <span class="text-danger">*</span></label>
+                        <textarea name="Description" class="form-control" rows="6" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">إرفاق مستندات (اختياري)</label>
+                        <input type="file" name="attachments" class="form-control" multiple />
+                    </div>
+
+                    <hr />
+                    <button type="submit" class="btn btn-primary w-100">إرسال الطلب</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>

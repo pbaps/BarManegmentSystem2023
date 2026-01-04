@@ -1,0 +1,854 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+@using BarManegment.Helpers
+@{
+    ViewBag.Title = "ملف المتدرب: " + Model.ArabicName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // --- حساب شروط الأهلية للاختبار الشفوي ---
+    bool hasPassedWrittenExam = Model.ExamHistory
+        .Any(e => e.Exam.ExamType.Name == "امتحان إنهاء تدريب" && e.Result == "ناجح");
+    bool isEnrolledInOralExam = Model.OralExamHistory.Any();
+    bool isTraineeActive = Model.Status == "متدرب مقيد";
+    bool canEnrollInOralExam = hasPassedWrittenExam && isTraineeActive && !isEnrolledInOralExam;
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @* --- رسائل التنبيه --- *@
+    @if (TempData["SuccessMessage"] != null)
+    {<div class="alert alert-success alert-dismissible fade show" role="alert">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>}
+    @if (TempData["ErrorMessage"] != null)
+    {<div class="alert alert-danger alert-dismissible fade show" role="alert">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>}
+    @if (TempData["InfoMessage"] != null)
+    {<div class="alert alert-info alert-dismissible fade show" role="alert">@TempData["InfoMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+@* --- بطاقة معلومات المتدرب --- *@
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    @if (!string.IsNullOrEmpty(Model.PersonalPhotoPath))
+                    {
+                        <img src="@Url.Content(Model.PersonalPhotoPath)" class="img-thumbnail" alt="الصورة الشخصية" style="width: 120px; height: 120px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <img src="https://placehold.co/150x150/6c757d/ffffff?text=صورة" class="img-thumbnail rounded-circle" alt="لا توجد صورة" style="width: 120px; height: 120px; object-fit: cover;">
+                    }
+                </div>
+                <div class="col-md-10">
+                    <h3>@Model.ArabicName</h3>
+                    <p class="text-muted mb-1">@Model.EnglishName</p>
+                    <p>
+                        <strong>رقم الهوية :</strong> @Model.NationalIdNumber
+                    </p>
+                    <div class="d-flex mb-2 align-items-center">
+                        <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">الحالة الحالية:</div>
+                        <div class="border p-2 rounded-end flex-grow-1">
+                            @if (Model.Status == "متدرب مقيد")
+                            {<span class="badge bg-success fs-6">@Model.Status</span> }
+                        else if (Model.Status == "متدرب موقوف")
+                        { <span class="badge bg-danger fs-6">@Model.Status</span> }
+                    else
+                    { <span class="badge bg-warning fs-6">@Model.Status</span>}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    @* ===
+        ===  بداية التعديل: إعادة تنظيم بطاقة الإجراءات
+        === *@
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="card-title mb-0">إدارة التدريب والأبحاث والامتحانات</h5></div>
+        <div class="card-body d-flex flex-wrap gap-2">
+
+            @* --- 1. إجراءات خاصة بالمتدرب المقيد فقط --- *@
+            @if (Model.Status == "متدرب مقيد")
+            {
+                <a href="@Url.Action("Create", "SupervisorChangeRequests", new { area = "Admin", traineeId = Model.Id })" class="btn btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i> تقديم طلب (وقف/نقل)
+                </a>
+                <a href="@Url.Action("CreateRenewal", "TraineeRenewals", new { area = "Admin", id = Model.Id })" class="btn btn-success">
+                    <i class="bi bi-calendar-check me-1"></i> تسجيل تجديد سنوي
+                </a>
+
+                using (Html.BeginForm("DeferRenewal", "TraineeRenewals", new { area = "Admin", traineeId = Model.Id }, FormMethod.Post, new { @class = "d-inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-warning"
+                            onclick="return confirm('هل أنت متأكد من تأجيل رسوم التجديد السنوي؟ سيتم إضافتها لرسوم اليمين.')">
+                        <i class="bi bi-calendar-minus me-1"></i> تأجيل التجديد (استثناء)
+                    </button>
+                }
+
+                <a href="@Url.Action("SubmitResearch", "LegalResearch", new { area = "Admin", traineeId = Model.Id })" class="btn btn-dark">
+                    <i class="bi bi-journal-plus me-1"></i> تسجيل بحث جديد
+                </a>
+
+                if (PermissionHelper.HasPermission("TraineeSuspensions"))
+                {
+                    @Html.ActionLink("إضافة إيقاف إداري",
+                                    "Create",
+                                    "TraineeSuspensions",
+                                    new { area = "Admin", traineeId = Model.Id },
+                                    new { @class = "btn btn-danger" })
+                }
+
+                if (canEnrollInOralExam && PermissionHelper.HasPermission("OralExamCommittee"))
+                {
+                    <a href="@Url.Action("AssignTrainee", "OralExamCommittee", new { area = "Admin", traineeId = Model.Id })" class="btn btn-danger">
+                        <i class="bi bi-mic-fill me-1"></i> تسجيل لاختبار شفوي
+                    </a>
+                }
+
+                if (Model.CanApplyForOath && PermissionHelper.HasPermission("OathRequests"))
+                {
+                    <a href="@Url.Action("Create", "OathRequests", new { area = "Admin", traineeId = Model.Id })" class="btn btn-lg btn-success">
+                        <i class="bi bi-patch-check-fill me-1"></i> تقديم طلب أداء اليمين
+                    </a>
+                }
+            }
+
+            @* --- 2. إجراءات خاصة بالمتدرب الموقوف فقط --- *@
+            @if (Model.Status == "متدرب موقوف")
+            {
+                <a href="@Url.Action("Create", "SupervisorChangeRequests", new { area = "Admin", traineeId = Model.Id })" class="btn btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i> تقديم طلب (استئناف/نقل)
+                </a>
+
+                // (زر الاستئناف الإداري المباشر)
+                if (PermissionHelper.HasPermission("TraineeSuspensions")) // (نفترض أن من يوقف يستأنف)
+                {
+                    using (Html.BeginForm("EndSuspension", "TraineeSuspensions", new { area = "Admin", traineeId = Model.Id }, FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success"
+                                onclick="return confirm('هل أنت متأكد من استئناف التدريب لهذا العضو؟ سيتم تغيير حالته إلى (متدرب مقيد).')">
+                            <i class="bi bi-play-circle-fill me-1"></i> استئناف التدريب (قرار إداري)
+                        </button>
+                    }
+                }
+            }
+
+            @* --- 3. إجراءات خاصة بالمحامي المزاول --- *@
+            @if (Model.Status == "محامي مزاول")
+            {
+                <a href="@Url.Action("PrintLicenseCertificate", "OathCeremony", new { area = "Admin", id = Model.Id })" target="_blank" class="btn btn-primary">
+                    <i class="bi bi-award-fill me-1"></i> طباعة شهادة الإجازة
+                </a>
+                <a href="@Url.Action("PrintPracticingCard", "OathCeremony", new { area = "Admin", id = Model.Id })" target="_blank" class="btn btn-success">
+                    <i class="bi bi-person-badge-fill me-1"></i> طباعة بطاقة المزاولة
+                </a>
+            }
+
+            @* --- 4. إجراءات عامة (تظهر دائماً) --- *@
+            <a href="@Url.Action("PrintIdCard", "TraineeProfile", new { area = "Admin", id = Model.Id })" target="_blank" class="btn btn-secondary">
+                <i class="bi bi-person-badge me-1"></i> طباعة بطاقة المتدرب
+            </a>
+            <a href="@Url.Action("PrintComprehensiveReport", "TraineeProfile", new { area = "Admin", id = Model.Id })" target="_blank" class="btn btn-info">
+                <i class="bi bi-printer-fill me-1"></i> طباعة تقرير شامل
+            </a>
+
+        </div>
+
+        @* عرض أسباب عدم الأهلية لليمين *@
+        @if (!Model.CanApplyForOath && Model.Status == "متدرب مقيد" && !Model.OathRequestHistory.Any(o => o.Status != "مرفوض" && o.Status != "مكتمل"))
+        {
+            <div class="card-footer bg-light border-top-0">
+                <small class="text-muted"><strong>المتدرب غير مؤهل لتقديم طلب أداء اليمين حاليًا للأسباب التالية:</strong></small>
+                <ul class="list-unstyled mb-0 small text-danger">
+                    @foreach (var issue in Model.OathEligibilityIssues)
+                    {
+                        <li>- @issue</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div> @* --- نهاية بطاقة الإجراءات --- *@
+
+ 
+
+    @* --- تفاصيل الملف الشخصي والسجلات --- *@
+<div class="row g-4">
+    @* <-- الوسم المفتوح 2 *@
+
+    @* --- بطاقة البيانات الأساسية (بالتنسيق الجديد) --- *@
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>البيانات الأساسية</h5>
+                <div>
+                    @* Added a div to group the button and text *@
+                    @* === بداية الإضافة: زر تعديل البيانات === *@
+                    @if (PermissionHelper.HasPermission("GraduateApplications"))
+                    {
+                        <a href="@Url.Action("Edit", "GraduateApplications", new { area = "Admin", id = Model.Id })" class="btn btn-warning btn-sm" title="تعديل البيانات الأساسية">
+                            <i class="bi bi-pencil-square"></i> تعديل
+                        </a>
+                    }
+                    @* === نهاية الإضافة === *@
+ 
+                </div>
+
+            </div>
+            <div class="card-body">
+
+                @* الاسم بالعربية *@
+                <div class="d-flex mb-2 align-items-center">
+                    <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">الاسم بالعربية:</div>
+                    <div class="border p-2 rounded-end flex-grow-1">@Model.ArabicName</div>
+                </div>
+
+                @* الرقم الوطني *@
+                <div class="d-flex mb-2 align-items-center">
+                    <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">الرقم الوطني:</div>
+                    <div class="border p-2 rounded-end flex-grow-1">@Model.NationalIdNumber</div>
+                </div>
+
+                @* رقم المتدرب *@
+                <div class="d-flex mb-2 align-items-center">
+                    <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">رقم المتدرب:</div>
+                    <div class="border p-2 rounded-end flex-grow-1">@(Model.TraineeSerialNo ?? "N/A")</div>
+                </div>
+
+                @* تاريخ بدء التدريب *@
+                <div class="d-flex mb-2 align-items-center">
+                    <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">تاريخ بدء التدريب:</div>
+                    <div class="border p-2 rounded-end flex-grow-1">@(Model.TrainingStartDate.HasValue ? Model.TrainingStartDate.Value.ToString("yyyy-MM-dd") : "N/A")</div>
+                </div>
+
+                @* تاريخ الميلاد *@
+                <div class="d-flex mb-2 align-items-center">
+                    <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">تاريخ الميلاد:</div>
+                    <div class="border p-2 rounded-end flex-grow-1">@Model.BirthDate.ToString("yyyy-MM-dd")</div>
+                </div>
+
+                @* الحالة الحالية *@
+                <div class="d-flex mb-2 align-items-center">
+                    <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">الحالة الحالية:</div>
+                    <div class="border p-2 rounded-end flex-grow-1">
+                        @if (Model.Status == "متدرب مقيد")
+                        {<span class="badge bg-success fs-6">@Model.Status</span> }
+                    else if (Model.Status == "متدرب موقوف")
+                    { <span class="badge bg-danger fs-6">@Model.Status</span> }
+                else
+                { <span class="badge alert-warning fs-6">@Model.Status</span>}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    @* --- بطاقة المحامي المشرف (بالتنسيق الجديد) --- *@
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h5>المحامي المشرف</h5></div>
+            <div class="card-body">
+                @if (Model.Supervisor != null)
+                {
+                    @* اسم المشرف *@
+                    <div class="d-flex mb-2 align-items-center">
+                        <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">اسم المشرف:</div>
+                        <div class="border p-2 rounded-end flex-grow-1">@Model.Supervisor.ArabicName</div>
+                    </div>
+
+                    @* رقم العضوية *@
+                    <div class="d-flex mb-2 align-items-center">
+                        <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">رقم العضوية:</div>
+                        <div class="border p-2 rounded-end flex-grow-1">@Model.Supervisor.Id</div> @* <-- افترضت أن Id هو رقم العضوية للمشرف *@
+                    </div>
+                }
+                else
+                { <div class="alert alert-warning">لا يوجد مشرف معين حالياً.</div>}
+            </div>
+        </div>
+    </div>
+
+    @* ... باقي البطاقات (سجل الطلبات، الامتحانات، إلخ) ... *@
+
+    @* --- سجل طلبات أداء اليمين --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>سجل طلبات أداء اليمين</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>تاريخ الطلب</th>
+                                <th>الحالة</th>
+                                <th>ملاحظات اللجنة</th>
+                                <th>مرفقات الطلب</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var request in Model.OathRequestHistory)
+                            {
+                                <tr>
+                                    <td>@request.RequestDate.ToString("yyyy-MM-dd")</td>
+                                    <td><span class="badge bg-info">@request.Status</span></td>
+                                    <td>@request.CommitteeNotes</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(request.CompletionFormPath))
+                                        {
+                                            <a href="@Url.Action("GetOathAttachment", "OathRequests", new { id = request.Id, type = "completion" })" target="_blank" class="btn btn-link btn-sm p-0">نموذج الانتهاء</a>
+                                        }
+                                        @if (!string.IsNullOrEmpty(request.SupervisorCertificatePath))
+                                        {
+                                            <a href="@Url.Action("GetOathAttachment", "OathRequests", new { id = request.Id, type = "supervisor" })" target="_blank" class="btn btn-link btn-sm p-0">شهادة المشرف</a>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        @if (request.Status == "بانتظار دفع رسوم اليمين" && request.PaymentVoucherId.HasValue)
+                                        {
+                                            <a href="@Url.Action("PrintVoucher", "PaymentVouchers", new { id = request.PaymentVoucherId })" class="btn btn-sm btn-success" target="_blank">طباعة قسيمة الدفع</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.OathRequestHistory.Any())
+                            {
+                                <tr><td colspan="5" class="text-center text-muted">لا توجد طلبات سابقة لأداء اليمين.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- سجل الامتحانات (التحريرية/الإلكترونية) --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>سجل الامتحانات (التحريرية/الإلكترونية)</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>اسم الامتحان</th>
+                                <th>النوع</th>
+                                <th>تاريخ التقديم</th>
+                                <th>النتيجة</th>
+                                <th>الدرجة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var exam in Model.ExamHistory)
+                            {
+                                <tr>
+                                    <td>@exam.Exam.Title</td>
+                                    <td>@exam.Exam.ExamType.Name</td>
+                                    <td>@exam.Exam.StartTime.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        @if (exam.Result == "ناجح")
+                                        {<span class="badge bg-success">@exam.Result</span> }
+                                    else if (exam.Result == "راسب")
+                                    { <span class="badge bg-danger">@exam.Result</span> }
+                                else
+                                { <span class="badge bg-warning text-dark">@exam.Result</span>}
+                                    </td>
+                                    <td>@(exam.Score?.ToString("N2"))</td>
+                                </tr>
+                            }
+                            @if (!Model.ExamHistory.Any())
+                            {
+                                <tr><td colspan="5" class="text-center text-muted">لا يوجد سجل امتحانات.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- سجل الاختبارات الشفوية --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>سجل الاختبارات الشفوية</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>اللجنة</th>
+                                <th>تاريخ الاختبار</th>
+                                <th>النتيجة</th>
+                                <th>الدرجة</th>
+                                <th>ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var oralExam in Model.OralExamHistory)
+                            {
+                                <tr>
+                                    <td>@(oralExam.OralExamCommittee?.CommitteeName ?? "N/A")</td>
+                                    <td>@oralExam.ExamDate.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        @if (oralExam.Result == "ناجح")
+                                        {<span class="badge bg-success">@oralExam.Result</span> }
+                                    else
+                                    { <span class="badge bg-danger">@oralExam.Result</span>}
+                                    </td>
+
+                                    <td>@(oralExam.Score?.ToString("N2"))</td>
+                                    <td>@oralExam.Notes</td>
+                                </tr>
+                            }
+                            @if (!Model.OralExamHistory.Any())
+                            {
+                                <tr><td colspan="5" class="text-center text-muted">لا يوجد سجل اختبارات شفوية.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- سجل طلبات الوقف والنقل --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>سجل طلبات الوقف / النقل</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>نوع الطلب</th>
+                                <th>تاريخ الطلب</th>
+                                <th>الحالة</th>
+                                <th>المشرف الجديد</th>
+                                <th>ملاحظات اللجنة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var req in Model.SupervisorChangeRequests)
+                            {
+                                <tr>
+                                    <td>@req.RequestType</td>
+                                    <td>@req.RequestDate.ToString("yyyy-MM-dd")</td>
+                                    <td><span class="badge bg-info">@req.Status</span></td>
+                                    <td>@(req.NewSupervisor?.ArabicName ?? "N/A")</td>
+
+                                    <td>@req.CommitteeNotes</td>
+                                </tr>
+                            }
+                            @if (!Model.SupervisorChangeRequests.Any())
+                            {
+                                <tr><td colspan="5" class="text-center">لا توجد طلبات سابقة.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* === بداية الإضافة: مودال الإيقاف الإداري === *@
+    <div class="modal fade" id="councilSuspensionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                @* (استخدمنا اسم ViewModel جديد CreateSuspensionViewModel) *@
+                @using (Html.BeginForm("CreateCouncilSuspension", "TraineeProfile", new { area = "Admin" }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("TraineeId", Model.Id) @* تمرير ID المتدرب *@
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">إضافة إيقاف بقرار مجلس</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>سيؤدي هذا إلى إيقاف المتدرب <strong>@Model.ArabicName</strong> خلال الفترة المحددة، وسيتم خصم هذه الأيام من مدة تدريبه الصافية.</p>
+
+                        <div class="mb-3">
+                            @Html.Label("Reason", "سبب الإيقاف (رقم القرار)", new { @class = "form-label" }) <span class="text-danger">*</span>
+                            @Html.TextArea("Reason", null, new { @class = "form-control", rows = 3, required = "required" })
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                @Html.Label("SuspensionStartDate", "من تاريخ", new { @class = "form-label" }) <span class="text-danger">*</span>
+                                @Html.Editor("SuspensionStartDate", new { htmlAttributes = new { @class = "form-control", type = "date", Value = DateTime.Now.ToString("yyyy-MM-dd") } })
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                @Html.Label("SuspensionEndDate", "إلى تاريخ", new { @class = "form-label" }) <span class="text-danger">*</span>
+                                @Html.Editor("SuspensionEndDate", new { htmlAttributes = new { @class = "form-control", type = "date", Value = DateTime.Now.AddMonths(1).ToString("yyyy-MM-dd") } })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-danger">حفظ قرار الإيقاف</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    @* === نهاية الإضافة === *@
+
+    @* --- سجل الأبحاث القانونية --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>سجل الأبحاث القانونية</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>عنوان البحث</th>
+                                <th>تاريخ التقديم</th>
+                                <th>الحالة</th>
+                                <th>النتيجة النهائية</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var research in Model.LegalResearches)
+                            {
+                                <tr>
+                                    <td>@research.Title</td>
+                                    <td>@research.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                                    <td><span class="badge bg-info">@research.Status</span></td>
+                                    <td>@(research.Decisions.OrderByDescending(d => d.DecisionDate).FirstOrDefault()?.Result ?? "N/A")</td>
+                                    <td class="text-end">
+                                        <a href="@Url.Action("Details", "LegalResearch", new { area="Admin", id = research.Id })" class="btn btn-sm btn-secondary">
+                                            <i class="bi bi-eye-fill me-1"></i> تفاصيل
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.LegalResearches.Any())
+                            {
+                                <tr><td colspan="5" class="text-center">لا توجد أبحاث مسجلة.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* ===
+        ===  بداية الإضافة: بطاقة سجل الإيقافات الإدارية
+        === *@
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-gavel me-2"></i> سجل الإيقافات الإدارية (قرارات اللجنة/المجلس)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>السبب/القرار</th>
+                                <th>تاريخ البدء</th>
+                                <th>تاريخ الانتهاء</th>
+                                <th>الحالة</th>
+                                <th>الموظف المُدخل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @* (نفترض أن ViewModel يحتوي على هذه القائمة) *@
+                            @if (Model.CouncilSuspensions != null && Model.CouncilSuspensions.Any())
+                            {
+                                foreach (var sus in Model.CouncilSuspensions)
+                                {
+                                    <tr>
+                                        <td>@sus.Reason</td>
+                                        <td>@sus.SuspensionStartDate.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            @* (تصحيح لعرض التاريخ القابل لـ null) *@
+                                            @(sus.SuspensionEndDate.HasValue ? sus.SuspensionEndDate.Value.ToString("yyyy-MM-dd") : "إيقاف مفتوح")
+                                        </td>
+                                        <td>
+                                            @if (sus.Status == "معتمد")
+                                            {<span class="badge bg-danger">@sus.Status (ساري)</span> }
+                                        else if (sus.Status.StartsWith("منتهية"))
+                                        { <span class="badge bg-secondary">@sus.Status</span> }
+                                    else
+                                    { <span class="badge bg-warning text-dark">@sus.Status</span>}
+                                        </td>
+                                        <td>@(sus.CreatedByUser?.FullNameArabic ?? "N/A")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">لا توجد قرارات إيقاف إدارية مسجلة.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* === نهاية الإضافة === *@
+
+    @* ===
+        ===  بداية الإضافة: بطاقة سجل التدريب الشهري
+        === *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">سجل التدريب العملي الشهري</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.TrainingLogs.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped sub-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الشهر/السنة</th>
+                                    <th>تاريخ التقديم</th>
+                                    <th>الحالة</th>
+                                    <th>المشرف (عند المراجعة)</th>
+                                    <th>ملاحظات المشرف</th>
+                                    <th>المرفق</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in Model.TrainingLogs)
+                                {
+                                    <tr>
+                                        <td>@log.Month / @log.Year</td>
+                                        <td>@log.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            @if (log.Status == "معتمد")
+                                            {<span class="badge bg-success">@log.Status</span> }
+                                        else if (log.Status == "مرفوض")
+                                        { <span class="badge bg-danger">@log.Status</span> }
+                                    else
+                                    { <span class="badge bg-warning text-dark">@log.Status</span>}
+                                        </td>
+                                        <td>@(log.Supervisor?.ArabicName ?? "N/A")</td>
+                                        <td>@log.SupervisorNotes</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(log.FilePath))
+                                            {
+                                                @* (نستخدم الرابط المباشر للملف من مجلد Uploads) *@
+                                                <a href="@Url.Content(log.FilePath)" target="_blank">
+                                                    <i class="bi bi-paperclip"></i> عرض
+                                                </a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">لا توجد سجلات تدريب شهرية مقدمة من المتدرب.</p>
+                }
+            </div>
+        </div>
+    </div>
+    @* === نهاية الإضافة === *@
+
+
+    @* (بطاقة الإيقافات الإدارية وباقي البطاقات...) *@
+    <div class="col-12">
+        <div class="card border-danger">
+            @* ... (الكود الخاص بـ CouncilSuspensions) ... *@
+        </div>
+    </div>
+
+    @* ... (باقي كود الصفحة) ... *@
+
+    @* --- سجل الدفعات المالية --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>سجل الدفعات المالية (إيصالات القبض)</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم الإيصال</th>
+                                <th>رقم القسيمة</th>
+                                <th>تاريخ الدفع</th>
+                                <th>المبلغ المدفوع</th>
+                                <th>طريقة الدفع</th>
+                                <th>الموظف القابض</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var receipt in Model.PaymentHistory)
+                            {
+                                <tr>
+                                    <td>@receipt.Id</td>
+                                    <td>@receipt.Id</td>
+                                    <td>@receipt.BankPaymentDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@(receipt.PaymentVoucher?.TotalAmount.ToString("N2"))</td>
+                                    <td>سداد بنكي</td>
+                                    <td>@receipt.IssuedByUserName</td>
+                                </tr>
+                            }
+                            @if (!Model.PaymentHistory.Any())
+                            {
+                                <tr><td colspan="6" class="text-center">لا توجد دفعات مسجلة.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- سجل التجديدات السنوية --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>سجل التجديدات السنوية</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>سنة التجديد</th>
+                                <th>تاريخ التجديد (الدفع)</th>
+                                <th>رقم الإيصال</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ren in Model.Renewals)
+                            {
+                                <tr>
+                                    <td>@ren.RenewalYear</td>
+                                    <td>@ren.RenewalDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@ren.ReceiptId</td>
+                                </tr>
+                            }
+                            @if (!Model.Renewals.Any())
+                            {
+                                <tr><td colspan="3" class="text-center">لا توجد تجديدات مسجلة.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- بطاقة المؤهلات (مع زر الإضافة) --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>المؤهلات العلمية</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addQualificationModal">
+                    <i class="bi bi-plus-circle me-1"></i> إضافة مؤهل
+                </button>
+            </div>
+            <div class="card-body">
+                @Html.Partial("~/Areas/Members/Views/Profile/_QualificationList.cshtml", Model.Qualifications)
+            </div>
+        </div>
+    </div>
+
+    @* --- بطاقة المرفقات (مع زر الإضافة) --- *@
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>المرفقات</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addAttachmentModal">
+                    <i class="bi bi-plus-circle me-1"></i> إضافة مرفق
+                </button>
+            </div>
+            <div class="card-body">
+                @Html.Partial("~/Areas/Members/Views/Profile/_AttachmentList.cshtml", Model.Attachments)
+            </div>
+        </div>
+    </div>
+</div> @* نهاية .row.g-4 (إغلاق الوسم 2) *@
+
+</div> @* --- نهاية .container-fluid (إغلاق الوسم 1) --- *@
+
+
+
+@* --- النماذج المنبثقة (Modals) --- *@
+<div class="modal fade" id="addQualificationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddQualification", "TraineeProfile", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("applicationId", Model.Id)
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مؤهل علمي جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">نوع المؤهل</label>
+                            @Html.DropDownList("QualificationTypeId", (SelectList)ViewBag.QualificationTypes, "اختر نوع المؤهل...", new { @class = "form-select", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الجامعة / الجهة المانحة</label>
+                            <input type="text" name="UniversityName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الكلية</label>
+                            <input type="text" name="Faculty" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">التخصص</label>
+                            <input type="text" name="Specialization" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">سنة التخرج</label>
+                            <input type="number" name="GraduationYear" class="form-control" placeholder="مثال: 2024" min="1950" max="@DateTime.Now.Year" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">الدرجة / المعدل (اختياري)</label>
+                            <input type="number" step="0.01" name="GradePercentage" class="form-control" placeholder="مثال: 85.5" min="0" max="100" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ المؤهل</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addAttachmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddAttachment", "TraineeProfile", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("applicationId", Model.Id)
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مرفق جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">نوع المرفق</label>
+                        @Html.DropDownList("AttachmentTypeId", (SelectList)ViewBag.AttachmentTypes, "اختر نوع المرفق...", new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">اختر الملف</label>
+                        <input type="file" name="UploadedFile" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ المرفق</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

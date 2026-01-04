@@ -1,0 +1,136 @@
+﻿@model IEnumerable<BarManegment.Models.LawyerFinancialAid>
+
+@{
+    ViewBag.Title = "سجل المساعدات المالية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-primary mb-1"><i class="bi bi-cash-stack me-2"></i> سجل المساعدات المالية</h4>
+            <span class="text-muted small">إدارة المنح والمساعدات الفردية والجماعية</span>
+        </div>
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-lg"></i> مساعدة فردية
+            </a>
+            <a href="@Url.Action("BatchCreate")" class="btn btn-success shadow-sm">
+                <i class="bi bi-people-fill"></i> صرف جماعي
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show border-start border-success border-4 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-start border-danger border-4 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="aidsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>المستفيد</th>
+                            <th>نوع المساعدة</th>
+                            <th>المبلغ</th>
+                            <th>التاريخ</th>
+                            <th>الحالة</th>
+                            <th>الطريقة</th>
+                            <th style="width: 150px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded-circle p-2 me-2 text-primary"><i class="bi bi-person-fill"></i></div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">@item.Lawyer.ArabicName</h6>
+                                            <small class="text-muted">@item.Lawyer.NationalIdNumber</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-info text-dark bg-opacity-10 border border-info">@item.AidType.Name</span></td>
+                                <td class="fw-bold text-success">@item.Amount @item.Currency.Symbol</td>
+                                <td>
+                                    <div class="small">@item.DecisionDate.ToString("yyyy/MM/dd")</div>
+                                    @if (!string.IsNullOrEmpty(item.BatchReference))
+                                    {
+                                        <a href="@Url.Action("BatchDetails", new { batchRef = item.BatchReference })" class="badge bg-secondary text-decoration-none text-white" title="الذهاب للكشف الجماعي">
+                                            Ref: @item.BatchReference
+                                        </a>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsPaid)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> مدفوعة</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> معلقة</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.DisbursementMethod == "BankTransfer")
+                                    {<span class="small text-muted"><i class="bi bi-bank me-1"></i> بنك</span> }
+                                    else if (item.DisbursementMethod == "Wallet")
+                                    { <span class="small text-muted"><i class="bi bi-phone me-1"></i> محفظة</span> }
+                                    else
+                                    { <span class="small text-muted"><i class="bi bi-cash me-1"></i> نقد</span>}
+                                </td>
+                                <td>
+                                    @if (!item.IsPaid)
+                                    {
+                                        <div class="btn-group btn-group-sm shadow-sm" role="group">
+                                            @* زر الصرف *@
+                                            <a href="@Url.Action("PayAid", new { id = item.Id })" class="btn btn-success text-white" title="اعتماد وصرف">
+                                                <i class="bi bi-cash-coin"></i>
+                                            </a>
+
+                                            @* زر التعديل - مضاف جديد *@
+                                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning text-dark" title="تعديل البيانات">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small"><i class="bi bi-lock-fill"></i> مغلق</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#aidsTable').DataTable({
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json" },
+                "order": [[4, "desc"]]
+            });
+        });
+    </script>
+}

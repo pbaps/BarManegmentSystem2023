@@ -1,0 +1,147 @@
+﻿@model BarManegment.Models.GraduateApplication
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml";
+}
+
+<style>
+    /* تخصيصات الصفحة */
+    .page {
+        font-family: 'Traditional Arabic', serif;
+        font-size: 18pt;
+        line-height: 1.8;
+    }
+
+    .header {
+        text-align: center;
+        border-bottom: 3px solid #cc0000;
+        padding-bottom: 15px;
+        margin-bottom: 40px;
+    }
+
+    .content {
+        text-align: justify;
+        margin-bottom: 50px;
+        padding: 0 10px;
+    }
+
+    .footer-signatures {
+        margin-top: 80px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .signature-block {
+        text-align: center;
+        font-weight: bold;
+        min-width: 200px;
+    }
+    /* لوحة إعدادات التوقيع */
+    .signature-settings {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px auto;
+        width: 210mm; /* نفس عرض الصفحة */
+        direction: rtl;
+    }
+</style>
+
+<!-- لوحة تحكم التوقيع (لا تظهر في الطباعة) -->
+<div class="no-print signature-settings shadow-sm">
+    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pen-fill"></i> إعدادات التوقيع</h6>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="small text-muted">اختر الموقع:</label>
+            <select id="signerSelect" class="form-select form-select-sm" onchange="updateSigner()">
+                <option value="custom">--- إدخال يدوي ---</option>
+                <option value="علي الدن|أمين الصندوق" selected>أمين الصندوق (علي الدن)</option>
+                <option value="صافي الدحدوح|نائب نقيب المحامين">نائب النقيب (صافي الدحدوح)</option>
+                <option value="زياد عطا النجار|أمين السر">أمين السر (زياد النجار)</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="small text-muted">الاسم:</label>
+            <input type="text" id="signerNameInput" class="form-control form-control-sm" value="الأستاذ علي الدن" oninput="syncSignerDisplay()">
+        </div>
+        <div class="col-md-4">
+            <label class="small text-muted">الصفة:</label>
+            <input type="text" id="signerTitleInput" class="form-control form-control-sm" value="أمين الصندوق" oninput="syncSignerDisplay()">
+        </div>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">
+        <!-- يمكن وضع صورة الترويسة الكاملة هنا -->
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="text-align:right; font-size:12pt; font-family:'Cairo', sans-serif;">
+                <strong>نقابة المحامين النظاميين الفلسطينيين</strong><br />
+                القدس - العاصمة
+            </div>
+            <img src="~/Content/Images/logo.png" width="90" />
+            <div style="text-align:left; font-size:12pt; font-family:'Cairo', sans-serif;" dir="ltr">
+                <strong>Palestinian Bar Association</strong><br />
+                Jerusalem
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <strong>السيد / مدير بنك فلسطين</strong> <span style="float:left">المحترم</span><br />
+        <strong>تحية طيبة وبعد ،،،،،،</strong>
+    </div>
+
+    <div style="text-align: center; margin: 40px 0;">
+        <h2 style="text-decoration: underline; font-family:'Traditional Arabic'; font-weight:bold;">الموضوع / فتح (أو تفعيل) حساب جاري</h2>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <strong>للأستاذ/ة : @Model.ArabicName</strong>
+    </div>
+
+    <div class="content">
+        بدايةً، تهديهم نقابة المحامين الفلسطينيين أطيب تحياتها وتتمنى لكم دوام الصحة والعافية.<br /><br />
+        نأمل من سيادتكم إصدار تعليماتكم لذوي الاختصاص للعمل على <strong>فتح / تفعيل حساب جاري</strong>
+        للأستاذ/ة المذكور/ة أعلاه، لدى البنك وذلك لتسهيل عملية تحويل أتعاب المحاماة الخاصة به/ا من حساب النقابة إلي حسابه/ا الشخصي.
+    </div>
+
+    <div style="text-align: center; margin-top: 50px;">
+        <strong>شاكرين لكم حسن اهتمامكم وتعاونكم معنا</strong><br />
+        <strong>وتفضلوا بقبول فائق الاحترام</strong>
+    </div>
+
+    <div class="footer-signatures">
+        <!-- التوقيع (على اليسار) -->
+        <div style="text-align: right; font-size: 12pt;">
+            حرر في : @DateTime.Now.ToString("yyyy/MM/dd")
+        </div>
+
+        <div class="signature-block">
+            نقابة المحامين الفلسطينيين - مركز غزة<br />
+            <span id="displayTitle">أمين الصندوق</span><br /><br />
+            <span id="displayName">الأستاذ علي الدن</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateSigner() {
+        var selected = document.getElementById("signerSelect").value;
+        if (selected === "custom") {
+            document.getElementById("signerNameInput").value = "";
+            document.getElementById("signerTitleInput").value = "";
+        } else {
+            var parts = selected.split('|');
+            document.getElementById("signerNameInput").value = "الأستاذ " + parts[0];
+            document.getElementById("signerTitleInput").value = parts[1];
+        }
+        syncSignerDisplay();
+    }
+
+    function syncSignerDisplay() {
+        document.getElementById("displayName").innerText = document.getElementById("signerNameInput").value;
+        document.getElementById("displayTitle").innerText = document.getElementById("signerTitleInput").value;
+    }
+</script>

@@ -1,0 +1,100 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.LawyerShareDetailsViewModel
+@{
+    ViewBag.Title = "إدارة حصص المحامي: " + Model.Lawyer.ArabicName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2>@ViewBag.Title</h2>
+<p class="text-muted">
+    رقم العضوية: @Model.Lawyer.MembershipId | رقم الهوية: @Model.Lawyer.User.IdentificationNumber
+</p>
+<p>
+    @Html.ActionLink("العودة إلى البحث", "Index", null, new { @class = "btn btn-outline-secondary" })
+</p>
+<hr />
+
+@* (رسائل النجاح أو الخطأ) *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="table-responsive">
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>رقم المعاملة</th>
+                <th>تاريخ الإيصال</th>
+                <th>نوع العقد</th>
+                <th>مبلغ الحصة</th>
+                <th>الحالة</th>
+                <th>سبب الحجز</th>
+                <th>الإجراء</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Shares.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted p-4">
+                        لا يوجد حصص مستحقة (غير مرسلة للبنك) لهذا المحامي.
+                    </td>
+                </tr>
+            }
+
+            @foreach (var item in Model.Shares)
+            {
+                string rowClass = item.IsOnHold ? "table-warning text-decoration-line-through" : "table-success";
+
+                <tr class="@rowClass">
+                    <td>@item.ContractTransactionId</td>
+                    <td>@item.Receipt.BankPaymentDate.ToString("yyyy-MM-dd")</td>
+                    <td>@item.ContractTransaction.ContractType.Name</td>
+                    <td>@item.Amount.ToString("N2")</td>
+                    <td>
+                        @if (item.IsOnHold)
+                        {
+                            <span class_="badge bg-danger">محجوزة</span>
+                        }
+                        else
+                        {
+                            <span class_="badge bg-success">جاهزة للدفع</span>
+                        }
+                    </td>
+                    <td>@item.HoldReason</td>
+                    <td style="width: 350px;">
+                        @if (item.IsOnHold)
+                        {
+                            @* --- نموذج إلغاء الحجز --- *@
+                            using (Html.BeginForm("ReleaseShare", "ShareManagement", FormMethod.Post, new { @class = "d-inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="shareId" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-circle"></i> إلغاء الحجز
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            @* --- نموذج الحجز --- *@
+                            using (Html.BeginForm("HoldShare", "ShareManagement", FormMethod.Post, new { @class = "d-inline-flex" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="shareId" value="@item.Id" />
+                                <input type="text" name="holdReason" class="form-control form-control-sm" style="width: 200px;" value="@Model.HoldReason" />
+                                <button type="submit" class="btn btn-sm btn-danger ms-1">
+                                    <i class="bi bi-pause-circle"></i> حجز
+                                </button>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

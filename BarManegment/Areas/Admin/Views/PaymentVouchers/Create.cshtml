@@ -1,0 +1,205 @@
+﻿@model BarManegment.ViewModels.CreateVoucherViewModel
+@{
+    ViewBag.Title = "إنشاء قسيمة دفع جديدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary fw-bold"><i class="bi bi-receipt-cutoff me-2"></i> @ViewBag.Title</h4>
+        <a href="#" onclick="window.close();" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-x-lg me-1"></i> إغلاق
+        </a>
+    </div>
+
+    @using (Html.BeginForm("Create", "PaymentVouchers", FormMethod.Post, new { area = "Admin", target = "_blank", id = "voucherForm" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(model => model.GraduateApplicationId)
+
+        <div class="row g-4">
+            <!-- العمود الأيمن: بيانات القسيمة والرسوم -->
+            <div class="col-lg-8">
+
+                <!-- بطاقة بيانات المتدرب -->
+                <div class="card shadow-sm border-0 mb-4 border-start border-5 border-primary">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3 text-primary">
+                                <i class="bi bi-person-vcard fs-3"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted text-uppercase small fw-bold mb-1">اسم المستفيد</h6>
+                                <h4 class="mb-0 text-dark fw-bold">@Model.TraineeName</h4>
+                            </div>
+                        </div>
+                        <hr class="my-3 opacity-10" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                @Html.LabelFor(model => model.ExpiryDate, htmlAttributes: new { @class = "form-label text-muted small fw-bold" })
+
+                                @* === 💡 التعديل: استخدام TextBoxFor مع تنسيق التاريخ yyyy-MM-dd ليظهر في المتصفح === *@
+                                @Html.TextBoxFor(model => model.ExpiryDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+
+                                @Html.ValidationMessageFor(model => model.ExpiryDate, "", new { @class = "text-danger" })
+                                <div class="form-text text-muted small">تاريخ انتهاء الصلاحية الافتراضي هو أسبوع من اليوم.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جدول الرسوم -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-secondary"><i class="bi bi-list-check me-2"></i> قائمة الرسوم المتاحة</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="selectAllSwitch">
+                            <label class="form-check-label small" for="selectAllSwitch">تحديد الكل</label>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">#</th>
+                                    <th>اسم الرسم</th>
+                                    <th>تفاصيل الحساب البنكي</th>
+                                    <th style="width: 180px;">المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Fees.Count; i++)
+                                {
+                                    <tr class="fee-row @(Model.Fees[i].IsSelected ? "table-active bg-primary bg-opacity-10" : "")">
+                                        <td class="text-center">
+                                            @Html.HiddenFor(m => m.Fees[i].FeeTypeId)
+                                            @Html.HiddenFor(m => m.Fees[i].BankAccountId)
+                                            @Html.HiddenFor(m => m.Fees[i].FeeTypeName)
+
+                                            <div class="form-check d-flex justify-content-center">
+                                                @Html.CheckBoxFor(m => m.Fees[i].IsSelected, new { @class = "form-check-input fee-check", style = "cursor:pointer; transform: scale(1.2);" })
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <label class="form-check-label d-block w-100 fw-bold text-dark cursor-pointer" for="@("Fees_" + i + "__IsSelected")">
+                                                @Model.Fees[i].FeeTypeName
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="small text-muted">
+                                                <span class="d-block"><i class="bi bi-bank me-1"></i> @Model.Fees[i].BankName</span>
+                                                <span class="font-monospace">@Model.Fees[i].BankAccountNumber</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                @Html.TextBoxFor(m => m.Fees[i].Amount, new { @class = "form-control fw-bold text-center fee-amount", type = "number", step = "0.01" })
+                                                <span class="input-group-text bg-white text-secondary">@(Model.Fees[i].CurrencySymbol)</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (!Model.Fees.Any())
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-exclamation-circle fs-4"></i>
+                            <p class="mt-2">لا توجد رسوم معرفة في النظام.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- العمود الأيسر: الملخص والدفع -->
+            <div class="col-lg-4">
+                <div class="card shadow border-0 mb-4 sticky-top" style="top: 20px; z-index: 1;">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="card-title mb-0"><i class="bi bi-calculator me-2"></i> ملخص القسيمة</h5>
+                    </div>
+                    <div class="card-body bg-light">
+                        <!-- طريقة الدفع -->
+                        <h6 class="fw-bold text-muted mb-3 small text-uppercase">طريقة الدفع</h6>
+                        <div class="row g-2 mb-4">
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="PaymentMethod" id="payCash" value="نقدي" @(Model.PaymentMethod == "نقدي" ? "checked" : "")>
+                                <label class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3" for="payCash">
+                                    <i class="bi bi-cash-coin fs-2 mb-2"></i>
+                                    <span class="fw-bold">نقدي</span>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="PaymentMethod" id="payBank" value="بنكي" @(Model.PaymentMethod == "بنكي" ? "checked" : "")>
+                                <label class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3" for="payBank">
+                                    <i class="bi bi-bank fs-2 mb-2"></i>
+                                    <span class="fw-bold">بنكي</span>
+                                </label>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.PaymentMethod, "", new { @class = "text-danger small mt-1" })
+                        </div>
+
+                        <hr />
+
+                        <!-- المجموع -->
+                        <div class="text-center my-4">
+                            <small class="text-muted text-uppercase fw-bold">المبلغ الإجمالي</small>
+                            <h1 class="display-5 fw-bold text-primary mb-0">
+                                <span id="totalDisplay">0.00</span>
+                                <span class="fs-1 text-secondary">@(Model.Fees.FirstOrDefault()?.CurrencySymbol)</span>
+                            </h1>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 py-3 shadow-sm fw-bold">
+                            <i class="bi bi-printer-fill me-2"></i> إصدار وطباعة
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // دالة حساب المجموع وتحديث الواجهة
+            function calculateTotal() {
+                var total = 0;
+                var count = 0;
+
+                $('.fee-row').each(function () {
+                    var checkbox = $(this).find('.fee-check');
+                    var amountInput = $(this).find('.fee-amount');
+
+                    if (checkbox.is(':checked')) {
+                        var amount = parseFloat(amountInput.val()) || 0;
+                        total += amount;
+                        count++;
+                        $(this).addClass('table-active bg-primary bg-opacity-10 border-start border-4 border-primary');
+                    } else {
+                        $(this).removeClass('table-active bg-primary bg-opacity-10 border-start border-4 border-primary');
+                    }
+                });
+
+                // تحديث الرقم (مع فواصل الآلاف)
+                $('#totalDisplay').text(total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            }
+
+            // تفعيل الحساب عند تغيير الاختيار أو المبلغ
+            $('.fee-check, .fee-amount').on('change input', function () {
+                calculateTotal();
+            });
+
+            // تحديد الكل
+            $('#selectAllSwitch').on('change', function () {
+                var isChecked = $(this).is(':checked');
+                $('.fee-check').prop('checked', isChecked).trigger('change');
+            });
+
+            // تشغيل الحساب عند تحميل الصفحة
+            calculateTotal();
+        });
+    </script>
+}

@@ -1,0 +1,113 @@
+﻿@model IEnumerable<BarManegment.Models.GraduateApplication>
+@{
+    ViewBag.Title = "متابعة تجديدات التدريب السنوية";
+    // يتم الآن جلب هذه البيانات من الكنترولر عبر ViewBag
+    var renewedTraineeIds = ViewBag.RenewedTraineeIds as List<int> ?? new List<int>();
+    var currentYear = (int)ViewBag.CurrentYear;
+    var searchTerm = ViewBag.SearchTerm as string;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4 class="card-title mb-0">@ViewBag.Title للعام @currentYear</h4>
+            </div>
+
+            @* === بداية إضافة فورم البحث === *@
+            @using (Html.BeginForm("Index", "TraineeRenewals", FormMethod.Get, new { @class = "row g-3 align-items-center" }))
+            {
+                <div class="col-auto">
+                    <label for="searchTerm" class="visually-hidden">بحث</label>
+                    @* عرض قيمة البحث الحالية *@
+                    <input type="text" class="form-control form-control-sm" id="searchTerm" name="searchTerm" placeholder="ابحث بالاسم أو الرقم..." value="@searchTerm">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-search me-1"></i> بحث
+                    </button>
+                    @if (!string.IsNullOrEmpty(searchTerm))
+                    {
+                        @Html.ActionLink("إلغاء البحث", "Index", null, new { @class = "btn btn-outline-secondary btn-sm ms-2" })
+                    }
+                </div>
+            }
+            @* === نهاية إضافة فورم البحث === *@
+
+            <p class="text-muted mt-2 mb-0">قائمة بالمتدربين المقيدين المستحق عليهم تجديد الاشتراك السنوي.</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم المتدرب</th>
+                            <th>اسم المتدرب</th>
+                            <th>المحامي المشرف</th>
+                            <th>حالة التجديد (@currentYear)</th>
+                            <th style="width: 200px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                bool isRenewed = renewedTraineeIds.Contains(item.Id);
+                                <tr>
+                                    <td>@item.Id</td>
+                                    <td>@item.ArabicName</td>
+                                    <td>@(item.Supervisor?.ArabicName ?? "غير محدد")</td>
+                                    <td>
+                                        @if (isRenewed)
+                                        {
+                                            <span class="badge bg-success">تم التجديد</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">التجديد مستحق</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!isRenewed)
+                                        {
+                                            // الرابط الآن يجب أن يشير إلى نوع الرسوم الصحيح "تجديد سنوي"
+                                            // تأكد من أن الأكشن Create في PaymentVouchers يستطيع التعامل مع نوع الرسم
+                                            <a href="@Url.Action("Create", "PaymentVouchers", new { traineeId = item.Id, feeTypeName = "تجديد سنوي" })" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-receipt me-1"></i> إصدار فيشة تجديد
+                                            </a>
+
+                                            @* ملاحظة: يمكنك تعديل الرابط أعلاه ليمرر ID نوع الرسم مباشرة إذا كان ذلك أسهل لكنترولر القسائم *@
+                                            @* مثال: new { traineeId = item.Id, feeTypeId = 5 } *@
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("Details", "TraineeProfile", new { id = item.Id })" class="btn btn-outline-secondary btn-sm" title="عرض الملف">
+                                                <i class="bi bi-person-vcard"></i> ملف المتدرب
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    @if (!string.IsNullOrEmpty(searchTerm))
+                                    {
+                                        <span>لا توجد نتائج مطابقة للبحث "@searchTerm".</span>
+                                    }
+                                    else
+                                    {
+                                        <span>لا يوجد متدربون مستحق عليهم التجديد لهذا العام.</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

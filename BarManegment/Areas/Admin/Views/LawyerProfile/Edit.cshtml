@@ -1,0 +1,148 @@
+﻿@model BarManegment.ViewModels.GraduateApplicationViewModel
+@{
+    ViewBag.Title = "تعديل بيانات المحامي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow border-0">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-person-gear me-2"></i> تعديل الملف الشخصي للمحامي</h5>
+                    <a href="@Url.Action("Details", "LawyerProfile", new { id = Model.Id })" class="btn btn-sm btn-outline-light fw-bold">عودة للملف</a>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm("Edit", "LawyerProfile", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.Id)
+
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="row">
+                            <!-- القسم الأيمن: البيانات الشخصية -->
+                            <div class="col-md-6 border-end">
+                                <h6 class="text-primary fw-bold mb-3 border-bottom pb-2"><i class="bi bi-person-vcard me-2"></i> البيانات الشخصية</h6>
+
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.ArabicName, new { @class = "form-label" }) <span class="text-danger">*</span>
+                                    @Html.EditorFor(m => m.ArabicName, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(m => m.ArabicName, "", new { @class = "text-danger small" })
+                                </div>
+
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.EnglishName, new { @class = "form-label" })
+                                    @Html.EditorFor(m => m.EnglishName, new { htmlAttributes = new { @class = "form-control", dir = "ltr" } })
+                                    @Html.ValidationMessageFor(m => m.EnglishName, "", new { @class = "text-danger small" })
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.NationalIdTypeId, new { @class = "form-label" })
+                                        @Html.DropDownListFor(m => m.NationalIdTypeId, Model.NationalIdTypes, new { @class = "form-select" })
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.NationalIdNumber, new { @class = "form-label" }) <span class="text-danger">*</span>
+                                        @Html.EditorFor(m => m.NationalIdNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(m => m.NationalIdNumber, "", new { @class = "text-danger small" })
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.BirthDate, new { @class = "form-label" }) <span class="text-danger">*</span>
+                                        @Html.EditorFor(m => m.BirthDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                        @Html.ValidationMessageFor(m => m.BirthDate, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.BirthPlace, new { @class = "form-label" })
+                                        @Html.EditorFor(m => m.BirthPlace, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.GenderId, new { @class = "form-label" })
+                                        @Html.DropDownListFor(m => m.GenderId, Model.Genders, new { @class = "form-select" })
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.Nationality, new { @class = "form-label" })
+                                        @Html.DropDownListFor(m => m.Nationality, Model.Countries, new { @class = "form-select" })
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">تحديث الصورة الشخصية</label>
+                                    <input type="file" name="PersonalPhotoFile" class="form-control" accept="image/*" />
+                                    <div class="form-text">اترك الحقل فارغاً للاحتفاظ بالصورة الحالية.</div>
+                                </div>
+                            </div>
+
+                            <!-- القسم الأيسر: الاتصال والبنك -->
+                            <div class="col-md-6 ps-md-4">
+                                <h6 class="text-primary fw-bold mb-3 border-bottom pb-2"><i class="bi bi-telephone me-2"></i> بيانات الاتصال</h6>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.ContactInfo.MobileNumber, new { @class = "form-label" }) <span class="text-danger">*</span>
+                                        @Html.EditorFor(m => m.ContactInfo.MobileNumber, new { htmlAttributes = new { @class = "form-control", dir = "ltr" } })
+                                        @Html.ValidationMessageFor(m => m.ContactInfo.MobileNumber, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.ContactInfo.Email, new { @class = "form-label" })
+                                        @Html.EditorFor(m => m.ContactInfo.Email, new { htmlAttributes = new { @class = "form-control", dir = "ltr" } })
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.ContactInfo.Governorate, new { @class = "form-label" })
+                                        @Html.DropDownListFor(m => m.ContactInfo.Governorate, Model.Governorates, "اختر المحافظة", new { @class = "form-select" })
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.ContactInfo.City, new { @class = "form-label" })
+                                        @Html.EditorFor(m => m.ContactInfo.City, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.ContactInfo.Street, new { @class = "form-label" })
+                                    @Html.EditorFor(m => m.ContactInfo.Street, new { htmlAttributes = new { @class = "form-control", placeholder = "اسم الشارع / المعلم الأقرب" } })
+                                </div>
+
+                                <h6 class="text-success fw-bold mb-3 border-bottom pb-2 mt-4"><i class="bi bi-bank me-2"></i> البيانات البنكية (اختياري)</h6>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.BankName, new { @class = "form-label" })
+                                        @Html.EditorFor(m => m.BankName, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        @Html.LabelFor(m => m.BankBranch, new { @class = "form-label" })
+                                        @Html.EditorFor(m => m.BankBranch, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        @Html.LabelFor(m => m.AccountNumber, new { @class = "form-label" })
+                                        @Html.EditorFor(m => m.AccountNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        @Html.LabelFor(m => m.Iban, new { @class = "form-label" })
+                                        @Html.EditorFor(m => m.Iban, new { htmlAttributes = new { @class = "form-control", dir = "ltr" } })
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="text-end border-top pt-3 mt-2">
+                            <button type="submit" class="btn btn-dark px-5 fw-bold shadow-sm">
+                                <i class="bi bi-save me-2"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

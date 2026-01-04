@@ -1,0 +1,44 @@
+﻿@model IEnumerable<BarManegment.Models.Attachment>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>نوع المرفق</th>
+                <th>اسم الملف</th>
+                <th>تاريخ الرفع</th>
+                <th class="no-print" style="width: 100px;">إجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.AttachmentType.Name</td>
+                        <td>@item.OriginalFileName</td>
+                        <td>@item.UploadDate.ToString("yyyy-MM-dd")</td>
+                        <td class="no-print">
+                            <a href="@Url.Action("GetAttachmentFile", "GraduateApplications", new { area = "Admin", id = item.Id })" target="_blank" class="btn btn-info btn-sm" title="فتح الملف">
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+                            @using (Html.BeginForm("DeleteAttachment", "GraduateApplications", new { area = "Admin", attachmentId = item.Id, applicationId = item.GraduateApplicationId }, FormMethod.Post, new { @class = "d-inline" }))
+                   
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد؟');" title="حذف">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="4" class="text-center text-muted">لم يتم رفع أي مرفقات.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

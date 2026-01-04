@@ -1,0 +1,43 @@
+﻿@model IEnumerable<BarManegment.Models.GraduateApplication>
+@{
+    ViewBag.Title = "تقديم طلب جديد - اختر متدرب";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+            <p class="text-muted mb-0">القائمة أدناه تعرض المتدربين (المقيدين والموقوفين) الذين يمكن تقديم طلب لهم.</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم المتدرب</th>
+                            <th>الاسم</th>
+                            <th>الحالة الحالية</th>
+                            <th style="width: 100px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.TraineeSerialNo</td>
+                                <td>@item.ArabicName</td>
+                                <td>@item.ApplicationStatus.Name</td>
+                                <td>
+                                    @Html.ActionLink("اختيار", "Create", new { traineeId = item.Id }, new { @class = "btn btn-sm btn-primary" })
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer text-end">
+            @Html.ActionLink("العودة إلى قائمة الطلبات", "Index", null, new { @class = "btn btn-secondary" })
+        </div>
+    </div>
+</div>

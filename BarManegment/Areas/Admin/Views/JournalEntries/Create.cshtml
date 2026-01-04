@@ -1,0 +1,219 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.JournalEntryViewModel
+@{
+    ViewBag.Title = "قيد يومية جديد";
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">إنشاء قيد يومية (سنة: @ViewBag.FiscalYearName)</h6>
+        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">عودة للقائمة</a>
+    </div>
+    <div class="card-body">
+        <form id="journalForm">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">تاريخ القيد</label>
+                    @Html.TextBoxFor(m => m.EntryDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">رقم المستند (المرجع)</label>
+                    @Html.TextBoxFor(m => m.ReferenceNumber, new { @class = "form-control" })
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">البيان العام</label>
+                    @Html.TextBoxFor(m => m.Description, new { @class = "form-control", placeholder = "شرح مختصر للقيد" })
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="tblLines">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 30%">الحساب</th>
+                            <th style="width: 15%">مركز التكلفة</th>
+                            <th style="width: 20%">البيان (اختياري)</th>
+                            <th style="width: 12%">مدين</th>
+                            <th style="width: 12%">دائن</th>
+                            <th style="width: 5%"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="3" class="text-end">الإجمالي:</td>
+                            <td id="totalDebit" class="text-success">0.00</td>
+                            <td id="totalCredit" class="text-success">0.00</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end">الفرق:</td>
+                            <td colspan="2" id="diffAmount" class="text-center">0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between mt-3">
+                <button type="button" class="btn btn-info" id="btnAddRow"><i class="bi bi-plus-circle"></i> إضافة سطر</button>
+                <button type="button" class="btn btn-success btn-lg" id="btnSave"><i class="bi bi-save"></i> حفظ القيد</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div style="display:none;">
+    @Html.DropDownList("HiddenAccounts", ViewBag.Accounts as SelectList, "اختر الحساب", new { @class = "form-control account-select" })
+    @Html.DropDownList("HiddenCostCenters", ViewBag.CostCenters as SelectList, "-- بلا --", new { @class = "form-control" })
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // إضافة سطرين افتراضياً
+            addRow();
+            addRow();
+
+            // زر إضافة سطر
+            $('#btnAddRow').click(function () {
+                addRow();
+            });
+
+            // زر حذف سطر
+            $(document).on('click', '.btn-remove', function () {
+                $(this).closest('tr').remove();
+                calculateTotals();
+            });
+
+            // عند تغيير الأرقام
+            $(document).on('input', '.calc-input', function () {
+                calculateTotals();
+            });
+
+            // زر الحفظ
+            $('#btnSave').click(function () {
+                saveEntry();
+            });
+        });
+
+        function addRow() {
+            var accountsHtml = $('#HiddenAccounts').html(); // نسخ خيارات الحسابات
+            var costCentersHtml = $('#HiddenCostCenters').html(); // نسخ خيارات المراكز
+
+            var row = `
+                <tr>
+                    <td>
+                        <select class="form-control select2-account account-input">${accountsHtml}</select>
+                    </td>
+                    <td>
+                        <select class="form-control costcenter-input">${costCentersHtml}</select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control desc-input" placeholder="شرح السطر" />
+                    </td>
+                    <td>
+                        <input type="number" class="form-control calc-input debit-input" value="0" step="0.01" min="0" />
+                    </td>
+                    <td>
+                        <input type="number" class="form-control calc-input credit-input" value="0" step="0.01" min="0" />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm btn-remove"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+            $('#tblLines tbody').append(row);
+
+            // تفعيل Select2 للصف الجديد فقط
+            $('#tblLines tbody tr:last .select2-account').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                placeholder: "ابحث عن الحساب...",
+                allowClear: true
+            });
+        }
+
+        function calculateTotals() {
+            var totalDebit = 0;
+            var totalCredit = 0;
+
+            $('.debit-input').each(function () {
+                var val = parseFloat($(this).val()) || 0;
+                totalDebit += val;
+            });
+
+            $('.credit-input').each(function () {
+                var val = parseFloat($(this).val()) || 0;
+                totalCredit += val;
+            });
+
+            $('#totalDebit').text(totalDebit.toFixed(2));
+            $('#totalCredit').text(totalCredit.toFixed(2));
+
+            var diff = totalDebit - totalCredit;
+            $('#diffAmount').text(Math.abs(diff).toFixed(2));
+
+            if (Math.abs(diff) < 0.01 && totalDebit > 0) {
+                $('#diffAmount').removeClass('text-danger').addClass('text-success').text("متوازن");
+                $('#btnSave').prop('disabled', false);
+            } else {
+                $('#diffAmount').removeClass('text-success').addClass('text-danger');
+                // لا نعطل الزر، نترك السيرفر يرفض لإعطاء رسالة واضحة
+            }
+        }
+
+        function saveEntry() {
+            // تجميع البيانات
+            var entry = {
+                EntryDate: $('#EntryDate').val(),
+                ReferenceNumber: $('#ReferenceNumber').val(),
+                Description: $('#Description').val(),
+                Lines: []
+            };
+
+            $('#tblLines tbody tr').each(function () {
+                var row = $(this);
+                var accountId = row.find('.account-input').val();
+
+                // تجاهل الصفوف الفارغة (التي لم يتم اختيار حساب لها)
+                if (accountId) {
+                    entry.Lines.push({
+                        AccountId: accountId,
+                        CostCenterId: row.find('.costcenter-input').val(),
+                        LineDescription: row.find('.desc-input').val(),
+                        Debit: parseFloat(row.find('.debit-input').val()) || 0,
+                        Credit: parseFloat(row.find('.credit-input').val()) || 0
+                    });
+                }
+            });
+
+            // تحقق بسيط
+            if (entry.Lines.length < 2) {
+                alert("يجب إدخال طرفي القيد على الأقل.");
+                return;
+            }
+
+            // إرسال AJAX
+            $.ajax({
+                url: '@Url.Action("SaveEntry")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(entry),
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                        window.location.href = '@Url.Action("Index")';
+                    } else {
+                        alert("خطأ: " + response.message);
+                    }
+                },
+                error: function () {
+                    alert("حدث خطأ في الاتصال بالسيرفر.");
+                }
+            });
+        }
+    </script>
+}

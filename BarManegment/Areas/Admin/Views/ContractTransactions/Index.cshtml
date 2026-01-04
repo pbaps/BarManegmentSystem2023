@@ -1,0 +1,136 @@
+﻿@model IEnumerable<BarManegment.Models.ContractTransaction>
+@{
+    ViewBag.Title = "متابعة معاملات التصديق";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2><i class="bi bi-file-earmark-check-fill me-2"></i> @ViewBag.Title</h2>
+
+@* 1. إضافة نموذج البحث *@
+@using (Html.BeginForm("Index", "ContractTransactions", FormMethod.Get, new { @class = "row g-3 mb-3" }))
+{
+    <div class="col-md-5">
+        <input type="text" name="searchString" class="form-control" placeholder="ابحث برقم المعاملة، اسم المحامي، أو نوع العقد..." value="@ViewBag.CurrentFilter" />
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-info w-100">
+            <i class="bi bi-search"></i> بحث
+        </button>
+    </div>
+    <div class="col-md-5 text-start">
+        @Html.ActionLink("إنشاء معاملة جديدة", "Create", null, new { @class = "btn btn-primary" })
+    </div>
+}
+<hr />
+
+@* 2. إضافة قسم لعرض رسائل النجاح أو الخطأ *@
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @ViewBag.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Html.Raw(ViewBag.ErrorMessage)
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.Id)</th>
+            <th>@Html.DisplayNameFor(model => model.TransactionDate)</th>
+            <th>@Html.DisplayNameFor(model => model.Lawyer)</th>
+            <th>@Html.DisplayNameFor(model => model.ContractType)</th>
+            <th>@Html.DisplayNameFor(model => model.FinalFee)</th>
+            <th>@Html.DisplayNameFor(model => model.Status)</th>
+            <th style="width: 280px;">الإجراء</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            string statusClass = "";
+            if (item.Status == "مكتمل") { statusClass = "table-success"; }
+            if (item.Status == "بانتظار الدفع") { statusClass = "table-danger"; }
+            if (item.Status == "بانتظار التصديق") { statusClass = "table-warning"; }
+            if (item.Status == "معفى (مكتمل)") { statusClass = "table-info"; }
+
+            <tr class="@statusClass">
+                <td>@item.Id</td>
+                <td>@item.TransactionDate.ToString("yyyy-MM-dd")</td>
+                <td>@Html.DisplayFor(modelItem => item.Lawyer.ArabicName)</td>
+                <td>@Html.DisplayFor(modelItem => item.ContractType.Name)</td>
+                <td>@item.FinalFee.ToString("N2")</td>
+                <td>@Html.DisplayFor(modelItem => item.Status)</td>
+
+                <td>
+                    @* --- 1. زر طباعة القسيمة (قبل الدفع) --- *@
+                    @if (item.Status == "بانتظار الدفع")
+                    {
+                        @Html.ActionLink("تحصيل نقدي", "ConfirmCashPayment", new { id = item.PaymentVoucherId }, new { @class = "btn btn-sm btn-success" })
+
+                        <a href="@Url.Action("PrintContractVoucher", new { id = item.PaymentVoucherId })" target="_blank" class="btn btn-sm btn-warning">
+                            <i class="bi bi-printer"></i> طباعة القسيمة
+                        </a>
+                    }
+
+                    @* --- 2. زر رفع الملف (بعد الدفع أو إذا كان معفى) --- *@
+                    @if (item.Status == "بانتظار التصديق" || (item.IsExempt && string.IsNullOrEmpty(item.ScannedContractPath)))
+                    {
+                        @Html.ActionLink("رفع النسخة المصدقة", "UploadScan", new { id = item.Id }, new { @class = "btn btn-sm btn-success" })
+                    }
+
+                    @* --- 3. زر عرض الملف (بعد الرفع) --- *@
+                    @if (item.Status == "مكتمل" || (item.Status == "معفى (مكتمل)" && !string.IsNullOrEmpty(item.ScannedContractPath)))
+                    {
+                        <a href="@Url.Action("ViewScannedContract", new { id = item.Id })" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye-fill"></i> عرض الملف
+                        </a>
+                    }
+
+                    @* --- 4. زر طباعة الإيصال (بعد الدفع) --- *@
+                    @if (item.Status == "بانتظار التصديق" || item.Status == "مكتمل")
+                    {
+                        <a href="@Url.Action("PrintContractReceipt", new { id = item.PaymentVoucherId })" target="_blank" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-printer-fill"></i> طباعة الإيصال
+                        </a>
+                    }
+
+                    @* 💡💡 === بداية الإضافة: زر طباعة الوكالة === 💡💡 *@
+                    @if ((item.Status == "مكتمل" || item.Status == "معفى (مكتمل)" || item.Status == "بانتظار التصديق") && item.ContractType.Name == "وكالة جواز سفر")
+                    {
+                        <a href="@Url.Action("PrintPassportAgency", new { id = item.Id })" target="_blank" class="btn btn-sm btn-dark">
+                            <i class="bi bi-passport-fill"></i> طباعة الوكالة
+                        </a>
+                    }
+                    @* 💡💡 === نهاية الإضافة === 💡💡 *@
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            @* (كود فتح نافذة طباعة الإيصال - بعد التحصيل النقدي) *@
+            @{
+                var printReceiptUrl = ViewBag.PrintReceiptUrl as string;
+            }
+
+            @if (!string.IsNullOrEmpty(printReceiptUrl))
+            {
+                <text>
+                    window.open('@Html.Raw(printReceiptUrl)', '_blank');
+                </text>
+            }
+        });
+    </script>
+}

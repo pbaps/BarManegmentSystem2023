@@ -1,0 +1,96 @@
+﻿@model BarManegment.Areas.Members.ViewModels.CreateServiceRequestViewModel
+@{
+    ViewBag.Title = "تقديم طلب جديد";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-envelope-paper me-2"></i> @ViewBag.Title</h4>
+    </div>
+    @using (Html.BeginForm("Create", "ServiceRequests", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            @Html.ValidationSummary(false, "يرجى تصحيح الأخطاء التالية:", new { @class = "text-danger" })
+
+            @* (عرض المشرف الحالي) *@
+            <div class="mb-3">
+                @Html.LabelFor(m => m.CurrentSupervisorName, new { @class = "form-label" })
+                <input type="text" value="@Model.CurrentSupervisorName" class="form-control" readonly style="background-color: #e9ecef;" />
+            </div>
+
+            @* (نوع الطلب) *@
+            <div class="form-floating mb-3">
+                @Html.DropDownListFor(model => model.RequestType, new SelectList(
+                    new[] {
+                        new { Value = "نقل", Text = "طلب نقل إشراف" },
+                        new { Value = "وقف", Text = "طلب وقف تدريب" },
+                        new { Value = "استكمال", Text = "طلب استئناف تدريب" }
+                    }, "Value", "Text"), "--- اختر نوع الطلب ---", new { @class = "form-select", id = "requestType" })
+                @Html.LabelFor(model => model.RequestType)
+                @Html.ValidationMessageFor(model => model.RequestType, "", new { @class = "text-danger" })
+            </div>
+
+            @* (حقل المشرف الجديد - يظهر فقط لطلب النقل) *@
+            <div id="newSupervisorSection" class="form-floating mb-3" style="display:none;">
+                @Html.DropDownListFor(m => m.NewSupervisorId, Model.SupervisorList, "--- اختر المشرف الجديد ---", new { @class = "form-select" })
+                @Html.LabelFor(m => m.NewSupervisorId)
+                @Html.ValidationMessageFor(m => m.NewSupervisorId, "", new { @class = "text-danger" })
+            </div>
+
+            @* (حقل السبب) *@
+            <div class="form-floating mb-3">
+                @Html.TextAreaFor(m => m.Reason, new { @class = "form-control", placeholder = " ", style = "height: 100px" })
+                @Html.LabelFor(m => m.Reason)
+            </div>
+
+            @* (حقل المرفق - يظهر للنقل والاستكمال) *@
+            <div id="attachmentSection" class="mb-3" style="display:none;">
+                @Html.LabelFor(m => m.AttachmentFile, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.AttachmentFile, new { type = "file", @class = "form-control" })
+                @Html.ValidationMessageFor(m => m.AttachmentFile, "", new { @class = "text-danger" })
+                <small id="attachmentHelp" class="text-muted"></small>
+            </div>
+
+        </div>
+        <div class="card-footer text-center">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send me-1"></i> إرسال الطلب
+            </button>
+            @Html.ActionLink("إلغاء", "Index", "Dashboard", null, new { @class = "btn btn-secondary" })
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            function toggleFields() {
+                var requestType = $('#requestType').val();
+
+                if (requestType === 'نقل') {
+                    $('#newSupervisorSection').show();
+                    $('#attachmentSection').show();
+                    $('#attachmentHelp').text('إلزامي: يرجى إرفاق موافقة المشرف الجديد.');
+                } else if (requestType === 'استكمال') {
+                    $('#newSupervisorSection').hide();
+                    $('#attachmentSection').show();
+                    $('#attachmentHelp').text('إلزامي: يرجى إرفاق ما يثبت زوال سبب الوقف.');
+                } else if (requestType === 'وقف') {
+                    $('#newSupervisorSection').hide();
+                    $('#attachmentSection').show(); // (جعلناه يظهر للوقف أيضاً)
+                    $('#attachmentHelp').text('إلزامي: يرجى إرفاق ما يثبت سبب الوقف.');
+                }
+                 else {
+                    $('#newSupervisorSection').hide();
+                    $('#attachmentSection').hide();
+                }
+            }
+
+            $('#requestType').on('change', toggleFields);
+            toggleFields(); // (التشغيل عند تحميل الصفحة)
+        });
+    </script>
+}

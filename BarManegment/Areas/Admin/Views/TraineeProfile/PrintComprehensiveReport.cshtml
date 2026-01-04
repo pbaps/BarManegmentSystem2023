@@ -1,0 +1,530 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_PrintWaselLayout.cshtml"; // <-- 1. استخدام الـ Layout الرسمي للطباعة
+    ViewBag.Title = "تقرير شامل للمتدرب: " + Model.ArabicName;
+
+    // --- 2. حساب المتغيرات مسبقاً ---
+    string photoUrl = !string.IsNullOrEmpty(Model.PersonalPhotoPath)
+                      ? Url.Content(Model.PersonalPhotoPath)
+                      : Url.Content("~/Content/Images/default-avatar.png"); // (افترض وجود صورة افتراضية)
+
+    bool isPracticing = Model.Status == "محامي مزاول";
+}
+
+@* --- 3. إضافة تنسيقات خاصة بهذا التقرير --- *@
+@section styles {
+    <style>
+        .report-title {
+            text-align: center;
+            text-decoration: underline;
+            font-weight: bold;
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: #000;
+        }
+
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            color: #000;
+            page-break-before: auto;
+            page-break-after: avoid;
+        }
+
+        .profile-photo {
+            width: 140px;
+            height: 180px;
+            object-fit: cover;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        /* جدول البيانات الأساسية (Key-Value) */
+        .summary-table {
+            width: 100%;
+            font-size: 14px;
+        }
+
+            .summary-table th, .summary-table td {
+                padding: 4px 8px;
+                border-bottom: 1px solid #f0f0f0;
+                vertical-align: middle;
+            }
+
+            .summary-table th {
+                width: 25%;
+                font-weight: 600;
+                color: #555;
+            }
+
+            .summary-table td {
+                font-weight: 500;
+                color: #000;
+            }
+
+        /* الجداول الفرعية (مثل سجل التجديدات) */
+        .sub-table {
+            width: 100%;
+            page-break-inside: avoid;
+            font-size: 12px;
+        }
+
+            .sub-table th, .sub-table td {
+                border: 1px solid #999;
+                padding: 5px;
+                vertical-align: top;
+            }
+
+            .sub-table th {
+                background-color: #f2f2f2;
+                font-weight: 600;
+                text-align: center;
+            }
+
+        .list-group-item {
+            font-size: 13px;
+            padding: 5px 0px;
+            border: none;
+            border-bottom: 1px solid #eee;
+        }
+
+            .list-group-item:last-child {
+                border-bottom: none;
+            }
+
+        p.text-muted {
+            font-size: 13px;
+        }
+
+        /* ضروري للطباعة */
+        @@media print {
+            .card {
+                border: 1px solid #ddd !important;
+            }
+            /* --- 1. تنسيقات الهيدر (تم إرجاعها إلى هنا) --- */
+            .receipt-header {
+                text-align: center;
+                margin-bottom: 15px;
+            }
+
+                .receipt-header .logo-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-bottom: 10px;
+                }
+
+                    .receipt-header .logo-container img {
+                        max-height: 70px;
+                        margin-left: 10px;
+                        margin-right: 10px;
+                    }
+
+                .receipt-header .title-text {
+                    font-size: 1.8rem;
+                    font-weight: bold;
+                    margin: 0;
+                    color: #d90000;
+                }
+
+                .receipt-header .subtitle-text {
+                    font-size: 1.2rem;
+                    font-weight: bold;
+                    margin: 0;
+                    color: #333;
+                }
+
+                .receipt-header .contact-info {
+                    font-size: 0.8em;
+                    color: #666;
+                    margin-top: 10px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 10px;
+                    margin-bottom: 15px;
+                }
+
+            .contact-info div {
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+                margin: 2px 8px;
+            }
+
+            .contact-info svg {
+                margin-left: 5px;
+                width: 14px;
+                height: 14px;
+                color: #d90000;
+            }
+
+        }
+        /* --- 1. تنسيقات الهيدر (تم إرجاعها إلى هنا) --- */
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+            .receipt-header .logo-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+                .receipt-header .logo-container img {
+                    max-height: 70px;
+                    margin-left: 10px;
+                    margin-right: 10px;
+                }
+
+            .receipt-header .title-text {
+                font-size: 1.8rem;
+                font-weight: bold;
+                margin: 0;
+                color: #d90000;
+            }
+
+            .receipt-header .subtitle-text {
+                font-size: 1.2rem;
+                font-weight: bold;
+                margin: 0;
+                color: #333;
+            }
+
+            .receipt-header .contact-info {
+                font-size: 0.8em;
+                color: #666;
+                margin-top: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+
+        .contact-info div {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            margin: 2px 8px;
+        }
+
+        .contact-info svg {
+            margin-left: 5px;
+            width: 14px;
+            height: 14px;
+            color: #d90000;
+        }
+
+
+    </style>
+}
+
+@* --- 4. بداية جسم التقرير (سيتم وضعه في @RenderBody) --- *@
+@* --- 1. بداية الهيدر الرسمي (تم إرجاعه إلى هنا ليتم تكراره) --- *@
+<div class="receipt-header " style=" padding-top: 30px;">
+    <div class="logo-container">
+        <img src="@Url.Content("~/Content/Images/logo.png")" alt="شعار نقابة المحامين" />
+        <div>
+            <h2 class="title-text">نقابة المحامين الفلسطينيين</h2>
+            <p class="subtitle-text">PALESTINIAN BAR ASSOCIATION</p>
+        </div>
+    </div>
+
+    <div class="contact-info">
+        <div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
+            <span>المركز الرئيسي: القدس</span>
+        </div>
+        <div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
+            <span>رام الله: شارع الإرسال</span>
+        </div>
+        <div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
+            <span>غزة: دوار النصر - شارع الخرطوم</span>
+        </div>
+    </div>
+
+  
+</div>
+@* --- نهاية الهيدر الرسمي --- *@
+<h2 class="report-title">تقرير شامل - ملف @(isPracticing ? "المحامي" : "المتدرب")</h2>
+
+<div class="row g-3 mb-4">
+
+    @* --- الصورة الشخصية --- *@
+    <div class="col-3 text-center">
+        <img src="@photoUrl" class="profile-photo" alt="الصورة الشخصية">
+    </div>
+
+    @* --- البيانات الأساسية --- *@
+    <div class="col-9">
+        <h4 class="section-title" style="margin-top: 0;">أولاً: البيانات الأساسية</h4>
+        <table class="table table-sm summary-table">
+            <tr>
+                <th>الاسم بالعربية:</th>
+                <td colspan="3"><strong>@Model.ArabicName</strong></td>
+            </tr>
+            <tr>
+                <th>الاسم بالإنجليزية:</th>
+                <td colspan="3">@Model.EnglishName</td>
+            </tr>
+            <tr>
+                <th>الرقم الوطني:</th>
+                <td>@Model.NationalIdNumber</td>
+                <th>الجنس:</th>
+                <td>@(Model.Gender?.Name)</td> @* <-- تم التصحيح *@
+            </tr>
+            <tr>
+                <th>تاريخ الميلاد:</th>
+                <td>@Model.BirthDate.ToString("yyyy-MM-dd")</td>
+                <th>مكان الميلاد:</th>
+                <td>@Model.BirthPlace</td>
+            </tr>
+            <tr>
+                <th>الحالة الحالية:</th>
+                <td><strong class="text-danger">@Model.Status</strong></td>
+                <th>الجنسية:</th>
+                <td>@Model.Nationality</td>
+            </tr>
+            <tr>
+                @if (isPracticing)
+                {
+                    <th>رقم العضوية (مزاول):</th>
+                    <td><strong>@(Model.MembershipId ?? "N/A")</strong></td>
+                    <th>تاريخ بدء المزاولة:</th>
+                    <td>@(Model.PracticeStartDate.HasValue ? Model.PracticeStartDate.Value.ToString("yyyy-MM-dd") : "N/A")</td>
+                }
+                else
+                {
+                    <th>رقم المتدرب:</th>
+                    <td><strong>@(Model.TraineeSerialNo ?? "N/A")</strong></td>
+                    <th>تاريخ بدء التدريب:</th>
+                    <td>@(Model.TrainingStartDate.HasValue ? Model.TrainingStartDate.Value.ToString("yyyy-MM-dd") : "N/A")</td>
+                }
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="row g-4">
+    @* --- العمود الأيمن --- *@
+    <div class="col-sm-12">
+        <h4 class="section-title">ثانياً: بيانات الاتصال</h4>
+        @if (Model.ContactInfo != null)
+        {
+            <table class="table table-sm summary-table">
+                <tr><th>الجوال:</th><td>@Model.ContactInfo.MobileNumber</td></tr>
+                <tr><th>البريد الإلكتروني:</th><td>@Model.ContactInfo.Email</td></tr>
+                <tr><th>العنوان:</th><td>@Model.ContactInfo.Governorate, @Model.ContactInfo.City, @Model.ContactInfo.Street</td></tr>
+            </table>
+        }
+        else
+        { <p class="text-muted">لا توجد بيانات اتصال.</p>}
+
+        <h4 class="section-title">رابعاً: الإشراف والانقطاعات</h4>
+        @if (Model.Supervisor != null)
+        {
+            <table class="table table-sm summary-table">
+                <tr><th>المشرف الحالي:</th><td>@Model.Supervisor.ArabicName (رقم: @Model.Supervisor.MembershipId)</td></tr>
+            </table>
+        }
+        else
+        { <p class="text-muted">لا يوجد مشرف معين حالياً.</p>}
+
+        @if (Model.SupervisorChangeRequests.Any())
+        {
+            <h6 class="mt-3">سجل طلبات الوقف/النقل:</h6>
+            <table class="table table-sm table-bordered sub-table">
+                <thead><tr><th>النوع</th><th>التاريخ</th><th>الحالة</th><th>المشرف الجديد</th></tr></thead>
+                <tbody>
+                    @foreach (var req in Model.SupervisorChangeRequests)
+                    {
+                        <tr><td>@req.RequestType</td><td>@req.RequestDate.ToString("yy/MM/dd")</td><td>@req.Status</td><td>@(req.NewSupervisor?.ArabicName ?? "-")</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (Model.CouncilSuspensions.Any())
+        {
+            <h6 class="mt-3">سجل الإيقافات الإدارية:</h6>
+            <table class="table table-sm table-bordered sub-table">
+                <thead><tr><th>السبب</th><th>من</th><th>إلى</th><th>أيام</th></tr></thead>
+                <tbody>
+                    @foreach (var sus in Model.CouncilSuspensions)
+                    {
+                        <tr>
+                            <td>@sus.Reason</td>
+                            <td>@sus.SuspensionStartDate.ToString("yy/MM/dd")</td>
+
+                            @* ===
+                ===  بداية التصحيح
+                === *@
+                            <td>
+                                @(sus.SuspensionEndDate.HasValue ? sus.SuspensionEndDate.Value.ToString("yy/MM/dd") : "إيقاف مفتوح")
+                            </td>
+                            <td>
+                                @if (sus.SuspensionEndDate.HasValue)
+                                {
+                                    @((sus.SuspensionEndDate.Value - sus.SuspensionStartDate).TotalDays)
+                                }
+                                else
+                                {
+                                    @* (إذا كان الإيقاف مفتوحاً، احسب الأيام حتى اليوم) *@
+                                    @((DateTime.Now - sus.SuspensionStartDate).TotalDays.ToString("N0")) <span>(مستمر)</span>
+                                }
+                            </td>
+                            @* === نهاية التصحيح === *@
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <h4 class="section-title">سادساً: سجل طلبات أداء اليمين</h4>
+        @if (Model.OathRequestHistory.Any())
+        {
+            <table class="table table-sm table-bordered sub-table">
+                <thead><tr><th>تاريخ الطلب</th><th>الحالة</th><th>ملاحظات</th></tr></thead>
+                <tbody>
+                    @foreach (var request in Model.OathRequestHistory)
+                    {
+                        <tr><td>@request.RequestDate.ToString("yyyy-MM-dd")</td><td>@request.Status</td><td>@request.CommitteeNotes</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        { <p class="text-muted">لا توجد طلبات سابقة لأداء اليمين.</p>}
+
+    </div>
+
+    @* --- العمود الأيسر --- *@
+    <div class="col-sm-12">
+        <h4 class="section-title">ثالثاً: المؤهلات العلمية</h4>
+        @if (Model.Qualifications.Any())
+        {
+            <ul class="list-group">
+                @foreach (var qual in Model.Qualifications)
+                {
+                    <li class="list-group-item">
+                        <strong>@qual.QualificationType.Name:</strong> @qual.Specialization من @qual.UniversityName (@qual.GraduationYear)
+                        @if (qual.GradePercentage.HasValue)
+                        {<span>- @qual.GradePercentage.Value %</span>}
+                    </li>
+                }
+            </ul>
+        }
+        else
+        { <p class="text-muted">لا توجد مؤهلات مسجلة.</p>}
+
+        <h4 class="section-title">خامساً: السجل المالي</h4>
+        @if (Model.Renewals.Any())
+        {
+            <h6 class="mt-3">سجل التجديدات:</h6>
+            <table class="table table-sm table-bordered sub-table">
+                <thead><tr><th>سنة التجديد</th><th>تاريخ الدفع</th><th>إيصال</th></tr></thead>
+                <tbody>
+                    @foreach (var ren in Model.Renewals)
+                    {
+                        <tr><td>@ren.RenewalYear</td><td>@ren.RenewalDate.ToString("yyyy-MM-dd")</td><td>@ren.ReceiptId</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        { <p class="text-muted">لا توجد تجديدات مسجلة.</p>}
+
+        @if (Model.PaymentHistory.Any())
+        {
+            <h6 class="mt-3">سجل الدفعات:</h6>
+            <table class="table table-sm table-bordered sub-table">
+                <thead><tr><th>إيصال</th><th>تاريخ الدفع</th><th>المبلغ</th><th>بيان الرسوم</th></tr></thead>
+                <tbody>
+                    @foreach (var receipt in Model.PaymentHistory)
+                    {
+                        <tr>
+                            <td>@receipt.Id</td>
+                            <td>@receipt.BankPaymentDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(receipt.PaymentVoucher?.TotalAmount.ToString("N2"))</td>
+                            <td>
+                                @string.Join(", ", receipt.PaymentVoucher?.VoucherDetails.Select(d => d.FeeType.Name) ?? new List<string>())
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        { <p class="text-muted">لا توجد دفعات مسجلة.</p>}
+    </div>
+</div>
+
+@* --- أقسام بعرض الصفحة --- *@
+<h4 class="section-title">سابعاً: سجل الإنجاز الأكاديمي (الأبحاث والامتحانات)</h4>
+@if (Model.LegalResearches.Any() || Model.ExamHistory.Any() || Model.OralExamHistory.Any())
+{
+    <table class="table table-sm table-bordered sub-table">
+        <thead class="table-light"><tr><th>البيان</th><th>النوع/اللجنة</th><th>التاريخ</th><th>الحالة/النتيجة</th><th>ملاحظات/الدرجة</th></tr></thead>
+        <tbody>
+            @foreach (var research in Model.LegalResearches)
+            {
+                <tr>
+                    <td>@research.Title</td>
+                    <td>بحث قانوني (@(research.Committee?.CommitteeName ?? "N/A"))</td>
+                    <td>@research.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                    <td>@research.Status / @(research.Decisions.OrderByDescending(d => d.DecisionDate).FirstOrDefault()?.Result ?? "N/A")</td>
+                    <td>-</td>
+                </tr>
+            }
+            @foreach (var exam in Model.ExamHistory)
+            {
+                <tr>
+                    <td>@exam.Exam.Title</td>
+                    <td>@exam.Exam.ExamType.Name</td>
+                    <td>@exam.Exam.StartTime.ToString("yyyy-MM-dd")</td>
+                    <td>@exam.Result</td>
+                    <td>@exam.Score?.ToString("N2")</td>
+                </tr>
+            }
+            @foreach (var oralExam in Model.OralExamHistory)
+            {
+                <tr>
+                    <td>اختبار شفوي</td>
+                    <td>@(oralExam.OralExamCommittee?.CommitteeName ?? "N/A")</td>
+                    <td>@oralExam.ExamDate.ToString("yyyy-MM-dd")</td>
+                    <td>@oralExam.Result</td>
+                    <td>@(oralExam.Score?.ToString("N2")) (@oralExam.Notes)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{ <p class="text-muted">لا يوجد سجل أبحاث أو امتحانات.</p>}
+
+<h4 class="section-title">ثامناً: المرفقات</h4>
+@if (Model.Attachments.Any())
+{
+    <ul class="list-group list-group-flush">
+        @foreach (var att in Model.Attachments)
+        {
+            <li class="list-group-item">
+                <strong>@att.AttachmentType.Name:</strong> @att.OriginalFileName (تاريخ الرفع: @att.UploadDate.ToString("yyyy-MM-dd"))
+            </li>
+        }
+    </ul>
+}
+else
+{ <p class="text-muted">لا توجد مرفقات.</p>}

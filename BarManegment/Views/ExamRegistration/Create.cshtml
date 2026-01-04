@@ -1,0 +1,261 @@
+﻿@model BarManegment.ViewModels.ExamApplicationViewModel
+@{
+    ViewBag.Title = "طلب تقديم لامتحان القبول";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+
+            <!-- رأس الصفحة والشعار -->
+            <div class="text-center mb-5">
+                <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" class="mb-3" style="height: 100px;" onerror="this.style.display='none'">
+                <h2 class="fw-bold text-primary">نقابة المحامين الفلسطينيين - مركز غزة</h2>
+                <h4 class="text-muted">@ViewBag.Title</h4>
+            </div>
+
+            <div class="card shadow-lg border-0 rounded-3">
+                <div class="card-header bg-primary text-white p-3 border-0 rounded-top-3" style="background: linear-gradient(45deg, #0d6efd, #0a58ca);">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-pencil-square fs-4 me-2"></i>
+                        <h5 class="mb-0 fw-bold">نموذج التسجيل</h5>
+                    </div>
+                </div>
+
+                <div class="card-body p-5">
+
+                    <div class="alert alert-info shadow-sm border-start border-5 border-info rounded-3 mb-4" role="alert">
+                        <h5 class="alert-heading fw-bold"><i class="bi bi-info-circle-fill me-2"></i> تعليمات هامة!</h5>
+                        <ul class="mb-0 small text-dark opacity-75">
+                            <li>يرجى التأكد من تعبئة جميع الحقول بدقة ومطابقتها للمستندات الرسمية.</li>
+                            <li>أي خطأ في البيانات قد يؤدي إلى استبعاد الطلب.</li>
+                            <li>تأكد من أن جميع المرفقات واضحة وبصيغة (PDF, JPG, PNG).</li>
+                        </ul>
+                    </div>
+
+                    @using (Html.BeginForm("Create", "ExamRegistration", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        @* === 💡 التعديل: إظهار ملخص الأخطاء فقط عند وجود أخطاء فعلية === *@
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            @Html.ValidationSummary(false, "يرجى تصحيح الأخطاء التالية قبل الإرسال:", new { @class = "alert alert-danger shadow-sm border-start border-5 border-danger rounded-3" })
+                        }
+                        @* ============================================================== *@
+
+                        <!-- 1. البيانات الشخصية -->
+                        <h5 class="text-primary fw-bold mb-3"><i class="bi bi-person-vcard me-2"></i> البيانات الشخصية</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                @Html.LabelFor(m => m.FullName, new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(m => m.FullName, new { @class = "form-control form-control-lg", placeholder = "الاسم رباعي كما هو في الهوية" })
+                                @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.NationalIdNumber, new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(m => m.NationalIdNumber, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.NationalIdNumber, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.BirthDate, new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(m => m.BirthDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                                @Html.ValidationMessageFor(m => m.BirthDate, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.GenderId, new { @class = "form-label fw-bold" })
+                                @Html.DropDownListFor(m => m.GenderId, Model.Genders, "--- اختر الجنس ---", new { @class = "form-select" })
+                                @Html.ValidationMessageFor(m => m.GenderId, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        <!-- 2. معلومات التواصل -->
+                        <h5 class="text-primary fw-bold mb-3"><i class="bi bi-telephone-inbound me-2"></i> معلومات التواصل</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.MobileNumber, new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(m => m.MobileNumber, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.MobileNumber, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.WhatsAppNumber, new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(m => m.WhatsAppNumber, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.WhatsAppNumber, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-12">
+                                @Html.LabelFor(m => m.Email, new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(m => m.Email, new { @class = "form-control", dir = "ltr", type = "email" })
+                                @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <!-- قسم التليجرام -->
+                            <div class="col-md-12">
+                                <div class="bg-light p-3 rounded border">
+                                    @Html.LabelFor(m => m.TelegramChatId, new { @class = "form-label fw-bold" })
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text bg-white text-primary"><i class="bi bi-telegram"></i></span>
+                                        @Html.TextBoxFor(m => m.TelegramChatId, new { @class = "form-control", placeholder = "أدخل معرف الدردشة (Chat ID)" })
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.TelegramChatId, "", new { @class = "text-danger small" })
+
+                                    <div class="d-flex align-items-center mt-2">
+                                        <i class="bi bi-info-circle text-info me-2"></i>
+                                        <small class="text-muted">
+                                            للحصول على إشعارات النتائج، ابحث عن البوت
+                                            <strong class="text-dark mx-1">@System.Configuration.ConfigurationManager.AppSettings["TelegramBotName"]</strong>
+                                            وأرسل له رسالة، ثم انسخ الرقم الذي سيرسله لك هنا.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        <!-- 3. المؤهلات العلمية -->
+                        <h5 class="text-primary fw-bold mb-3"><i class="bi bi-mortarboard me-2"></i> المؤهلات العلمية</h5>
+
+                        <!-- الثانوية العامة -->
+                        <div class="card bg-light border-0 mb-3">
+                            <div class="card-body">
+                                <h6 class="fw-bold text-dark mb-3">أ. الثانوية العامة</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(m => m.HighSchoolYear, new { @class = "form-label small text-muted fw-bold" })
+                                        @Html.TextBoxFor(m => m.HighSchoolYear, new { @class = "form-control", type = "number" })
+                                        @Html.ValidationMessageFor(m => m.HighSchoolYear, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(m => m.HighSchoolPercentage, new { @class = "form-label small text-muted fw-bold" })
+                                        @Html.TextBoxFor(m => m.HighSchoolPercentage, new { @class = "form-control", type = "number", step = "0.1" })
+                                        @Html.ValidationMessageFor(m => m.HighSchoolPercentage, "", new { @class = "text-danger small" })
+
+                                        @* 💡 عرض الحد الأدنى ديناميكياً *@
+                                        @if (ViewBag.MinHighSchoolScore != null)
+                                        {
+                                            <div class="form-text text-muted">الحد الأدنى للقبول: <strong>@ViewBag.MinHighSchoolScore%</strong></div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- البكالوريوس -->
+                        <div class="card bg-light border-0 mb-4">
+                            <div class="card-body">
+                                <h6 class="fw-bold text-dark mb-3">ب. البكالوريوس / الليسانس</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        @Html.LabelFor(m => m.UniversityName, new { @class = "form-label small text-muted fw-bold" })
+                                        @Html.TextBoxFor(m => m.UniversityName, new { @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.UniversityName, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(m => m.BachelorYear, new { @class = "form-label small text-muted fw-bold" })
+                                        @Html.TextBoxFor(m => m.BachelorYear, new { @class = "form-control", type = "number" })
+                                        @Html.ValidationMessageFor(m => m.BachelorYear, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-6">
+                                        @Html.LabelFor(m => m.BachelorPercentage, new { @class = "form-label small text-muted fw-bold" })
+                                        @Html.TextBoxFor(m => m.BachelorPercentage, new { @class = "form-control", type = "number", step = "0.1" })
+                                        @Html.ValidationMessageFor(m => m.BachelorPercentage, "", new { @class = "text-danger small" })
+
+                                        @* 💡 عرض الحد الأدنى ديناميكياً *@
+                                        @if (ViewBag.MinBachelorScore != null)
+                                        {
+                                            <div class="form-text text-muted">الحد الأدنى للقبول: <strong>@ViewBag.MinBachelorScore%</strong></div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        <!-- 4. المرفقات -->
+                        <h5 class="text-primary fw-bold mb-3"><i class="bi bi-paperclip me-2"></i> المرفقات المطلوبة</h5>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded text-center h-100 hover-shadow transition bg-white">
+                                    <i class="bi bi-person-badge fs-1 text-secondary mb-2 d-block"></i>
+                                    @Html.LabelFor(m => m.PersonalIdFile, new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.PersonalIdFile, new { type = "file", @class = "form-control form-control-sm mt-2" })
+                                    @Html.ValidationMessageFor(m => m.PersonalIdFile, "", new { @class = "text-danger small d-block mt-1" })
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded text-center h-100 hover-shadow transition bg-white">
+                                    <i class="bi bi-file-earmark-text fs-1 text-secondary mb-2 d-block"></i>
+                                    @Html.LabelFor(m => m.HighSchoolCertificateFile, new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.HighSchoolCertificateFile, new { type = "file", @class = "form-control form-control-sm mt-2" })
+                                    @Html.ValidationMessageFor(m => m.HighSchoolCertificateFile, "", new { @class = "text-danger small d-block mt-1" })
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded text-center h-100 hover-shadow transition bg-white">
+                                    <i class="bi bi-mortarboard fs-1 text-secondary mb-2 d-block"></i>
+                                    @Html.LabelFor(m => m.BachelorCertificateFile, new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.BachelorCertificateFile, new { type = "file", @class = "form-control form-control-sm mt-2" })
+                                    @Html.ValidationMessageFor(m => m.BachelorCertificateFile, "", new { @class = "text-danger small d-block mt-1" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- زر الإرسال -->
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold py-3 shadow-sm hover-scale">
+                                <i class="bi bi-send-check-fill me-2"></i> إرسال طلب التسجيل
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="text-center mt-4 text-muted small">
+                &copy; @DateTime.Now.Year نقابة المحامين الفلسطينيين - جميع الحقوق محفوظة
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- أنماط إضافية للتأثيرات الحركية -->
+<style>
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        border-color: #0d6efd !important;
+    }
+
+    .transition {
+        transition: all 0.3s ease;
+    }
+
+    .hover-scale:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(25, 135, 84, 0.25) !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // الحد الأقصى للملف الواحد بالميجابايت
+            const MAX_FILE_SIZE_MB = 10;
+
+            $('input[type="file"]').on('change', function () {
+                if (this.files && this.files[0]) {
+                    const fileSizeMB = this.files[0].size / 1024 / 1024;
+                    if (fileSizeMB > MAX_FILE_SIZE_MB) {
+                        alert('عذراً، حجم الملف كبير جداً. الحد الأقصى المسموح به هو ' + MAX_FILE_SIZE_MB + ' ميجابايت.');
+                        $(this).val(''); // مسح الملف المختار
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,64 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.LookupItemViewModel
+
+@Html.HiddenFor(m => m.Id)
+@Html.HiddenFor(m => m.Type)
+
+@{
+    string typeLower = Model.Type?.ToLower();
+}
+
+@* === الحالة الخاصة 1: أنواع المستخدمين === *@
+@if (typeLower == "usertypes")
+{
+    <div class="mb-3">
+        @Html.LabelFor(m => m.Name, "الاسم بالعربية", new { @class = "form-label fw-bold" })
+        @Html.EditorFor(m => m.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: مدير النظام" } })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="mb-3">
+        @Html.LabelFor(m => m.Symbol, "الاسم بالإنجليزية (للنظام)", new { @class = "form-label fw-bold" })
+        @Html.EditorFor(m => m.Symbol, new { htmlAttributes = new { @class = "form-control", placeholder = "Example: Admin" } })
+        @Html.ValidationMessageFor(m => m.Symbol, "", new { @class = "text-danger" })
+        <div class="form-text">يستخدم هذا الاسم في الكود للتحقق من الصلاحيات.</div>
+    </div>
+}
+@* === الحالة الخاصة 2: العملات === *@
+else if (typeLower == "currencies")
+{
+    <div class="mb-3">
+        @Html.LabelFor(m => m.Name, "اسم العملة", new { @class = "form-label fw-bold" })
+        @Html.EditorFor(m => m.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: دينار أردني" } })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="mb-3">
+        @Html.LabelFor(m => m.Symbol, "الرمز", new { @class = "form-label fw-bold" })
+        @Html.EditorFor(m => m.Symbol, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: JD" } })
+        @Html.ValidationMessageFor(m => m.Symbol, "", new { @class = "text-danger" })
+    </div>
+}
+@* === الحالة الخاصة 3: المؤهلات === *@
+else if (typeLower == "qualificationtypes")
+{
+    <div class="mb-3">
+        @Html.LabelFor(m => m.Name, "اسم المؤهل", new { @class = "form-label fw-bold" })
+        @Html.EditorFor(m => m.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: بكالوريوس" } })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="mb-3">
+        @Html.LabelFor(m => m.PercentageValue, "النسبة الدنيا للقبول (%)", new { @class = "form-label fw-bold" })
+        @Html.EditorFor(m => m.PercentageValue, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.1", min = "0", max = "100" } })
+        @Html.ValidationMessageFor(m => m.PercentageValue, "", new { @class = "text-danger" })
+    </div>
+}
+@* === الحالة الافتراضية (لكل الجداول الأخرى بما فيها SystemLookups) === *@
+else
+{
+    <div class="mb-3">
+        @Html.LabelFor(m => m.Name, "الاسم / البيان", new { @class = "form-label fw-bold" })
+        @Html.EditorFor(m => m.Name, new { htmlAttributes = new { @class = "form-control" } })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+    </div>
+}

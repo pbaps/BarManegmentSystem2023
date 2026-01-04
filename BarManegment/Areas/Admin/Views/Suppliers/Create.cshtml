@@ -1,0 +1,52 @@
+﻿@model BarManegment.Models.Supplier
+
+@{
+    ViewBag.Title = "إضافة مورد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-primary">إضافة مورد جديد</h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">اسم المورد <span class="text-danger">*</span></label>
+                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">رقم الهاتف</label>
+                                @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">العنوان</label>
+                            @Html.EditorFor(model => model.Address, new { htmlAttributes = new { @class = "form-control" } })
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الحساب المالي (الأستاذ) <span class="text-danger">*</span></label>
+                            @Html.DropDownList("AccountId", null, "اختر حساب المورد...", new { @class = "form-select select2" })
+                            <div class="form-text text-muted">يتم ربط المورد بحساب ضمن الخصوم المتداولة للمطابقة المالية.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold">حفظ</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

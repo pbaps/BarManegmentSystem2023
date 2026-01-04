@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - طباعة</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: white;
+            color: #000;
+            font-size: 14px; /* حجم خط مناسب للورق */
+        }
+
+        /* تنسيقات الطباعة الدقيقة */
+        @@media print {
+            @@page {
+                size: A4;
+                margin: 10mm 10mm 10mm 10mm; /* هوامش الورقة */
+            }
+
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                background-color: white !important;
+                -webkit-print-color-adjust: exact !important; /* طباعة الخلفيات الملونة */
+                print-color-adjust: exact !important;
+            }
+            /* إخفاء العناصر غير المرغوبة عند الطباعة */
+            .no-print, .btn, .navbar, #sidebar, footer {
+                display: none !important;
+            }
+            /* تحسين الجداول للطباعة */
+            .table {
+                border: 1px solid #000 !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+
+                .table th, .table td {
+                    border: 1px solid #000 !important;
+                    padding: 8px !important;
+                    color: #000 !important;
+                }
+
+                .table thead {
+                    background-color: #f0f0f0 !important; /* لون رمادي فاتح للرأس */
+                }
+            /* تجنب قص المحتوى بين الصفحات */
+            tr, .card, .row {
+                page-break-inside: avoid;
+            }
+            /* الروابط تظهر كنص فقط */
+            a {
+                text-decoration: none !important;
+                color: #000 !important;
+            }
+        }
+
+        /* تنسيق الترويسة (Header) */
+        .print-header {
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .logo-placeholder {
+            width: 80px;
+            height: 80px;
+            background-color: #eee;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid #333;
+        }
+
+        /* تنسيق التذييل (Footer) */
+        .print-footer {
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            margin-top: 30px;
+            text-align: center;
+            font-size: 11px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+        }
+
+        /* ترك مساحة أسفل الصفحة للتذييل الثابت */
+        .content-wrapper {
+            margin-bottom: 50px;
+        }
+    </style>
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+
+    <div class="fixed-top p-3 no-print bg-light border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-right"></i> عودة</a>
+        </div>
+        <h5 class="m-0">معاينة الطباعة</h5>
+        <div>
+            <button onclick="window.print()" class="btn btn-primary btn-sm fw-bold"><i class="bi bi-printer"></i> طباعة المستند</button>
+        </div>
+    </div>
+
+    <div class="container-fluid content-wrapper" style="max-width: 210mm; margin: 0 auto; padding-top: 60px;">
+
+        <header class="print-header text-center">
+            <div class="row align-items-center">
+                <div class="col-4 text-end">
+                    <h4 class="fw-bold mb-1">نقابة المحامين الفلسطينيين</h4>
+                    <h6 class="text-muted">مركز غزة</h6>
+                    <small>دائرة الشؤون المالية والإدارية</small>
+                </div>
+                <div class="col-4">
+                    <div class="logo-placeholder">
+                        <img src="~/Content/Images/logo.png" style="width:82px"/>
+                     
+                    </div>
+                </div>
+                <div class="col-4 text-start">
+                    <h5 class="fw-bold mb-1">Palestinian Bar Association</h5>
+                    <h6 class="text-muted">Gaza Center</h6>
+                    <small dir="ltr">@DateTime.Now.ToString("dd/MM/yyyy")</small>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            @RenderBody()
+        </main>
+
+        <footer class="print-footer">
+            <div class="row">
+                <div class="col-12">
+                    <p class="mb-0">فلسطين - غزة - شارع الجلاء - مقابل برج الجوهرة | هاتف: 2882222-08 | فاكس: 2882223-08</p>
+                    <p class="mb-0 text-muted">www.pba.ps | info@pba.ps</p>
+                    <small class="d-block mt-1">طبع بواسطة: @Session["FullName"] | وقت الطباعة: @DateTime.Now.ToString("yyyy/MM/dd HH:mm")</small>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+</body>
+</html>

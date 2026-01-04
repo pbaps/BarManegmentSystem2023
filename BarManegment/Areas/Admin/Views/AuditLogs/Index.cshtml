@@ -1,0 +1,172 @@
+﻿@using PagedList.Mvc;
+@using PagedList;
+@using BarManegment.Helpers
+@model IPagedList<BarManegment.Models.AuditLogModel>
+
+@{
+    ViewBag.Title = "سجلات تدقيق النظام";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="text-primary fw-bold"><i class="bi bi-shield-check me-2"></i> سجلات تدقيق النظام (Audit Logs)</h4>
+            <p class="text-muted small mb-0">مراقبة كافة العمليات والإجراءات التي تمت على النظام</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm shadow-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i> تحديث البيانات
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-2">
+            <small class="fw-bold text-muted"><i class="bi bi-filter me-1"></i> خيارات البحث والفرز</small>
+        </div>
+        <div class="card-body bg-light">
+            @using (Html.BeginForm("Index", "AuditLogs", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary">بحث (اسم، تفاصيل)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="searchString" value="@ViewBag.CurrentFilter" class="form-control" placeholder="اكتب للبحث..." />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-secondary">نوع الإجراء</label>
+                    <select name="actionFilter" class="form-select">
+                        <option value="">-- كافة الإجراءات --</option>
+                        <option value="Create" @(ViewBag.ActionFilter == "Create" ? "selected" : "")>إضافة (Create)</option>
+                        <option value="Edit" @(ViewBag.ActionFilter == "Edit" ? "selected" : "")>تعديل (Edit)</option>
+                        <option value="Delete" @(ViewBag.ActionFilter == "Delete" ? "selected" : "")>حذف (Delete)</option>
+                        <option value="Login" @(ViewBag.ActionFilter == "Login" ? "selected" : "")>تسجيل دخول</option>
+                        <option value="Logout" @(ViewBag.ActionFilter == "Logout" ? "selected" : "")>تسجيل خروج</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-secondary">من تاريخ</label>
+                    <input type="date" name="dateFrom" value="@ViewBag.DateFrom" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-secondary">إلى تاريخ</label>
+                    <input type="date" name="dateTo" value="@ViewBag.DateTo" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">
+                        <i class="bi bi-funnel-fill me-1"></i> تطبيق الفلتر
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-sm" style="font-size: 0.9rem;">
+                    <thead class="table-light border-bottom">
+                        <tr>
+                            <th class="py-3 ps-3">التوقيت</th>
+                            <th class="py-3">المستخدم</th>
+                            <th class="py-3">المتحكم (Controller)</th>
+                            <th class="py-3">الإجراء (Action)</th>
+                            <th class="py-3">التفاصيل</th>
+                            <th class="py-3">IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 text-nowrap" dir="ltr">
+                                    <span class="fw-bold">@item.Timestamp.ToString("yyyy-MM-dd")</span>
+                                    <br />
+                                    <small class="text-muted">@item.Timestamp.ToString("hh:mm:ss tt")</small>
+                                </td>
+                                <td>
+                                    @if (item.User != null)
+                                    {
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2 border" style="width: 30px; height: 30px;">
+                                                <i class="bi bi-person text-secondary"></i>
+                                            </div>
+                                            <span class="fw-bold text-dark">@item.User.FullNameArabic</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">نظام / غير معروف</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border fw-normal font-monospace">@item.Controller</span>
+                                </td>
+                                <td>
+                                    @{
+                                        string arAction = AuditTranslationHelper.TranslateAction(item.Action);
+                                        string badgeClass = "bg-secondary";
+
+                                        if (item.Action.Contains("Create") || item.Action.Contains("Login")) { badgeClass = "bg-success"; }
+                                        else if (item.Action.Contains("Edit") || item.Action.Contains("Update")) { badgeClass = "bg-warning text-dark"; }
+                                        else if (item.Action.Contains("Delete")) { badgeClass = "bg-danger"; }
+                                        else if (item.Action.Contains("Logout")) { badgeClass = "bg-secondary"; }
+                                        else { badgeClass = "bg-info text-dark"; }
+                                    }
+                                    <span class="badge @badgeClass">@arAction</span>
+                                </td>
+                                <td class="text-muted small text-break" style="max-width: 400px; line-height: 1.4;">
+                                    @AuditTranslationHelper.TranslateDetails(item.Details)
+                                </td>
+                                <td class="font-monospace small text-muted">@item.IpAddress</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-search text-muted opacity-25" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-muted">لا توجد سجلات مطابقة للبحث</h5>
+                    <p class="text-muted small">حاول تغيير معايير الفلترة أو التاريخ.</p>
+                </div>
+            }
+        </div>
+
+        @if (Model.PageCount > 1)
+        {
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                <div class="small text-muted">
+                    عرض الصفحة <span class="fw-bold">@Model.PageNumber</span> من أصل <span class="fw-bold">@Model.PageCount</span>
+                    (إجمالي السجلات: @Model.TotalItemCount)
+                </div>
+                <div>
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchString = ViewBag.CurrentFilter, actionFilter = ViewBag.ActionFilter, dateFrom = ViewBag.DateFrom, dateTo = ViewBag.DateTo }),
+                    new PagedListRenderOptions
+                    {
+                        LiElementClasses = new string[] { "page-item" },
+                        // PageClasses = new string[] { "page-link" }, // قم بتفعيل هذا السطر إذا كنت تستخدم PagedList.Mvc الإصدار الحديث المتوافق مع Bootstrap 5
+                        DisplayLinkToFirstPage = PagedListDisplayMode.Always,
+                        DisplayLinkToLastPage = PagedListDisplayMode.Always,
+                        DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                        DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                        LinkToPreviousPageFormat = "السابق",
+                        LinkToNextPageFormat = "التالي",
+                        LinkToFirstPageFormat = "الأولى",
+                        LinkToLastPageFormat = "الأخيرة",
+                        MaximumPageNumbersToDisplay = 5,
+                        ContainerDivClasses = new[] { "pagination-container" },
+                        UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" }
+                    })
+                </div>
+            </div>
+        }
+    </div>
+</div>

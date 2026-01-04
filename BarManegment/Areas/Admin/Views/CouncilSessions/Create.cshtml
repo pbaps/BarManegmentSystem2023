@@ -1,0 +1,51 @@
+﻿@model BarManegment.Models.CouncilSession
+
+@{
+    ViewBag.Title = "فتح جلسة جديدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">بيانات الجلسة الجديدة</h5>
+            </div>
+            <div class="card-body">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>العام</label>
+                            @Html.EditorFor(model => model.Year, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>رقم الجلسة المتسلسل</label>
+                            @Html.EditorFor(model => model.SessionNumber, new { htmlAttributes = new { @class = "form-control" } })
+                            <small class="text-muted">تم اقتراح الرقم بناءً على آخر جلسة.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>تاريخ الانعقاد</label>
+                        @Html.EditorFor(model => model.SessionDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                        @Html.ValidationMessageFor(model => model.SessionDate, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        <label>مكان الانعقاد</label>
+                        @Html.EditorFor(model => model.Location, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.Location, "", new { @class = "text-danger" })
+                    </div>
+
+                    <hr />
+                    <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> حفظ وفتح الجلسة</button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

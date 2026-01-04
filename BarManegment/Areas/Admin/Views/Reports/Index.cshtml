@@ -1,0 +1,233 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.ReportViewModel
+@{
+    ViewBag.Title = "نظام الاستعلامات والتقارير الشامل";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .columns-container {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+</style>
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>منشئ التقارير المتقدم</h5>
+
+            @* تبديل نوع التقرير *@
+            <div class="btn-group">
+                <a href="@Url.Action("Index", new { type = "Graduates" })" class="btn btn-sm @(Model.ReportType == "Graduates" ? "btn-light" : "btn-outline-light")">الخريجين</a>
+                <a href="@Url.Action("Index", new { type = "Contracts" })" class="btn btn-sm @(Model.ReportType == "Contracts" ? "btn-light" : "btn-outline-light")">العقود</a>
+                <a href="@Url.Action("Index", new { type = "Financial" })" class="btn btn-sm @(Model.ReportType == "Financial" ? "btn-light" : "btn-outline-light")">المالية</a>
+                <a href="@Url.Action("Index", new { type = "FamilyHealth" })" class="btn btn-sm @(Model.ReportType == "FamilyHealth" ? "btn-light" : "btn-outline-light")">العائلة والصحة</a>
+            
+            </div>
+        </div>
+
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "Reports", FormMethod.Post, new { id = "reportForm" }))
+            {
+                @Html.HiddenFor(m => m.ReportType)
+                @Html.AntiForgeryToken()
+
+                <div class="row g-3">
+                    @* --- 1. الفلاتر (Filters) --- *@
+                    <div class="col-md-8">
+                        <h6 class="fw-bold text-primary border-bottom pb-2">1. خيارات التصفية (Filters)</h6>
+                        <div class="row g-3">
+                            @* البحث العام *@
+                            <div class="col-md-6">
+                                <label class="form-label">بحث بكلمة مفتاحية (اسم/هوية):</label>
+                                @Html.TextBoxFor(m => m.SearchKeyword, new { @class = "form-control", placeholder = "بحث..." })
+                            </div>
+
+                            @* التواريخ *@
+                            <div class="col-md-3">
+                                <label class="form-label">من تاريخ:</label>
+                                @Html.TextBoxFor(m => m.DateFrom, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">إلى تاريخ:</label>
+                                @Html.TextBoxFor(m => m.DateTo, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                            </div>
+
+                            @* فلاتر ديناميكية حسب النوع *@
+                            @if (Model.ReportType == "Graduates")
+                            {
+                                @* السطر الأول: الحالة والجنس والمؤهل *@
+                                <div class="col-md-4">
+                                    <label class="form-label">الحالة النقابية:</label>
+                                    @Html.DropDownListFor(m => m.StatusId, ViewBag.StatusList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">الجنس:</label>
+                                    @Html.DropDownListFor(m => m.GenderId, ViewBag.GenderList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">المؤهل العلمي:</label>
+                                    @Html.DropDownListFor(m => m.QualificationTypeId, ViewBag.QualificationTypeList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+
+                                @* السطر الثاني: المحافظة، المدينة، سنة التسجيل *@
+                                <div class="col-md-4">
+                                    <label class="form-label">المحافظة:</label>
+                                    @* نملأ القائمة من القيم الموجودة في قاعدة البيانات *@
+                                    @Html.DropDownListFor(m => m.SelectedGovernorate, ViewBag.GovernorateList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">المدينة/الحي (بحث نصي):</label>
+                                    @Html.TextBoxFor(m => m.SelectedCity, new { @class = "form-control", placeholder = "اكتب اسم المدينة..." })
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">سنة التسجيل:</label>
+                                    @Html.DropDownListFor(m => m.RegistrationYear, ViewBag.YearsList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                            }
+
+
+
+                            else if (Model.ReportType == "Contracts")
+                            {
+                                <div class="col-md-4">
+                                    <label class="form-label">نوع العقد:</label>
+                                    @Html.DropDownListFor(m => m.TypeId, ViewBag.TypeList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                            }
+
+                            @* ... (بعد فلاتر العقود) ... *@
+
+                            @if (Model.ReportType == "FamilyHealth")
+                            {
+                                <div class="col-md-3">
+                                    <label class="form-label">الحالة الاجتماعية:</label>
+                                    @Html.DropDownListFor(m => m.SelectedMaritalStatus, ViewBag.MaritalStatusList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">محافظة النزوح:</label>
+                                    @Html.DropDownListFor(m => m.SelectedDisplacement, ViewBag.DisplacementList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">الحالة الصحية:</label>
+                                    @Html.DropDownListFor(m => m.SelectedHealthStatus, ViewBag.HealthStatusList as SelectList, "الكل", new { @class = "form-select" })
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">هل تعرض للاعتقال؟</label>
+                                    <select name="IsDetainedFilter" class="form-select">
+                                        <option value="">الكل</option>
+                                        <option value="true">نعم</option>
+                                        <option value="false">لا</option>
+                                    </select>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @* --- 2. اختيار الأعمدة (Column Selection) --- *@
+                    <div class="col-md-4">
+                        <h6 class="fw-bold text-success border-bottom pb-2">2. الأعمدة للعرض والتصدير</h6>
+                        <div class="columns-container">
+                            @foreach (var col in Model.AvailableColumns)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="SelectedColumns" value="@col.Key" id="col_@col.Key"
+                                           @(Model.SelectedColumns.Contains(col.Key) ? "checked" : "")>
+                                    <label class="form-check-label" for="col_@col.Key">
+                                        @col.Value
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-2 text-end">
+                            <button type="button" class="btn btn-sm btn-link p-0" onclick="$('.columns-container input').prop('checked', true)">تحديد الكل</button> |
+                            <button type="button" class="btn btn-sm btn-link p-0" onclick="$('.columns-container input').prop('checked', false)">إلغاء التحديد</button>
+                        </div>
+                    </div>
+                </div>
+
+                <hr />
+
+                @* --- أزرار التحكم --- *@
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary px-4" formaction="@Url.Action("Index")">
+                        <i class="bi bi-search me-2"></i> عرض النتائج
+                    </button>
+
+                    <button type="submit" class="btn btn-success px-4" formaction="@Url.Action("Export")">
+                        <i class="bi bi-file-earmark-excel me-2"></i> تصدير إلى Excel
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* --- جدول النتائج --- *@
+    @if (Model.Results != null && Model.Results.Count > 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 fw-bold">نتائج البحث (@Model.Results.Count سجل)</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            @foreach (var colKey in Model.SelectedColumns)
+                            {
+                                if (Model.AvailableColumns.ContainsKey(colKey))
+                                {
+                                    <th>@Model.AvailableColumns[colKey]</th>
+                                }
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Results)
+                        {
+                            <tr>
+                                @{
+                                    // استخدام Reflection لعرض البيانات بناءً على الأعمدة المختارة فقط
+                                    var props = item.GetType().GetProperties();
+                                    foreach (var colKey in Model.SelectedColumns)
+                                    {
+                                        var prop = ((System.Reflection.PropertyInfo[])props).FirstOrDefault(p => p.Name == colKey);
+                                        if (prop != null)
+                                        {
+                                            var val = prop.GetValue(item, null);
+                                            <td>
+                                                @if (val is DateTime dt)
+                                                {
+                                                    @dt.ToString("yyyy-MM-dd")
+                                                }
+                                                else
+                                                {
+                                                    @val
+                                                }
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td>-</td>
+                                        }
+                                    }
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else if (Model.Results != null && Model.Results.Count == 0 && Request.HttpMethod == "POST")
+    {
+        <div class="alert alert-warning text-center">
+            لا توجد بيانات تطابق معايير البحث.
+        </div>
+    }
+</div>

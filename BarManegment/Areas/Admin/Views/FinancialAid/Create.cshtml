@@ -1,0 +1,142 @@
+﻿@model BarManegment.Models.LawyerFinancialAid
+
+@{
+    ViewBag.Title = "تسجيل مساعدة جديدة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card shadow border-0">
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="bg-light p-3 rounded mb-4 border-start border-4 border-primary">
+                            <h6 class="text-primary fw-bold mb-3">1. بيانات المساعدة الأساسية</h6>
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label fw-bold">المحامي المستفيد <span class="text-danger">*</span></label>
+                                    @* إضافة id لسهولة الاستهداف *@
+                                    @Html.DropDownList("LawyerId", null, "ابحث واختر المحامي...", new { @class = "form-select select2", id = "LawyerId", required = "required" })
+                                    @Html.ValidationMessageFor(model => model.LawyerId, "", new { @class = "text-danger small" })
+                                </div>
+                                @* ... (باقي الحقول كما هي) ... *@
+                                <div class="col-md-5">
+                                    <label class="form-label fw-bold">نوع المساعدة <span class="text-danger">*</span></label>
+                                    @Html.DropDownList("AidTypeId", null, "اختر النوع...", new { @class = "form-select", required = "required" })
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">المبلغ <span class="text-danger">*</span></label>
+                                    @Html.EditorFor(model => model.Amount, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.01", required = "required" } })
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">العملة</label>
+                                    @Html.DropDownList("CurrencyId", null, new { @class = "form-select" })
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">ملاحظات</label>
+                                    @Html.TextAreaFor(model => model.Notes, new { @class = "form-control", rows = 1 })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border p-3 rounded mb-3">
+                            <h6 class="text-secondary fw-bold mb-3 border-bottom pb-2">2. تفاصيل الصرف (آلية الدفع)</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">طريقة التحويل</label>
+                                    <select name="DisbursementMethod" id="DisbursementMethod" class="form-select bg-light">
+                                        <option value="BankTransfer">تحويل بنكي (Bank Transfer)</option>
+                                        <option value="Wallet">محفظة إلكترونية (E-Wallet)</option>
+                                        <option value="Cash">استلام نقدي (Cash)</option>
+                                    </select>
+                                </div>
+
+                                @* قسم البنك - إضافة معرفات للحقول *@
+                                <div class="col-md-8 bank-details">
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">اسم البنك</label>
+                                            @Html.EditorFor(model => model.TargetBankName, new { htmlAttributes = new { @class = "form-control", id = "bankName" } })
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">الفرع</label>
+                                            @Html.EditorFor(model => model.TargetBankBranch, new { htmlAttributes = new { @class = "form-control", id = "bankBranch" } })
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">الآيبان (IBAN)</label>
+                                            @Html.EditorFor(model => model.TargetIban, new { htmlAttributes = new { @class = "form-control text-uppercase", id = "bankIban" } })
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-success small mt-1"><i class="bi bi-check-circle"></i> سيتم تعبئة البيانات تلقائياً.</div>
+                                </div>
+
+                                @* قسم المحفظة *@
+                                <div class="col-md-8 wallet-details" style="display:none;">
+                                    <label class="form-label fw-bold">رقم المحفظة / الجوال</label>
+                                    @Html.EditorFor(model => model.TargetWalletNumber, new { htmlAttributes = new { @class = "form-control", id = "walletNumber" } })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-success btn-lg px-5 fw-bold shadow-sm">
+                                <i class="bi bi-save2 me-2"></i> حفظ المساعدة
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({ theme: 'bootstrap-5', width: '100%', dir: "rtl" });
+
+            // التبديل بين طرق الدفع
+            $('#DisbursementMethod').change(function () {
+                var method = $(this).val();
+                if (method === 'BankTransfer') {
+                    $('.bank-details').show(); $('.wallet-details').hide();
+                } else if (method === 'Wallet') {
+                    $('.bank-details').hide(); $('.wallet-details').show();
+                } else {
+                    $('.bank-details').hide(); $('.wallet-details').hide();
+                }
+            });
+
+            // ✅ جلب بيانات المحامي عند الاختيار
+            $('#LawyerId').change(function() {
+                var id = $(this).val();
+                if(id) {
+                    $.get('@Url.Action("GetLawyerDetails", "FinancialAid")', { id: id }, function(data) {
+                        if(data) {
+                            // تعبئة حقول البنك
+                            if(data.bankName) $('#bankName').val(data.bankName);
+                            if(data.branch) $('#bankBranch').val(data.branch);
+                            if(data.iban) $('#bankIban').val(data.iban);
+
+                            // تعبئة حقول المحفظة
+                            if(data.wallet) $('#walletNumber').val(data.wallet);
+
+                            // تغيير طريقة الدفع تلقائياً حسب المتوفر
+                            if (data.iban) {
+                                $('#DisbursementMethod').val('BankTransfer').trigger('change');
+                            } else if (data.wallet) {
+                                $('#DisbursementMethod').val('Wallet').trigger('change');
+                            } else {
+                                $('#DisbursementMethod').val('Cash').trigger('change');
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

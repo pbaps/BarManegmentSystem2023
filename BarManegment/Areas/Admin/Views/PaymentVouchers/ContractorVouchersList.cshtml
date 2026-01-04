@@ -1,0 +1,138 @@
+﻿@model IEnumerable<BarManegment.Areas.Admin.ViewModels.ContractorVoucherDisplay>
+@{
+    ViewBag.Title = "أرشيف قسائم المتعهدين (طوابع)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // 1. (الفصل) نقوم بفصل القوائم هنا بناءً على الحالة
+    var unpaidVouchers = Model.Where(item => item.Voucher.Status == "صادر" || item.Voucher.Status == "بانتظار الدفع");
+    var paidVouchers = Model.Where(item => item.Voucher.Status == "مسدد");
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-end mb-3">
+        @Html.ActionLink("إنشاء قسيمة متعهد جديدة", "CreateContractorVoucher", "PaymentVouchers", new { area = "Admin" }, new { @class = "btn btn-primary" })
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="m-0"><i class="bi bi-clock-history"></i> قسائم بانتظار الدفع</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("ContractorVouchersList", "PaymentVouchers", new { area = "Admin" }, FormMethod.Get, new { @class = "row g-3 mb-3" }))
+            {
+                <div class="col-md-4">
+                    <input type="text" name="searchString" class="form-control" placeholder="ابحث برقم القسيمة..." value="@Request.QueryString["searchString"]" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-info"><i class="bi bi-search"></i> بحث</button>
+                </div>
+            }
+            <hr />
+
+            <table id="unpaidVouchersTable" class="table table-hover table-sm align-middle" style="width:100%">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم القسيمة</th>
+                        <th>اسم المتعهد</th>
+                        <th>تاريخ الإصدار</th>
+                        <th>المبلغ الإجمالي</th>
+                        <th>الحالة</th>
+                        <th class="text-end">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in unpaidVouchers)
+                    {
+                        <tr>
+                            <td>@item.Voucher.Id</td>
+                            <td>
+                                <span class="text-primary fw-bold">@item.ContractorName</span>
+                            </td>
+                            <td>@item.Voucher.IssueDate.ToString("yyyy/MM/dd")</td>
+                            <td>@item.Voucher.TotalAmount.ToString("N2")</td>
+                            <td>
+                                <span class="badge bg-warning text-dark">@item.Voucher.Status</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                @Html.ActionLink("طباعة", "PrintContractorVoucher", new { id = item.Voucher.Id, area = "Admin" }, new { @class = "btn btn-sm btn-outline-secondary", target = "_blank" })
+                                @Html.ActionLink("حذف", "Delete", new { id = item.Voucher.Id, area = "Admin" }, new { @class = "btn btn-sm btn-danger" })
+
+ 
+                                @Html.ActionLink("تسجيل السداد", "CreateContractorReceipt", "Receipts", new { voucherId = item.Voucher.Id, area = "Admin" }, new { @class = "btn btn-sm btn-success" })
+
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="m-0"><i class="bi bi-archive-fill"></i> أرشيف القسائم المسددة</h5>
+        </div>
+        <div class="card-body">
+            <table id="paidVouchersTable" class="table table-hover table-sm align-middle" style="width:100%">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم القسيمة</th>
+                        <th>اسم المتعهد</th>
+                        <th>تاريخ الإصدار</th>
+                        <th>المبلغ الإجمالي</th>
+                        <th>الحالة</th>
+                        <th class="text-end">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in paidVouchers)
+                    {
+                        <tr>
+                            <td>@item.Voucher.Id</td>
+                            <td>
+                                <span class="text-primary fw-bold">@item.ContractorName</span>
+                            </td>
+                            <td>@item.Voucher.IssueDate.ToString("yyyy/MM/dd")</td>
+                            <td>@item.Voucher.TotalAmount.ToString("N2")</td>
+                            <td>
+                                <span class="badge bg-success">@item.Voucher.Status</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                @Html.ActionLink("عرض الإيصال", "PrintContractorReceipt", "Receipts", new { id = item.Voucher.Id, area = "Admin" }, new { @class = "btn btn-sm btn-outline-info", target = "_blank" })
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // إعدادات مشتركة للجداول
+            var datatableOptions = {
+                "language": {
+                    // ترجمة الواجهة إلى العربية
+                    "url": "https://cdn.datatables.net/plug-ins/1.13.8/i18n/ar.json"
+                },
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "الكل"]], // خيارات عدد الصفحات
+                "pageLength": 50, // البدء بـ 50 صف
+                "order": [[0, 'desc']] // الترتيب الافتراضي (الرقم الأحدث أولاً)
+            };
+
+            // تفعيل الجداول
+            $('#unpaidVouchersTable').DataTable(datatableOptions);
+            $('#paidVouchersTable').DataTable(datatableOptions);
+        });
+    </script>
+}

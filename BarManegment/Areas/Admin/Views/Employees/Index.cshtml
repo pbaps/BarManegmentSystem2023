@@ -1,0 +1,104 @@
+﻿@model IEnumerable<BarManegment.Models.Employee>
+
+@{
+    ViewBag.Title = "سجل الموظفين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary fw-bold"><i class="bi bi-people-fill me-2"></i> سجل الموظفين</h4>
+        <div>
+            <a href="@Url.Action("Create", "Departments")" class="btn btn-outline-secondary btn-sm me-1">أقسام</a>
+            <a href="@Url.Action("Create", "JobTitles")" class="btn btn-outline-secondary btn-sm me-1">مسميات</a>
+            <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm fw-bold">
+                <i class="bi bi-person-plus-fill me-1"></i> موظف جديد
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الاسم</th>
+                            <th>القسم / الوظيفة</th>
+                            <th>تاريخ التعيين</th>
+                            <th>الراتب الأساسي</th>
+                            <th>حساب النظام</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2 border" style="width: 35px; height: 35px;">
+                                            <i class="bi bi-person text-secondary"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold d-block">@item.FullName</span>
+                                            <small class="text-muted">@item.Phone</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="d-block fw-bold text-dark">@item.Department.Name</span>
+                                    <small class="text-muted">@item.JobTitle.Name</small>
+                                </td>
+                                <td>@item.HireDate.ToString("yyyy/MM/dd")</td>
+                                <td class="fw-bold text-success">@item.BasicSalary.ToString("N0")</td>
+                                <td>
+                                    @if (item.UserId != null)
+                                    {
+                                        <span class="badge bg-info text-dark"><i class="bi bi-check-circle me-1"></i> مرتبط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary opacity-50">غير مرتبط</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">على رأس عمله</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">موقوف/مستقيل</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-people fs-1 d-block mb-3 opacity-25"></i>
+                    <h5>لا يوجد موظفين مسجلين</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,104 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.IncomeStatementViewModel
+
+@{
+    ViewBag.Title = "قائمة الدخل (الأرباح والخسائر)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body bg-light">
+            @using (Html.BeginForm("IncomeStatement", "AccountingReports", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">من تاريخ</label>
+                    <input type="date" name="from" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">إلى تاريخ</label>
+                    <input type="date" name="to" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">عرض</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="@Url.Action("PrintIncomeStatement", new { from = Model.FromDate, to = Model.ToDate })" target="_blank" class="btn btn-dark w-100">
+                        <i class="bi bi-printer"></i> طباعة
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white text-center py-3">
+            <h4 class="mb-0 fw-bold">قائمة الدخل والمصروفات</h4>
+            <small>عن الفترة من @Model.FromDate?.ToString("yyyy/MM/dd") إلى @Model.ToDate?.ToString("yyyy/MM/dd")</small>
+        </div>
+        <div class="card-body p-4">
+
+            <div class="row">
+                <div class="col-md-6 border-end">
+                    <h5 class="text-success border-bottom pb-2 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i> الإيرادات</h5>
+                    <table class="table table-sm table-hover">
+                        <tbody>
+                            @foreach (var item in Model.Revenues)
+                            {
+                                <tr>
+                                    <td>@item.AccountName <span class="text-muted small">(@item.AccountCode)</span></td>
+                                    <td class="text-end fw-bold">@item.Amount.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-success">
+                            <tr>
+                                <td class="fw-bold">إجمالي الإيرادات</td>
+                                <td class="text-end fw-bold">@Model.TotalRevenues.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="text-danger border-bottom pb-2 fw-bold"><i class="bi bi-graph-down-arrow me-2"></i> المصروفات</h5>
+                    <table class="table table-sm table-hover">
+                        <tbody>
+                            @foreach (var item in Model.Expenses)
+                            {
+                                <tr>
+                                    <td>@item.AccountName <span class="text-muted small">(@item.AccountCode)</span></td>
+                                    <td class="text-end fw-bold">@item.Amount.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-danger">
+                            <tr>
+                                <td class="fw-bold">إجمالي المصروفات</td>
+                                <td class="text-end fw-bold">@Model.TotalExpenses.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <hr class="my-4" style="border-top: 2px dashed #bbb;" />
+
+            <div class="text-center">
+                <h5 class="text-muted">صافي الدخل للفترة (الفائض / العجز)</h5>
+                @if (Model.NetIncome >= 0)
+                {
+                    <h1 class="text-success fw-bold display-4">+ @Model.NetIncome.ToString("N2")</h1>
+                    <span class="badge bg-success fs-5">فائض مالي (ربح)</span>
+                }
+                else
+                {
+                    <h1 class="text-danger fw-bold display-4">@Model.NetIncome.ToString("N2")</h1>
+                    <span class="badge bg-danger fs-5">عجز مالي (خسارة)</span>
+                }
+                <div class="mt-2 text-muted small">عملة التقرير: شيكل إسرائيلي (NIS)</div>
+            </div>
+
+        </div>
+    </div>
+</div>

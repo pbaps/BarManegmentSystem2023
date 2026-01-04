@@ -1,0 +1,155 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.RequestReviewViewModel
+@{
+    ViewBag.Title = "مراجعة تفاصيل الطلب رقم: " + Model.Request.Id;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml"; // (تأكد أن هذا هو المسار الصحيح للـ Layout)
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4 class="mb-0">@ViewBag.Title</h4>
+    </div>
+    <div class="card-body">
+
+        <h5 class="text-primary">بيانات المتدرب</h5>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-3">اسم المتدرب:</dt>
+            <dd class="col-sm-9">@Model.Trainee.ArabicName</dd>
+
+            <dt class="col-sm-3">رقم المتدرب:</dt>
+            <dd class="col-sm-9">@Model.Trainee.TraineeSerialNo</dd>
+
+            <dt class="col-sm-3">الحالة الحالية:</dt>
+            <dd class="col-sm-9">
+                @if (Model.Trainee.ApplicationStatus.Name == "متدرب مقيد")
+                {<span class="badge bg-success">@Model.Trainee.ApplicationStatus.Name</span> }
+            else if (Model.Trainee.ApplicationStatus.Name == "متدرب موقوف")
+            { <span class="badge bg-danger">@Model.Trainee.ApplicationStatus.Name</span> }
+        else
+        { <span class="badge bg-info">@Model.Trainee.ApplicationStatus.Name</span>}
+            </dd>
+
+            <dt class="col-sm-3">المشرف الحالي:</dt>
+            <dd class="col-sm-9">@(Model.Trainee.Supervisor?.ArabicName ?? "لا يوجد")</dd>
+        </dl>
+
+        <h5 class="text-primary mt-4">تفاصيل الطلب</h5>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-3">نوع الطلب:</dt>
+            <dd class="col-sm-9"><strong>@Model.Request.RequestType</strong></dd>
+
+            <dt class="col-sm-3">تاريخ التقديم:</dt>
+            <dd class="col-sm-9">@Model.Request.RequestDate.ToString("yyyy/MM/dd")</dd>
+
+            @if (Model.Request.NewSupervisor != null)
+            {
+                <dt class="col-sm-3">المشرف الجديد المقترح:</dt>
+                <dd class="col-sm-9">@Model.Request.NewSupervisor.ArabicName</dd>
+            }
+
+            <dt class="col-sm-3">المرفق المقدم من المتدرب:</dt>
+            <dd class="col-sm-9">
+                @if (!string.IsNullOrEmpty(Model.Request.NewSupervisorApprovalPath))
+                {
+                    <a href="@Url.Content(Model.Request.NewSupervisorApprovalPath)" target="_blank" class="btn btn-outline-info">
+                        <i class="bi bi-paperclip"></i> عرض المرفق
+                    </a>
+                }
+                else
+                {
+                    <span class="text-muted">لم يتم إرفاق ملف.</span>
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+@* ---
+    --- قسم اتخاذ القرار (الأزرار)
+    --- *@
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">اتخاذ قرار</h5>
+    </div>
+    <div class="card-body">
+
+        @* (التحقق من أن الطلب لا يزال قيد المراجعة) *@
+        @if (Model.Request.Status == "قيد المراجعة" || Model.Request.Status == "قيد المراجعة (دفع مؤجل)")
+        {
+            @* === زر الموافقة (يظهر حسب نوع الطلب) === *@
+            if (Model.Request.RequestType == "استئناف تدريب" || Model.Request.RequestType == "استكمال")
+            {
+                using (Html.BeginForm("ApproveResumeRequest", "SupervisorChangeRequests", new { id = Model.Request.Id }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <p>عند الموافقة، سيتم إغلاق فترة الإيقاف الحالية وتغيير حالة المتدرب إلى "متدرب مقيد".</p>
+                    <button type="submit" class="btn btn-success"
+                            onclick="return confirm('هل أنت متأكد من الموافقة على استئناف التدريب؟')">
+                        <i class="bi bi-check-circle"></i> موافقة على الاستئناف
+                    </button>
+                }
+            }
+            else if (Model.Request.RequestType == "نقل إشراف" || Model.Request.RequestType == "نقل")
+            {
+                using (Html.BeginForm("ApproveTransferRequest", "SupervisorChangeRequests", new { id = Model.Request.Id }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <p>عند الموافقة، سيتم نقل المتدرب إلى المشرف الجديد المقترح.</p>
+                    <div class="form-floating mb-3">
+                        <textarea name="committeeNotes" class="form-control" placeholder=" " style="height: 80px"></textarea>
+                        <label>ملاحظات (اختياري)</label>
+                    </div>
+                    <button type="submit" class="btn btn-success"
+                            onclick="return confirm('هل أنت متأكد من الموافقة على نقل الإشراف؟')">
+                        <i class="bi bi-check-circle"></i> موافقة على النقل
+                    </button>
+                }
+            }
+            else if (Model.Request.RequestType == "وقف تدريب" || Model.Request.RequestType == "وقف")
+            {
+                using (Html.BeginForm("ApproveStopRequest", "SupervisorChangeRequests", new { id = Model.Request.Id }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <p>عند الموافقة، سيتم تغيير حالة المتدرب إلى "متدرب موقوف" وتسجيل فترة إيقاف مفتوحة باسمه.</p>
+                    <div class="form-floating mb-3">
+                        <textarea name="committeeNotes" class="form-control" placeholder=" " style="height: 80px"></textarea>
+                        <label>ملاحظات (اختياري)</label>
+                    </div>
+                    <button type="submit" class="btn btn-warning"
+                            onclick="return confirm('هل أنت متأكد من الموافقة على وقف التدريب؟')">
+                        <i class="bi bi-check-circle"></i> موافقة على الوقف
+                    </button>
+                }
+            }
+
+            <hr />
+
+            @* === زر الرفض (مشترك للجميع) === *@
+            using (Html.BeginForm("RejectRequest", "SupervisorChangeRequests", new { id = Model.Request.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="form-floating mb-3">
+                    <textarea name="committeeNotes" class="form-control" placeholder=" " style="height: 100px"></textarea>
+                    <label>سبب الرفض (ملاحظات اللجنة)</label>
+                </div>
+                <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('هل أنت متأكد من رفض هذا الطلب؟')">
+                    <i class="bi bi-x-circle"></i> رفض الطلب
+                </button>
+            }
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <p class="mb-0"><strong>تمت معالجة هذا الطلب.</strong></p>
+                <p class="mb-0">الحالة النهائية: @Model.Request.Status</p>
+                <p class="mb-0">ملاحظات: @Model.Request.CommitteeNotes</p>
+            </div>
+        }
+
+    </div>
+    <div class="card-footer">
+        @Html.ActionLink("العودة لقائمة المراجعة", "CommitteeReview", null, new { @class = "btn btn-secondary" })
+    </div>
+</div>

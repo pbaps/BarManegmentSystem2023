@@ -1,0 +1,212 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CoordinatorDashboardViewModel
+
+@{
+    ViewBag.Title = "لوحة تحكم منسق الجلسات";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">الطلبات الواردة (قيد التنسيق)</h1>
+    <a href="@Url.Action("Create", "CouncilSessions", new { area = "Admin" })" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm">
+        <i class="fas fa-plus fa-sm text-white-50"></i> فتح جلسة جديدة
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-info text-white">
+        <h6 class="m-0 fw-bold"><i class="bi bi-inbox-fill"></i> صندوق الطلبات الواردة</h6>
+    </div>
+    <div class="card-body text-dark">
+
+        <div class="row mb-3 align-items-end bg-light p-3 rounded border">
+            <div class="col-md-6">
+                <label class="fw-bold form-label">اختر الجلسة المستهدفة (للترحيل الجماعي):</label>
+                @Html.DropDownList("bulkSessionId", Model.OpenSessions, "-- اختر جلسة مفتوحة --", new { @class = "form-select", id = "bulkSessionSelect" })
+            </div>
+            <div class="col-md-6 text-start mt-2 mt-md-0">
+                <button type="button" onclick="submitBulk()" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-arrow-right-circle"></i> ترحيل المحدد إلى جدول الأعمال
+                </button>
+            </div>
+        </div>
+
+        <hr />
+
+        @if (Model.PendingItems == null || !Model.PendingItems.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-check2-all display-1"></i>
+                <p class="mt-3">لا يوجد طلبات معلقة حالياً.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered" id="pendingTable" style="color: black;">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40px;" class="text-center">
+                                <input type="checkbox" class="form-check-input" id="selectAll" />
+                            </th>
+                            <th>الموضوع</th>
+                            <th>المصدر</th>
+                            <th>النوع</th>
+                            <th>الحالة / الملاحظات</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.PendingItems)
+                        {
+                            <tr>
+                                <td class="text-center align-middle">
+                                    <input type="checkbox" value="@item.Id" class="item-checkbox form-check-input" />
+                                </td>
+                                <td>
+                                    <strong>@item.Title</strong>
+                                    <p class="text-muted small mb-0">@(item.Description != null && item.Description.Length > 60 ? item.Description.Substring(0, 60) + "..." : item.Description)</p>
+                                </td>
+                                <td class="align-middle">
+                                    @if (item.Source == "Committee")
+                                    {<span class="badge bg-warning text-dark">لجنة</span> }
+                                    else if (item.Source == "LawyerPortal")
+                                    { <span class="badge bg-info text-dark">بوابة محامي</span> }
+                                    else
+                                    { <span class="badge bg-secondary">@item.Source</span>}
+                                </td>
+                                <td class="align-middle">@item.RequestType</td>
+                                <td class="align-middle">
+                                    @if (item.ExecutionStatus != null && item.ExecutionStatus.Contains("مؤجل"))
+                                    {
+                                        <span class="badge bg-danger">مؤجل سابقاً</span>
+                                    }
+                                    else if (item.ExecutionStatus != null && item.ExecutionStatus.Contains("دراسة"))
+                                    {
+                                        <span class="badge bg-primary">معاد للدراسة</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">جديد</span>
+                                    }
+                                </td>
+                                <td class="align-middle text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewModal-@item.Id">
+                                        <i class="bi bi-eye"></i> معاينة / ترحيل
+                                    </button>
+
+                                    <div class="modal fade" id="viewModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content text-start">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title">@item.Title</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>@item.Description</p>
+                                                    <hr />
+
+                                                    <div class="card border-primary mb-3">
+                                                        <div class="card-header bg-primary text-white py-1 small">إجراء سريع</div>
+                                                        <div class="card-body p-2">
+                                                            <p class="small mb-2">ترحيل فوري:</p>
+                                                            @using (Html.BeginForm("AssignItemsToSession", "CoordinatorInbox", new { area = "Admin" }, FormMethod.Post))
+                                                            {
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="selectedItemIds" value="@item.Id" />
+                                                                <div class="input-group">
+                                                                    @Html.DropDownList("selectedSessionId", Model.OpenSessions, new { @class = "form-select form-select-sm", required = "required" })
+                                                                    <button type="submit" class="btn btn-sm btn-success">إضافة</button>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    @using (Html.BeginForm("DeleteAgendaItem", "CoordinatorInbox", new { area = "Admin" }, FormMethod.Post))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="itemId" value="@item.Id" />
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('حذف نهائي؟')">حذف</button>
+                                                    }
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إغلاق</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@using (Html.BeginForm("AssignItemsToSession", "CoordinatorInbox", new { area = "Admin" }, FormMethod.Post, new { id = "bulkForm" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="selectedSessionId" id="hiddenSessionId" />
+    <div id="hiddenIdsContainer"></div>
+}
+
+@section Scripts {
+    <script>
+        // 1. تحديد الكل
+        document.getElementById('selectAll').onclick = function () {
+            var checkboxes = document.querySelectorAll('.item-checkbox');
+            for (var checkbox of checkboxes) {
+                checkbox.checked = this.checked;
+            }
+        }
+
+        // 2. دالة الترحيل الجماعي
+        function submitBulk() {
+            var selectedSession = document.getElementById("bulkSessionSelect").value;
+
+            // تحقق من اختيار الجلسة
+            if (!selectedSession) {
+                alert("يرجى اختيار جلسة من القائمة العلوية.");
+                return;
+            }
+
+            // جمع الـ IDs المحددة
+            var checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert("يرجى تحديد بند واحد على الأقل من الجدول.");
+                return;
+            }
+
+            // تعبئة النموذج المخفي
+            document.getElementById("hiddenSessionId").value = selectedSession;
+            var container = document.getElementById("hiddenIdsContainer");
+            container.innerHTML = ""; // مسح القديم
+
+            checkboxes.forEach(function (cb) {
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "selectedItemIds"; // نفس اسم المتغير في الكنترولر
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+
+            // إرسال النموذج
+            document.getElementById("bulkForm").submit();
+        }
+    </script>
+}

@@ -1,0 +1,101 @@
+﻿@model BarManegment.Areas.Members.ViewModels.MessageThreadViewModel
+@{
+    ViewBag.Title = "عرض الرسالة: " + Model.Subject;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    int currentUserId = (int)Session["UserId"]; // لجلب ID المستخدم الحالي لتنسيق العرض
+}
+
+<h2><i class="bi bi-chat-left-text-fill me-2"></i> @Model.Subject</h2>
+<p>
+    @Html.ActionLink("العودة إلى صندوق الوارد", "Inbox", null, new { @class = "btn btn-outline-secondary" })
+</p>
+<hr />
+
+<div class="row">
+    <div class="col-md-12">
+        <h4><i class="bi bi-chat-dots"></i> تسلسل المحادثة</h4>
+
+        @* 1. عرض الرسائل في المحادثة *@
+        @foreach (var message in Model.Messages)
+        {
+            bool isSender = (message.SenderId == currentUserId);
+            string panelClass = isSender ? "card border-primary mb-3" : "card border-secondary mb-3";
+            string headerClass = isSender ? "card-header bg-primary bg-opacity-75 text-white" : "card-header bg-light";
+            string senderName = isSender ? "أنت" : message.Sender.FullNameArabic;
+
+            <div class="@panelClass">
+                <div class="@headerClass">
+                    <strong>@senderName</strong>
+                    <span class="float-end">@message.Timestamp.ToString("yyyy-MM-dd HH:mm")</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">@Html.Raw(message.Body.Replace(Environment.NewLine, "<br/>"))</p>
+
+                    @if (message.HasAttachment && message.Attachments != null && message.Attachments.Any())
+                    {
+                        <hr />
+                        <h6><i class="bi bi-paperclip"></i> المرفقات:</h6>
+                        <ul class="list-unstyled">
+                            @foreach (var attachment in message.Attachments)
+                            {
+                                <li>
+                                    <a href="@Url.Action("ViewAttachment", "Messaging", new { id = attachment.Id })" target="_blank">@attachment.OriginalFileName</a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        }
+
+        <hr />
+
+        @* 2. نموذج الرد السريع *@
+        <h4><i class="bi bi-reply-fill"></i> الرد السريع</h4>
+
+        @* يجب أن يشير النموذج إلى دالة Compose *@
+        @using (Html.BeginForm("Compose", "Messaging", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+
+            @* يجب أن تتطابق أسماء الحقول المخفية مع خصائص ComposeMessageViewModel *@
+            @Html.Hidden("SenderId", Model.ReplyModel.SenderId)
+            @Html.Hidden("ParentMessageId", Model.ReplyModel.ParentMessageId)
+            @Html.Hidden("RecipientIdentifier", Model.ReplyModel.RecipientIdentifier)
+            @Html.Hidden("Subject", Model.ReplyModel.Subject)
+
+            <div class="form-horizontal">
+                <div class="form-group mb-3">
+                    <label class="control-label col-md-2">إلى:</label>
+                    <div class="col-md-10">
+                        <p class="form-control-static fs-5 fw-bold">@Model.ReplyModel.RecipientNameDisplay</p>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Body" class="control-label col-md-2">الرد</label>
+                    <div class="col-md-10">
+                        @* يجب استخدام الاسم "Body" ليتطابق مع ViewModel *@
+                        @Html.TextArea("Body", Model.ReplyModel.Body, new { @class = "form-control", rows = 5, placeholder = "اكتب ردك هنا...", @name = "Body" })
+                        @Html.ValidationMessage("Body", "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Files" class="control-label col-md-2">المرفقات</label>
+                    <div class="col-md-10">
+                        @* يجب استخدام الاسم "Files" ليتطابق مع ViewModel *@
+                        <input type="file" name="Files" id="Files" multiple="multiple" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <input type="submit" value="إرسال الرد" class="btn btn-success" />
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+

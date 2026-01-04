@@ -1,0 +1,170 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeQueryViewModel
+@using BarManegment.Models
+@using System.Collections.Generic
+@{
+    ViewBag.Title = "استعلامات المتدربين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    @if (TempData["SuccessMessage"] != null)
+    {<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+    @if (TempData["ErrorMessage"] != null)
+    {<div class="alert alert-danger">@Html.Raw(TempData["ErrorMessage"])</div>}
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+        </div>
+
+        @* --- 1. نموذج البحث (GET) --- *@
+        @using (Html.BeginForm("Index", "TraineeQuery", FormMethod.Get))
+        {
+            <div class="card-body bg-light">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.SearchTerm, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.SearchTerm, new { @class = "form-control", placeholder = "ابحث بالاسم، الرقم الوطني، رقم المتدرب..." })
+                    </div>
+                    <div class="col-md-3">
+                        @Html.LabelFor(m => m.StatusId, new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.StatusId, Model.Statuses, "--- كل الحالات ---", new { @class = "form-select" })
+                    </div>
+                    <div class="col-md-3">
+                        @Html.LabelFor(m => m.SupervisorId, new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.SupervisorId, Model.Supervisors, "--- كل المشرفين ---", new { @class = "form-select" })
+                    </div>
+                    <div class="col-md-3">
+                        @Html.LabelFor(m => m.StartDate, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.StartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                    <div class="col-md-3">
+                        @Html.LabelFor(m => m.EndDate, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.EndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                    <div class="col-md-3">
+                        @Html.LabelFor(m => m.Governorate, new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.Governorate, Model.Governorates, "--- كل المحافظات ---", new { @class = "form-select" })
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-start">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i> تطبيق الفلتر</button>
+                <a href="@Url.Action("Index", "TraineeQuery")" class="btn btn-outline-secondary">إلغاء الفلاتر</a>
+            </div>
+        }
+    </div>
+
+    @* --- 2. نموذج اختيار الأعمدة والتصدير (POST) --- *@
+    @using (Html.BeginForm("ExportToExcel", "TraineeQuery", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        @Html.HiddenFor(m => m.SearchTerm)
+        @Html.HiddenFor(m => m.StatusId)
+        @Html.HiddenFor(m => m.SupervisorId)
+        @Html.HiddenFor(m => m.StartDate)
+        @Html.HiddenFor(m => m.EndDate)
+        @Html.HiddenFor(m => m.Governorate)
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">اختيار الأعمدة والتصدير</h5>
+            </div>
+            <div class="card-body">
+                @Html.LabelFor(m => m.SelectedColumns, new { @class = "form-label" })
+                <small class="text-muted">(لتحديد أكثر من عمود، استمر بالضغط على Ctrl أو Shift)</small>
+                @Html.ListBoxFor(m => m.SelectedColumns, Model.AvailableColumns, new { @class = "form-control", style = "height: 150px;" })
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <div>
+                    <button type="submit" formaction="@Url.Action("Index")" formmethod="get" class="btn btn-info">
+                        <i class="bi bi-display me-1"></i> عرض الأعمدة المحددة
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-file-earmark-excel me-1"></i> تصدير النتائج (Excel)
+                    </button>
+                </div>
+                <div>
+                    @Html.ActionLink("استيراد بيانات", "Import", null, new { @class = "btn btn-outline-secondary" })
+                </div>
+            </div>
+        </div>
+    }
+
+    @* --- 3. جدول النتائج (ديناميكي) --- *@
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">النتائج (@Model.Results.Count)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            @foreach (var column in Model.SelectedColumns)
+                            {
+                                var columnItem = Model.AvailableColumns.Items.Cast<KeyValuePair<string, string>>().FirstOrDefault(k => k.Key == column);
+                                <th>@(columnItem.Value ?? column)</th>
+                            }
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Results.Any())
+                        {
+                            <tr><td colspan="@(Model.SelectedColumns.Count + 1)" class="text-center text-muted p-4">لا توجد نتائج مطابقة للبحث.</td></tr>
+                        }
+
+                        @foreach (var item in Model.Results)
+                        {
+                            <tr>
+                                @foreach (var column in Model.SelectedColumns)
+                                {
+                                    <td>
+                                        @if (column == "TraineeSerialNo")
+                                        {@item.TraineeSerialNo }
+                                    else if (column == "ArabicName")
+                                    { @item.ArabicName }
+                                else if (column == "NationalIdNumber")
+                                { @item.NationalIdNumber }
+                            else if (column == "Status")
+                            { @(item.ApplicationStatus?.Name) }
+                            else if (column == "Supervisor")
+                            { @(item.Supervisor?.ArabicName ?? "N/A") }
+                            else if (column == "TrainingStartDate")
+                            { @(item.TrainingStartDate?.ToString("yyyy-MM-dd")) }
+                            else if (column == "TrainingEndDate")
+                            {
+                                DateTime? endDate = item.TrainingStartDate?.AddYears(2);
+                                @(endDate?.ToString("yyyy-MM-dd"))
+                            }
+                            else if (column == "Gender")
+                            { @(item.Gender?.Name) }
+                            else if (column == "BirthDate")
+                            { @(item.BirthDate.ToString("yyyy-MM-dd")) }
+                            else if (column == "MobileNumber")
+                            { @(item.ContactInfo?.MobileNumber) }
+                            else if (column == "Email")
+                            { @(item.ContactInfo?.Email) }
+                            else if (column == "Governorate")
+                            { @(item.ContactInfo?.Governorate) }
+                            else if (column == "Address")
+                            { @(item.ContactInfo?.Street) }
+                            else
+                            { <span class="text-danger">@column</span>}
+                                    </td>
+                                }
+                                <td class="text-center">
+                                    <a href="@Url.Action("Details", "TraineeProfile", new { area = "Admin", id = item.Id })" class="btn btn-sm btn-info" title="عرض الملف الشخصي">
+                                        <i class="bi bi-person-vcard"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

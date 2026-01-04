@@ -1,0 +1,104 @@
+﻿@model IEnumerable<BarManegment.Models.MonthlyPayroll>
+
+@{
+    ViewBag.Title = "سجل الرواتب الشهرية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-primary"><i class="bi bi-cash-stack me-2"></i> سجل مسيرات الرواتب</h4>
+        <a href="@Url.Action("Create")" class="btn btn-success fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> إصدار مسير جديد
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3">#</th>
+                            <th>الفترة (شهر/سنة)</th>
+                            <th>تاريخ الإصدار</th>
+                            <th>إجمالي الرواتب (Gross)</th>
+                            <th>إجمالي الصافي (Net)</th>
+                            <th>الحالة</th>
+                            <th>بواسطة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.Id</td>
+                                    <td class="fw-bold text-primary">@item.Month / @item.Year</td>
+                                    <td>@item.IssueDate.ToString("yyyy/MM/dd")</td>
+                                    <td>@item.TotalGrossAmount.ToString("N2")</td>
+                                    <td class="fw-bold text-success">@item.TotalNetAmount.ToString("N2")</td>
+                                    <td>
+                                        @if (item.IsPostedToJournal)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> مرحل للمالية</span>
+                                            <div class="small text-muted mt-1">قيد #@item.JournalEntryId</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> مسودة</span>
+                                        }
+                                    </td>
+                                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary">@item.CreatedBy</span></td>
+                                    <td>
+                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="التفاصيل">
+                                            <i class="bi bi-eye"></i> عرض
+                                        </a>
+
+                                        @if (!item.IsPostedToJournal)
+                                        {
+                                            <form action="@Url.Action("Delete", new { id = item.Id })" method="post" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا المسير؟');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    لا توجد مسيرات رواتب مصدرة حتى الآن.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

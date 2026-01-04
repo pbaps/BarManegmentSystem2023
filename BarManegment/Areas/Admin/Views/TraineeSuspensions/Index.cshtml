@@ -1,0 +1,54 @@
+﻿@model IEnumerable<BarManegment.Models.TraineeSuspension>
+@{
+    ViewBag.Title = "طلبات الإيقاف (بانتظار الموافقة)";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4 class="mb-0">@ViewBag.Title</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>المتدرب</th>
+                    <th>تاريخ البدء</th>
+                    <th>تاريخ الانتهاء</th>
+                    <th>السبب</th>
+                    <th>الموظف المقترح</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted p-4">لا توجد طلبات إيقاف بانتظار الموافقة حالياً.</td>
+                    </tr>
+                }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Trainee.ArabicName</td>
+                        <td>@item.SuspensionStartDate.ToString("yyyy/MM/dd")</td>
+                        <td>@(item.SuspensionEndDate.HasValue ? item.SuspensionEndDate.Value.ToString("yyyy/MM/dd") : "إيقاف مفتوح")</td>
+                        <td>@item.Reason</td>
+                        <td>@(item.CreatedByUser?.FullNameArabic)</td>
+                        <td>
+                            @* زر الموافقة: يرسل طلب POST إلى دالة Approve *@
+                            @using (Html.BeginForm("Approve", "TraineeSuspensions", new { id = item.Id }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-success btn-sm"
+                                        onclick="return confirm('هل أنت متأكد من اعتماد هذا القرار؟ سيتم تغيير حالة المتدرب إلى (متدرب موقوف) فوراً.')">
+                                    <i class="bi bi-check-circle"></i> اعتماد القرار
+                                </button>
+                            }
+                            @* (يمكن إضافة زر للرفض هنا أيضاً) *@
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,236 @@
+﻿@model BarManegment.Models.ExamApplication
+@{
+    ViewBag.Title = "مراجعة طلب: " + Model.FullName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    @if (TempData["GeneratedPassword"] != null)
+    {
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">تم إنشاء كلمة مرور مؤقتة جديدة!</h4>
+            <p>كلمة المرور الجديدة للمتقدم هي:</p>
+            <p class="mb-0 fs-5 text-center"><strong>@TempData["GeneratedPassword"]</strong></p>
+        </div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="card-title mb-0">اتخاذ القرار</h5></div>
+        <div class="card-body">
+
+            @* ===
+                ===  بداية التعديل: تغيير لون البادج للمعفى
+                === *@
+            <p class="lead">
+                الحالة الحالية للطلب:
+                @if (Model.Status == "مقبول للامتحان")
+                {<span class="badge bg-success fs-6">@Model.Status</span> }
+            else if (Model.Status == "مرفوض")
+            { <span class="badge bg-danger fs-6">@Model.Status</span> }
+        else if (Model.Status == "معفى (مؤهل للتسجيل)")
+        { <span class="badge bg-info text-dark fs-6">@Model.Status</span> }
+    else
+    { <span class="badge bg-primary fs-6">@Model.Status</span>}
+            </p>
+            @* === نهاية التعديل === *@
+
+
+            <div class="d-flex gap-2">
+                @if (Model.Status == "قيد المراجعة")
+                {
+                    using (Html.BeginForm("ProcessDecision", "ExamApplications", new { id = Model.Id }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="decision" value="Approve" />
+                        <button type="submit" class="btn btn-success">قبول الطلب للامتحان</button>
+                    }
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">رفض الطلب</button>
+
+                    @* (إضافة زر الإعفاء هنا أيضاً) *@
+                    using (Html.BeginForm("Exempt", "ExamApplications", new { id = Model.Id }, FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning"
+                                onclick="return confirm('هل أنت متأكد من إعفاء هذا المتقدم من الامتحان والسماح له بالتسجيل مباشرة؟');">
+                            <i class="bi bi-shield-check"></i> إعفاء (تسجيل مباشر)
+                        </button>
+                    }
+                }
+
+                @if (Model.Status == "مقبول للامتحان")
+                {
+                    using (Html.BeginForm("ResetPassword", "ExamApplications", new { id = Model.Id }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('هل أنت متأكد؟ سيتم إنشاء كلمة مرور جديدة.');">
+                            إعادة تعيين كلمة المرور
+                        </button>
+                    }
+                    using (Html.BeginForm("UndoDecision", "ExamApplications", new { id = Model.Id }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-secondary" onclick="return confirm('هل أنت متأكد من التراجع عن هذا القرار؟');">التراجع عن القبول</button>
+                    }
+                }
+
+                @if (Model.Status == "مرفوض")
+                {
+                    <p class="text-danger"><strong>سبب الرفض:</strong> @Model.RejectionReason</p>
+                    using (Html.BeginForm("UndoDecision", "ExamApplications", new { id = Model.Id }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-secondary" onclick="return confirm('هل أنت متأكد من التراجع عن هذا القرار؟');">التراجع عن الرفض</button>
+                    }
+                }
+
+                @* ===
+                    === بداية الإضافة: زر التراجع عن الإعفاء
+                    === *@
+                @if (Model.Status == "معفى (مؤهل للتسجيل)")
+                {
+                    using (Html.BeginForm("UndoDecision", "ExamApplications", new { id = Model.Id }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-secondary" onclick="return confirm('هل أنت متأكد من التراجع عن قرار الإعفاء؟ سيعود الطلب إلى حالة (قيد المراجعة).');">
+                            <i class="bi bi-arrow-counterclockwise"></i> التراجع عن الإعفاء
+                        </button>
+                    }
+                }
+                @* === نهاية الإضافة === *@
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Telegram Link Card -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="card-title mb-0">ربط حساب تليجرام</h5></div>
+    <div class="card-body">
+        @if (Model.TelegramChatId.HasValue)
+        {
+            <div class="alert alert-success">هذا الحساب مرتبط بتليجرام بالفعل. (المعرف: @Model.TelegramChatId)</div>
+        }
+        else
+        {
+ 
+            var botName = System.Configuration.ConfigurationManager.AppSettings["TelegramBotName"].Replace("@", "");
+
+            // ===
+            // === بداية التصحيح: إزالة الأقواس [] و ()
+            // ===
+            var startLink = $"https://t.me/{botName}?start={Model.Id}";
+            // === نهاية التصحيح ===
+
+            <p>لربط حساب المتقدم ببوت الإشعارات...</p>
+            <a href="@startLink" target="_blank" class="btn btn-info">بدء الربط مع تليجرام</a>
+            <p class="mt-2">أو أرسل الكود التالي للبوت: <code>/start @Model.Id</code></p>
+        }
+    </div>
+</div>
+
+<!-- Application Details Cards -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h5>البيانات الشخصية</h5></div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">الاسم الكامل</dt>
+                    <dd class="col-sm-8">@Model.FullName</dd>
+
+                    <dt class="col-sm-4">الرقم الوطني</dt>
+                    <dd class="col-sm-8">@Model.NationalIdNumber</dd>
+
+                    <dt class="col-sm-4">تاريخ الميلاد</dt>
+                    <dd class="col-sm-8">@Model.BirthDate.ToString("yyyy-MM-dd")</dd>
+
+                    <dt class="col-sm-4">الجنس</dt>
+                    <dd class="col-sm-8">@Model.Gender.Name</dd>
+
+                    <dt class="col-sm-4">رقم الجوال</dt>
+                    <dd class="col-sm-8">@Model.MobileNumber</dd>
+
+                    <dt class="col-sm-4">رقم الواتساب</dt>
+                    <dd class="col-sm-8">@(Model.WhatsAppNumber ?? "لم يدرج")</dd>
+
+                    <dt class="col-sm-4">البريد الإلكتروني</dt>
+                    <dd class="col-sm-8">@Model.Email</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h5>المؤهلات العلمية</h5></div>
+            <div class="card-body">
+                @foreach (var q in Model.Qualifications.OrderBy(q => q.GraduationYear))
+                {
+                    <h6>@q.QualificationType</h6>
+                    <dl class="row mb-3">
+                        @if (q.QualificationType == "البكالوريوس")
+                        {
+                            <dt class="col-sm-4">الجامعة</dt>
+                            <dd class="col-sm-8">@q.UniversityName</dd>
+                        }
+                        <dt class="col-sm-4">سنة التخرج</dt>
+                        <dd class="col-sm-8">@q.GraduationYear</dd>
+                        <dt class="col-sm-4">المعدل</dt>
+                        <dd class="col-sm-8">@q.GradePercentage%</dd>
+                    </dl>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5>المرفقات</h5></div>
+            <div class="card-body">
+                <div class="list-group">
+                    @* === بداية التعديل: تحديث الروابط لتشير إلى الدالة الجديدة === *@
+                    <a href="@Url.Action("ViewAttachment", "ExamApplications", new { id = Model.Id, type = "highschool" })" target="_blank" class="list-group-item list-group-item-action">عرض شهادة الثانوية العامة</a>
+                    <a href="@Url.Action("ViewAttachment", "ExamApplications", new { id = Model.Id, type = "bachelor" })" target="_blank" class="list-group-item list-group-item-action">عرض الشهادة الجامعية</a>
+                    <a href="@Url.Action("ViewAttachment", "ExamApplications", new { id = Model.Id, type = "id" })" target="_blank" class="list-group-item list-group-item-action">عرض صورة الهوية</a>
+                    @* === نهاية التعديل === *@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("ProcessDecision", "ExamApplications", new { id = Model.Id }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">رفض الطلب</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="decision" value="Reject" />
+                    <div class="mb-3">
+                        <label for="rejectionReason" class="form-label">سبب الرفض (مطلوب)</label>
+                        <textarea name="rejectionReason" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

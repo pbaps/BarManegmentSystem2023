@@ -1,0 +1,28 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.GradeEssayViewModel
+@{ ViewBag.Title = "تصحيح سؤال مقالي"; }
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-body">
+            <h4>@ViewBag.Title</h4>
+            <div class="p-3 my-3 bg-light border rounded">
+                <strong>السؤال (@Model.QuestionPoints درجة):</strong>
+                <p>@Html.Raw(Model.QuestionText)</p>
+            </div>
+            <div class="p-3 my-3 border rounded">
+                <strong>إجابة المتقدم:</strong>
+                <p>@Model.EssayAnswer</p>
+            </div>
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ManualGradeId)
+                <div class="form-floating mb-3">
+                    @Html.EditorFor(m => m.Score, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.5" } })
+                    @Html.LabelFor(m => m.Score)
+                </div>
+                <input type="submit" value="حفظ الدرجة" class="btn btn-primary" />
+            }
+        </div>
+    </div>
+</div>

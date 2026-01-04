@@ -1,0 +1,34 @@
+﻿@model BarManegment.Areas.Admin.Controllers.CheckActionViewModel
+
+<div class="modal-header bg-success text-white">
+    <h5 class="modal-title">إيداع وتحصيل الشيك</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+@using (Html.BeginForm("Collect", "CheckPortfolio", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.CheckId)
+
+    <div class="modal-body">
+        <div class="alert alert-light border text-center fw-bold mb-3">
+            @ViewBag.CheckInfo
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">تاريخ الإيداع الفعلي</label>
+            @Html.EditorFor(m => m.ActionDate, "{0:yyyy-MM-dd}", new { htmlAttributes = new { @class = "form-control", type = "date" } })
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">إيداع في حساب بنكي (محفظة)</label>
+            @Html.DropDownListFor(m => m.TargetBankAccountId, ViewBag.TargetBankAccountId as SelectList, null, new { @class = "form-select", required = "required" })
+            <div class="form-text">سيتم إنشاء قيد: من ح/ البنك المختار إلى ح/ شيكات برسم التحصيل.</div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="submit" class="btn btn-success fw-bold">تأكيد التحصيل</button>
+    </div>
+}

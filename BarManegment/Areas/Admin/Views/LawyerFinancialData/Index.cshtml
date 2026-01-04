@@ -1,0 +1,60 @@
+﻿@{
+    ViewBag.Title = "إدارة البيانات المالية للمحامين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid p-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0"><i class="bi bi-bank2 me-2"></i> تحديث البيانات البنكية والمحافظ</h5>
+        </div>
+        <div class="card-body p-4">
+
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-8">
+                    <label class="form-label fw-bold">ابحث عن المحامي:</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchBox" class="form-control" placeholder="الاسم، رقم الهوية، أو رقم العضوية..." autofocus />
+                        <button class="btn btn-primary px-4" onclick="searchLawyer()">بحث</button>
+                    </div>
+                    <div class="form-text text-muted">اضغط Enter للبحث</div>
+                </div>
+            </div>
+
+            <div id="searchResults">
+                @* سيتم عرض النتائج هنا *@
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-search fs-1 opacity-25"></i>
+                    <p class="mt-2">قم بالبحث لعرض النتائج...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function searchLawyer() {
+            var term = $('#searchBox').val();
+            if (term.length < 2) {
+                alert("يرجى إدخال حرفين على الأقل للبحث.");
+                return;
+            }
+
+            $('#searchResults').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">جاري البحث...</p></div>');
+
+            $.get('@Url.Action("SearchLawyer")', { term: term }, function (data) {
+                $('#searchResults').html(data);
+            });
+        }
+
+        // البحث عند الضغط على Enter
+        $('#searchBox').keypress(function (e) {
+            if (e.which == 13) {
+                searchLawyer();
+            }
+        });
+    </script>
+}

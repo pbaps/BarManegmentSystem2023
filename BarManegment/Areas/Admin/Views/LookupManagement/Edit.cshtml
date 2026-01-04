@@ -1,0 +1,25 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.LookupItemViewModel
+@{
+    ViewBag.Title = "تعديل عنصر في: " + ViewBag.LookupTypeName;
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header"><h4>@ViewBag.Title</h4></div>
+        @using (Html.BeginForm("Edit", "LookupManagement", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                @* تضمين الحقول المشتركة والإضافية *@
+                @Html.Partial("_LookupFormFields", Model)
+
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="حفظ التعديلات" class="btn btn-primary" />
+                @Html.ActionLink("إلغاء", "List", new { type = Model.Type }, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

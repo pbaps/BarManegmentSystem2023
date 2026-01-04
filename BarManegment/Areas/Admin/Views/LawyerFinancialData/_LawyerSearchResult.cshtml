@@ -1,0 +1,40 @@
+﻿@model IEnumerable<dynamic>
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle border">
+            <thead class="table-light">
+                <tr>
+                    <th>اسم المحامي</th>
+                    <th>رقم الهوية</th>
+                    <th>رقم العضوية</th>
+                    <th>الحالة</th>
+                    <th class="text-center">إجراء</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-bold text-primary">@item.ArabicName</td>
+                        <td>@item.NationalIdNumber</td>
+                        <td>@(item.MembershipId ?? "---")</td>
+                        <td><span class="badge bg-info text-dark">@item.Status</span></td>
+                        <td class="text-center">
+                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-pencil-square me-1"></i> تعديل البيانات المالية
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning text-center mt-3">
+        <i class="bi bi-exclamation-circle me-2"></i> لا توجد نتائج مطابقة للبحث.
+    </div>
+}

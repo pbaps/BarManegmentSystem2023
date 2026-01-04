@@ -1,0 +1,150 @@
+﻿@model BarManegment.Models.CouncilSession
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>محضر جلسة رقم @Model.SessionNumber</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        @("@")import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Amiri', serif; /* خط رسمي للطباعة */
+            background-color: #fff;
+            padding: 20px;
+            font-size: 16px;
+        }
+        .header { text-align: center; margin-bottom: 40px; border-bottom: 3px double #000; padding-bottom: 15px; }
+        .header h2 { font-family: 'Cairo', sans-serif; font-weight: 700; }
+        .section-title {
+            background-color: #f0f0f0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-family: 'Cairo', sans-serif;
+        }
+        .signature-box { height: 60px; }
+
+        /* تنسيقات الطباعة */
+        @("@")media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-after: always; }
+            body { padding: 0; font-size: 14px; }
+            table { width: 100% !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="no-print mb-4 text-start">
+            <button onclick="window.print()" class="btn btn-primary">🖨️ طباعة المحضر</button>
+            <button onclick="window.close()" class="btn btn-secondary">إغلاق</button>
+        </div>
+
+        <div class="header">
+            <div class="row align-items-center">
+                <div class="col-4 text-end">
+                    <h5>نقابة المحامين النظاميين</h5>
+                    <h6>أمانة السر</h6>
+                </div>
+                <div class="col-4">
+                    <h2 class="mt-2">محضر جلسة مجلس النقابة</h2>
+                </div>
+                <div class="col-4 text-start">
+                    <p><strong>رقم الجلسة:</strong> @Model.SessionNumber / @Model.Year</p>
+                    <p><strong>التاريخ:</strong> @Model.SessionDate.ToShortDateString()</p>
+                    <p><strong>المكان:</strong> @Model.Location</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">أولاً: الحضور والغياب</div>
+        <p>عُقدت الجلسة برئاسة نقيب المحامين، وبحضور السادة الأعضاء المدرجة أسماؤهم أدناه:</p>
+
+        <table class="table table-bordered border-dark">
+            <thead>
+                <tr class="table-secondary">
+                    <th width="5%">#</th>
+                    <th width="35%">اسم العضو</th>
+                    <th width="15%">الحالة</th>
+                    <th width="45%">التوقيع</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int i = 1; }
+                @foreach (var att in Model.Attendees)
+                {
+                    <tr>
+                        <td>@(i++)</td>
+                        <td><strong>@att.MemberName</strong></td>
+                        <td>@(att.IsPresent ? "حاضر" : "غائب")</td>
+                        <td class="signature-box"></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="section-title">ثانياً: القرارات المتخذة</div>
+
+        <table class="table table-bordered border-dark">
+            <thead>
+                <tr class="table-secondary">
+                    <th width="5%">م</th>
+                    <th width="30%">الموضوع</th>
+                    <th width="15%">القرار</th>
+                    <th width="50%">نص القرار</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int j = 1; }
+                @foreach (var item in Model.AgendaItems)
+                {
+                    <tr>
+                        <td>@(j++)</td>
+                        <td>
+                            <strong>@item.Title</strong>
+                            <br /><small>المصدر: @item.Source</small>
+                        </td>
+                        <td class="text-center">
+                            @if (item.CouncilDecisionType == "Approved")
+                            {<span>موافقة</span> }
+                            else if (item.CouncilDecisionType == "Rejected")
+                            { <span>رفض</span> }
+                            else if (item.CouncilDecisionType == "Postponed")
+                            { <span>مؤجل</span> }
+                            else
+                            { <span>@item.CouncilDecisionType</span>}
+                        </td>
+                        <td>@item.DecisionText</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="row mt-5 pt-5 text-center">
+            <div class="col-6">
+                <h5>أمين السر</h5>
+                <br /><br />
+                <p>____________________</p>
+            </div>
+            <div class="col-6">
+                <h5>نقيب المحامين</h5>
+                <br /><br />
+                <p>____________________</p>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 small text-muted">
+            حرر هذا المحضر بتاريخ @DateTime.Now.ToString("yyyy/MM/dd")
+        </div>
+
+    </div>
+</body>
+</html>

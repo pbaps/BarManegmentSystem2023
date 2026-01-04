@@ -1,0 +1,36 @@
+﻿@model IEnumerable<BarManegment.Models.PartyRole>
+
+@{
+    ViewBag.Title = "إدارة صفات أطراف العقود";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2><i class="bi bi-person-lines-fill me-2"></i> @ViewBag.Title</h2>
+<p class="text-muted">
+    (مثل: بائع، مشتري، موكل، مؤجر، مستأجر، ...)
+</p>
+
+<p>
+    @Html.ActionLink("إضافة صفة جديدة", "Create", null, new { @class = "btn btn-primary" })
+</p>
+<hr />
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.Name)</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                <td>
+                    @Html.ActionLink("تعديل", "Edit", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-success" })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

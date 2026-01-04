@@ -1,0 +1,177 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CreateReceiptViewModel
+@{
+    ViewBag.Title = "تسجيل سداد وإصدار إيصال";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-cash-coin me-2"></i> @ViewBag.Title</h5>
+                </div>
+
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.PaymentVoucherId)
+                        @Html.HiddenFor(m => m.TotalAmount)
+                        @Html.HiddenFor(m => m.TraineeName)
+                        @Html.HiddenFor(m => m.CurrentTraineeStatus)
+                        @Html.HiddenFor(m => m.CurrencySymbol)
+
+                        <!-- الحقل الرئيسي مخفي (سيتم تعبئته تلقائياً من الجدول) -->
+                        @Html.HiddenFor(m => m.BankReceiptNumber, new { id = "MainBankReceiptNumber" })
+
+                        @* --- 💡 التعديل: إظهار رسالة الخطأ فقط عند وجود أخطاء فعلية --- *@
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            @Html.ValidationSummary(false, "تعذر الحفظ. يرجى تصحيح الأخطاء التالية:", new { @class = "alert alert-danger shadow-sm border-start border-5 border-danger rounded-3" })
+                        }
+                        @* ---------------------------------------------------------- *@
+
+                        <!-- 1. ملخص القسيمة -->
+                        <div class="alert alert-light border border-success d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center">
+                                <div class="display-6 text-success me-3"><i class="bi bi-receipt"></i></div>
+                                <div>
+                                    <h5 class="mb-1 text-dark fw-bold">سداد القسيمة رقم: <span class="font-monospace text-primary">@Model.PaymentVoucherId.ToString("D5")</span></h5>
+                                    <div class="text-muted mb-1">الاسم: <strong>@Model.TraineeName</strong></div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fs-4 fw-bold text-success">@Model.TotalAmount.ToString("N2") <small class="fs-6 text-muted">@Model.CurrencySymbol</small></div>
+                                <small class="text-muted">الإجمالي المطلوب</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        <!-- 2. تفاصيل السداد (مفصلة لكل رسم) -->
+                        <h6 class="text-primary fw-bold mb-3"><i class="bi bi-list-check me-2"></i> تفاصيل أرقام الإيصالات البنكية</h6>
+
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light small text-muted text-uppercase">
+                                    <tr>
+                                        <th style="width: 25%">نوع الرسم</th>
+                                        <th style="width: 30%">الحساب البنكي المستهدف</th>
+                                        <th style="width: 15%">المبلغ</th>
+                                        <th style="width: 30%">رقم إيصال البنك <span class="text-danger">*</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Details.Count; i++)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @Html.HiddenFor(m => m.Details[i].FeeTypeId)
+                                                @Html.HiddenFor(m => m.Details[i].FeeTypeName)
+                                                @Html.HiddenFor(m => m.Details[i].Amount)
+                                                @Html.HiddenFor(m => m.Details[i].CurrencySymbol)
+                                                @Html.HiddenFor(m => m.Details[i].BankName)
+                                                @Html.HiddenFor(m => m.Details[i].BankAccountId)
+
+                                                <span class="fw-bold text-dark">@Model.Details[i].FeeTypeName</span>
+                                            </td>
+                                            <td>
+                                                <div class="small">
+                                                    <i class="bi bi-bank2 text-secondary me-1"></i> @Model.Details[i].BankName
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold">@Model.Details[i].Amount.ToString("N2")</span> <small class="text-muted">@Model.Details[i].CurrencySymbol</small>
+                                            </td>
+                                            <td>
+                                                @* 💡 حقل الإدخال المفصل لكل سطر *@
+                                                @Html.TextBoxFor(m => m.Details[i].BankReceiptNumber, new { @class = "form-control form-control-sm receipt-input", placeholder = "أدخل رقم الوصل...", required = "required" })
+                                                @Html.ValidationMessageFor(m => m.Details[i].BankReceiptNumber, "", new { @class = "text-danger small" })
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 3. بيانات عامة -->
+                        <div class="row g-3 bg-light p-3 rounded border mb-4">
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.BankPaymentDate, new { @class = "form-label fw-bold" })
+                                @Html.TextBoxFor(m => m.BankPaymentDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                                @Html.ValidationMessageFor(m => m.BankPaymentDate, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-8">
+                                @Html.LabelFor(m => m.Notes, new { @class = "form-label fw-bold" })
+                                @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "1", placeholder = "ملاحظات إضافية..." })
+                            </div>
+                        </div>
+
+                        <!-- 4. خيارات التفعيل -->
+                        if (Model.ActivateTrainee)
+                        {
+                            <div class="alert alert-warning d-flex border-warning">
+                                <div class="form-check form-switch">
+                                    @Html.CheckBoxFor(m => m.ActivateTrainee, new { @class = "form-check-input", style = "cursor:pointer; transform: scale(1.3); margin-left: 10px;" })
+                                    <label class="form-check-label fw-bold text-dark" for="ActivateTrainee">
+                                        تفعيل قيد المتدرب وتوليد رقم نقابي
+                                    </label>
+                                    <div class="small text-muted mt-1">سيتم تغيير الحالة إلى "متدرب مقيد" واعتماد تاريخ السداد كتاريخ بدء التدريب.</div>
+                                </div>
+                            </div>
+                        }
+                        else if (Model.CurrentTraineeStatus != null && Model.CurrentTraineeStatus.Contains("تجديد"))
+                        {
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2"></i> سيتم تجديد اشتراك المزاولة تلقائياً لهذا العام.
+                            </div>
+                        }
+
+                        <!-- أزرار التحكم -->
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                            <a href="@Url.Action("Index", "PaymentVouchers")" class="btn btn-outline-secondary px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">
+                                <i class="bi bi-check-lg me-2"></i> تأكيد السداد وإصدار الإيصال
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // كود لتجميع أرقام الإيصالات في الحقل الرئيسي المخفي
+            $('form').on('submit', function () {
+                var allReceipts = [];
+                $('.receipt-input').each(function () {
+                    var val = $(this).val();
+                    if (val) {
+                        allReceipts.push(val);
+                    }
+                });
+
+                // دمج الأرقام بفاصلة
+                var joinedReceipts = allReceipts.join(", ");
+                $('#MainBankReceiptNumber').val(joinedReceipts);
+            });
+
+            // نسخ القيمة الأولى لباقي الحقول لتسهيل الإدخال (اختياري)
+            $('.receipt-input').first().on('change', function () {
+                var val = $(this).val();
+                if (val) {
+                    // إذا كانت باقي الحقول فارغة، اقترح نفس الرقم (تسهيلاً للمحاسب إذا كان إيصالاً واحداً)
+                    $('.receipt-input').not(':first').each(function () {
+                        if ($(this).val() === '') {
+                            $(this).val(val);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

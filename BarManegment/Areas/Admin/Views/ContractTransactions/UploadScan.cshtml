@@ -1,0 +1,152 @@
+﻿@model BarManegment.Models.ContractTransaction
+@{
+    ViewBag.Title = "رفع النسخة المصدقة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2>@ViewBag.Title (المعاملة رقم: @Model.Id)</h2>
+<p class="text-muted">
+    أنت تقوم الآن برفع النسخة النهائية المصدقة (المختومة) للمعاملة. (سيتم ضغط الصور تلقائياً للحفاظ على جودة متوسطة وحجم صغير).
+</p>
+<hr />
+
+@* (تم تحويل النموذج إلى AJAX للتعامل مع الضغط) *@
+@using (Html.BeginForm("UploadScan", "ContractTransactions", FormMethod.Post, new { enctype = "multipart/form-data", id = "uploadForm" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.Id)
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+    <div class="card shadow-sm border-primary">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-upload me-2"></i> الرفع من الجهاز</h5>
+            <p class="card-text">اختر ملف (PDF أو صورة).</p>
+
+            <div class="form-group mb-3">
+                <label for="ScannedFile" class="form-label">ملف العقد المصدق</label>
+                @* (مطلوب للتحقق من الصحة، ويقبل فقط هذه الامتدادات) *@
+                <input type="file" name="ScannedFile" id="ScannedFile" class="form-control" required accept=".pdf,.jpg,.jpeg,.png" />
+            </div>
+
+            @* (هنا تظهر رسالة حالة الضغط) *@
+            <div id="upload-status" class="mt-2 text-muted" style="font-size: 0.9rem;"></div>
+        </div>
+    </div>
+
+    <div class="form-group mt-4">
+        <input type="submit" value="رفع وإنهاء المعاملة" class="btn btn-success" id="submitButton" />
+        @Html.ActionLink("العودة إلى القائمة", "Index", null, new { @class = "btn btn-outline-secondary" })
+    </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    @* 1. إضافة مكتبة ضغط الصور (مجانية وتعمل مباشرة) *@
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            var compressedFile = null; // (سنخزن الملف المضغوط هنا)
+
+            // --- 2. كود ضغط الصور عند اختيارها يدوياً ---
+            $('#ScannedFile').change(async function (event) {
+                var file = event.target.files[0];
+                if (!file) {
+                    compressedFile = null;
+                    $('#upload-status').html("");
+                    return;
+                }
+
+                // (لا نضغط ملفات PDF، فقط الصور)
+                if (!file.type.startsWith('image/')) {
+                    compressedFile = file; // (استخدم الملف الأصلي)
+                    $('#upload-status').html("سيتم رفع الملف (PDF) كما هو.");
+                    return;
+                }
+
+                // (إعدادات الضغط: تقليل الجودة والحجم)
+                var options = {
+                    maxSizeMB: 1,           // (الحد الأقصى للحجم 1 ميجا)
+                    maxWidthOrHeight: 1920, // (تقليل الأبعاد)
+                    useWebWorker: true,
+                    quality: 0.7            // (ضغط بنسبة 70%)
+                };
+
+                try {
+                    $('#upload-status').html("<i>جاري ضغط الصورة... يرجى الانتظار...</i>");
+                    $('#submitButton').prop('disabled', true);
+
+                    var originalSize = (file.size / 1024 / 1024).toFixed(2);
+
+                    // (عملية الضغط)
+                    compressedFile = await imageCompression(file, options);
+
+                    var newSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+
+                    $('#upload-status').html(
+                        `<span style="color: green; font-weight: bold;">تم ضغط الصورة! (الحجم الأصلي: ${originalSize} MB، الحجم الجديد: ${newSize} MB)</span>`
+                    );
+                    $('#submitButton').prop('disabled', false);
+
+                } catch (error) {
+                    console.error(error);
+                    $('#upload-status').html(`<span style="color: red;">فشل ضغط الصورة. سيتم استخدام الملف الأصلي.</span>`);
+                    compressedFile = file; // (استخدام الملف الأصلي عند الفشل)
+                    $('#submitButton').prop('disabled', false);
+                }
+            });
+
+
+            // --- 3. إرسال النموذج (AJAX) ---
+            $('#uploadForm').submit(function (e) {
+                e.preventDefault(); // (منع الإرسال العادي)
+
+                if (!compressedFile) {
+                    // (إذا لم يختار ملفاً بعد، استخدم الملف الأصلي من الحقل)
+                    if ($('#ScannedFile')[0].files.length === 0) {
+                         alert("الرجاء اختيار ملف أولاً.");
+                         return;
+                    }
+                    compressedFile = $('#ScannedFile')[0].files[0];
+                }
+
+                $('#submitButton').prop('disabled', true).val("جاري الرفع...");
+
+                var formData = new FormData();
+                // (إضافة الملف المضغوط أو الأصلي (PDF))
+                // (مهم: يجب أن يتطابق "ScannedFile" مع اسم البارامتر في المتحكم)
+                formData.append("ScannedFile", compressedFile, compressedFile.name);
+
+                // (إضافة بقية بيانات النموذج)
+                formData.append("Id", $('#Id').val());
+                formData.append("__RequestVerificationToken", $('input[name=__RequestVerificationToken]').val());
+
+                fetch('@Url.Action("UploadScan")', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // (نجح الأمر، قم بإعادة التوجيه)
+                        alert("تم رفع الملف وإكمال المعاملة بنجاح.");
+                        // (نستخدم رابط العودة الذي أرسله الخادم)
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        // (فشل الأمر، اعرض الخطأ)
+                        alert("خطأ: " + data.message);
+                        $('#submitButton').prop('disabled', false).val("رفع وإنهاء المعاملة");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("حدث خطأ فادح أثناء الاتصال بالخادم.");
+                    $('#submitButton').prop('disabled', false).val("رفع وإنهاء المعاملة");
+                });
+            });
+
+        });
+    </script>
+}

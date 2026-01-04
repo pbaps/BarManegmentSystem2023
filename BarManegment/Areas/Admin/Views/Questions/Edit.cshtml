@@ -1,0 +1,65 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.QuestionViewModel
+@{ ViewBag.Title = "تعديل سؤال"; }
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header"><h4>@ViewBag.Title لامتحان: @Model.ExamTitle</h4></div>
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.Id)
+            @Html.HiddenFor(m => m.ExamId)
+            @Html.HiddenFor(m => m.ExamTitle)
+            @Html.HiddenFor(m => m.QuestionTypeId)
+
+            <div class="card-body">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+                <div class="row">
+                    <div class="col-md-8">
+                        @Html.LabelFor(m => m.QuestionTypeId)
+                        @Html.DropDownListFor(m => m.QuestionTypeId, Model.QuestionTypes, new { @class = "form-select", @disabled = "disabled" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Points)
+                        @Html.EditorFor(m => m.Points, new { htmlAttributes = new { @class = "form-control" } })
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    @Html.LabelFor(m => m.QuestionText)
+                    @Html.TextAreaFor(model => model.QuestionText, new { @class = "form-control", style = "height: 120px;" })
+                </div>
+
+                @* === بداية التعديل: استخدام Model.QuestionTypeId مباشرة === *@
+                <div id="multipleChoiceSection" style="@(Model.QuestionTypeId == 1 ? "" : "display:none;")" class="question-type-section mt-3">
+                    <h5>الخيارات (اختر الإجابة الصحيحة)</h5>
+                    @for (int i = 0; i < Model.Answers.Count; i++)
+                    {
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                @Html.RadioButtonFor(m => m.CorrectAnswerIndex, i, new { id = "correct_" + i })
+                            </div>
+                            @Html.TextBoxFor(m => m.Answers[i].AnswerText, new { @class = "form-control", placeholder = "نص الإجابة " + (i + 1) })
+                        </div>
+                    }
+                </div>
+
+                <div id="trueFalseSection" style="@(Model.QuestionTypeId == 2 ? "" : "display:none;")" class="question-type-section mt-3">
+                    <h5>الإجابة الصحيحة</h5>
+                    <div class="form-check">
+                        @Html.RadioButtonFor(m => m.TrueFalseAnswer, true, new { id = "isTrue" }) <label for="isTrue">صح</label>
+                    </div>
+                    <div class="form-check">
+                        @Html.RadioButtonFor(m => m.TrueFalseAnswer, false, new { id = "isFalse" }) <label for="isFalse">خطأ</label>
+                    </div>
+                </div>
+                @* === نهاية التعديل === *@
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="حفظ التعديلات" class="btn btn-primary" />
+                @Html.ActionLink("العودة", "Index", new { examId = Model.ExamId }, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

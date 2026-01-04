@@ -1,0 +1,19 @@
+﻿@model BarManegment.Models.Currency
+@{ ViewBag.Title = "تعديل العملة"; }
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <h4>@ViewBag.Title</h4>
+    <hr />
+    @Html.HiddenFor(model => model.Id)
+    <div class="form-floating mb-3">
+        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+        @Html.LabelFor(model => model.Name)
+    </div>
+    <div class="form-floating mb-3">
+        @Html.EditorFor(model => model.Symbol, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+        @Html.LabelFor(model => model.Symbol)
+    </div>
+    <input type="submit" value="حفظ" class="btn btn-primary" />
+}

@@ -1,0 +1,116 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CourseDetailsViewModel
+@{
+    ViewBag.Title = "رصد الحضور: " + Model.SessionTitle;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="text-primary fw-bold mb-1"><i class="bi bi-clipboard-check-fill me-2"></i> @ViewBag.Title</h4>
+            <p class="text-muted mb-0">
+                الدورة: <strong>@Model.CourseName</strong> | التاريخ: @Model.SessionDate.ToString("yyyy-MM-dd hh:mm tt")
+            </p>
+        </div>
+        <a href="@Url.Action("Index", new { courseId = Model.CourseId })" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-right me-1"></i> العودة للجلسات
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark">قائمة المتدربين</h5>
+            <span class="badge bg-info text-dark">إجمالي المتدربين: @Model.Trainees.Count</span>
+        </div>
+
+        <div class="card-body p-0">
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.SessionId)
+                @Html.HiddenFor(m => m.CourseId)
+                @Html.HiddenFor(m => m.SessionTitle)
+                @Html.HiddenFor(m => m.CourseName)
+                @Html.HiddenFor(m => m.SessionDate)
+
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0 table-striped">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th class="ps-4" style="width: 50px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAll" style="transform: scale(1.2);">
+                                </th>
+                                <th>الاسم الكامل</th>
+                                <th>الرقم النقابي</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Trainees.Count; i++)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        @Html.HiddenFor(m => m.Trainees[i].TraineeId)
+                                        @Html.HiddenFor(m => m.Trainees[i].TraineeName)
+                                        @Html.HiddenFor(m => m.Trainees[i].TraineeSerialNo)
+
+                                        @Html.CheckBoxFor(m => m.Trainees[i].IsAttended, new { @class = "form-check-input trainee-check", style = "transform: scale(1.2); cursor: pointer;" })
+                                    </td>
+                                    <td class="fw-bold">
+                                        <label class="cursor-pointer w-100 m-0" for="@("Trainees_" + i + "__IsAttended")">
+                                            @Model.Trainees[i].TraineeName
+                                        </label>
+                                    </td>
+                                    <td class="font-monospace text-muted">@Model.Trainees[i].TraineeSerialNo</td>
+                                    <td>
+                                        @if (Model.Trainees[i].IsAttended)
+                                        {
+                                            <span class="badge bg-success status-badge">حاضر</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-muted border status-badge">غائب</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-light py-3 text-end sticky-bottom">
+                    <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                        <i class="bi bi-save me-2"></i> حفظ الحضور
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تحديد الكل
+            $('#selectAll').change(function () {
+                $('.trainee-check').prop('checked', $(this).prop('checked')).trigger('change');
+            });
+
+            // تحديث شارة الحالة عند التغيير
+            $('.trainee-check').change(function() {
+                var badge = $(this).closest('tr').find('.status-badge');
+                if($(this).is(':checked')) {
+                    badge.removeClass('bg-light text-muted border').addClass('bg-success').text('حاضر');
+                    $(this).closest('tr').addClass('table-active');
+                } else {
+                    badge.removeClass('bg-success').addClass('bg-light text-muted border').text('غائب');
+                    $(this).closest('tr').removeClass('table-active');
+                }
+            });
+
+            // تلوين الصفوف المحددة عند التحميل
+            $('.trainee-check:checked').closest('tr').addClass('table-active');
+        });
+    </script>
+}

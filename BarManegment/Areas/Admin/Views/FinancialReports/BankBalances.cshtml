@@ -1,0 +1,57 @@
+﻿@model IEnumerable<BarManegment.Areas.Admin.ViewModels.BankBalanceViewModel>
+
+@{
+    ViewBag.Title = "كشف أرصدة البنوك والصناديق";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    decimal totalLocal = Model.Sum(x => x.LocalBalance);
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="m-0 text-primary fw-bold"><i class="bi bi-bank2 me-2"></i> أرصدة النقدية والبنوك</h5>
+            <button onclick="window.print()" class="btn btn-sm btn-secondary"><i class="bi bi-printer"></i> طباعة</button>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>رقم الحساب</th>
+                        <th>اسم الحساب (البنك/الصندوق)</th>
+                        <th class="text-center">العملة</th>
+                        <th class="text-end">الرصيد الفعلي (عملة)</th>
+                        <th class="text-end">المقابل (شيكل)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="font-monospace">@item.AccountCode</td>
+                            <td class="fw-bold">@item.AccountName</td>
+                            <td class="text-center"><span class="badge bg-info text-dark">@item.CurrencySymbol</span></td>
+
+                            <td class="text-end fw-bold text-primary" dir="ltr">
+                                @item.ForeignBalance.ToString("N2") @item.CurrencySymbol
+                            </td>
+
+                            <td class="text-end fw-bold text-dark" dir="ltr">
+                                @item.LocalBalance.ToString("N2") ₪
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="4" class="text-start fw-bold">إجمالي النقدية المتوفرة (مقوم بالشيكل):</td>
+                        <td class="text-end fw-bold text-success fs-5">@totalLocal.ToString("N2") ₪</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-footer bg-white text-muted small">
+            * القيم بالشيكل تقريبية بناءً على أسعار الصرف التاريخية المسجلة وقت العمليات.
+        </div>
+    </div>
+</div>

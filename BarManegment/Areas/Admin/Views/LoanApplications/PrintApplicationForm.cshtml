@@ -1,0 +1,261 @@
+﻿@model BarManegment.Models.LoanApplication
+@{
+    ViewBag.Title = "طباعة تقرير طلب قرض حسن";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLOanayout.cshtml"; // (استخدام التخطيط الصحيح)
+    var guarantors = (ViewBag.Guarantors as List<BarManegment.Models.Guarantor>) ?? new List<BarManegment.Models.Guarantor>();
+    string provinceName = ViewBag.ProvinceName as string ?? "غير مدخل";
+}
+
+@section styles {
+    <style>
+        .print-container {
+            direction: rtl;
+            background: #fff;
+            padding: 15mm;
+            margin: 20px auto;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14pt;
+            line-height: 1.8;
+            position: relative;
+        }
+
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #dc3545;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+            .print-header .logo-container {
+                display: flex;
+                align-items: center;
+            }
+
+            .print-header img {
+                max-height: 80px;
+                margin-left: 15px;
+            }
+
+            .print-header .title-text {
+                font-family: 'Cairo', sans-serif;
+                font-size: 1.5rem;
+                font-weight: bold;
+                margin: 0;
+                color: #000;
+            }
+
+            .print-header .subtitle-text {
+                font-size: 1rem;
+                font-weight: bold;
+                margin: 0;
+                color: #333;
+            }
+
+            .print-header .loan-id {
+                border: 1px solid #000;
+                padding: 5px 10px;
+                font-weight: bold;
+            }
+
+        .print-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 22pt;
+            text-decoration: underline;
+            margin: 30px 0;
+        }
+
+        /* (تنسيق الجداول) */
+        .data-table {
+            width: 100%;
+            margin-bottom: 25px;
+            border-collapse: collapse;
+        }
+
+            .data-table th, .data-table td {
+                border: 1px solid #000;
+                padding: 8px;
+                text-align: right;
+                vertical-align: top;
+            }
+
+            .data-table th {
+                background-color: #f2f2f2;
+                font-family: 'Cairo', sans-serif;
+                font-weight: bold;
+                width: 25%; /* (تحديد عرض ثابت للعنوان) */
+            }
+
+            .data-table td {
+                font-family: 'Cairo', sans-serif;
+                font-weight: bold;
+                background-color: #fafafa;
+            }
+
+        .section-title {
+            font-family: 'Cairo', sans-serif;
+            font-weight: bold;
+            font-size: 16pt;
+            background-color: #eee;
+            padding: 5px 10px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .signature-area {
+            margin-top: 80px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        @@media print {
+            body {
+                background: #fff;
+            }
+
+            .print-container {
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .print-footer-layout {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="print-container">
+
+    @* --- رأس الصفحة --- *@
+    <div class="print-header">
+        <div class="logo-container">
+            <img src="@Url.Content("~/Content/Images/logo.png")" alt="شعار نقابة المحامين" />
+            <div>
+                <h2 class="title-text">نقابة المحامين الفلسطينيين</h2>
+                <p class="subtitle-text">PALESTINIAN BAR ASSOCIATION</p>
+            </div>
+        </div>
+        <div class="loan-id">
+            رقم القرض/ @Model.Id
+        </div>
+    </div>
+
+    <div class="print-title">
+        تقرير طلب قرض حسن
+    </div>
+
+    @* --- المعلومات الشخصية --- *@
+    <div class="section-title">المعلومات الشخصية</div>
+    <table class="data-table">
+        <tr>
+            <th>اسم المحامي</th>
+            <td>@Model.Lawyer.ArabicName</td>
+            <th>رقم الهوية</th>
+            <td>@Model.Lawyer.User.IdentificationNumber</td>
+        </tr>
+        <tr>
+            <th>رقم العضوية</th>
+            <td>@Model.Lawyer.MembershipId</td>
+            <th>الحالة المهنية</th>
+            <td>@Model.Lawyer.ApplicationStatus.Name</td>
+        </tr>
+        <tr>
+            <th>تاريخ المزاولة</th>
+            <td>@(Model.Lawyer.TrainingStartDate.HasValue ? Model.Lawyer.TrainingStartDate.Value.ToString("yyyy-MM-dd") : "N/A")</td>
+            <th>عدد سنوات المزاولة</th>
+            <td>@((DateTime.Today.Year - (Model.Lawyer.TrainingStartDate ?? DateTime.Today).Year).ToString()) سنوات</td>
+        </tr>
+        <tr>
+            <th>الهاتف</th>
+            <td>@Model.Lawyer.ContactInfo?.Phone</td>
+            <th>الجوال</th>
+            <td>@Model.Lawyer.ContactInfo?.Mobile</td>
+        </tr>
+        <tr>
+            <th>المحافظة</th>
+            <td>@provinceName</td>
+            <th>العنوان</th>
+            <td>@Model.Lawyer.ContactInfo?.Address</td>
+        </tr>
+    </table>
+
+    @* --- معلومات القرض --- *@
+    <div class="section-title">معلومات القرض</div>
+    <table class="data-table">
+        <tr>
+            <th>رقم القرض</th>
+            <td>@Model.Id</td>
+            <th>تاريخ تقديم القرض</th>
+            <td>@Model.ApplicationDate.ToString("yyyy-MM-dd")</td>
+        </tr>
+        <tr>
+            <th>قيمة القرض</th>
+            <td>@Model.Amount.ToString("N2") @Model.LoanType.BankAccount.Currency.Symbol</td>
+            <th>عدد الأقساط</th>
+            <td>@Model.InstallmentCount شهر</td>
+        </tr>
+        <tr>
+            <th>القسط</th>
+            <td>@Model.InstallmentAmount.ToString("N2")</td>
+            <th>تاريخ أول دفعة</th>
+            <td>@Model.StartDate.ToString("yyyy-MM-dd")</td>
+        </tr>
+        <tr>
+            <th>سبب القرض</th>
+            <td colspan="3">@Model.Notes</td>
+        </tr>
+    </table>
+
+    @* --- معلومات الكفلاء --- *@
+    <div class="section-title">معلومات الكفلاء</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>اسم الكفيل</th>
+                <th>الحالة الحالية</th>
+                <th>تاريخ المزاولة</th>
+                <th>الخبرة</th>
+                <th>كامل</th>
+                <th>ملاحظات على الكفيل</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var g in guarantors)
+            {
+                <tr>
+                    @if (g.GuarantorType == "Lawyer")
+                    {
+                        <td>@g.LawyerGuarantor.ArabicName</td>
+                        <td>@g.LawyerGuarantor.ApplicationStatus.Name</td>
+                        <td>@g.LawyerGuarantor.TrainingStartDate?.ToString("yyyy-MM-dd")</td>
+                        <td>@((DateTime.Today.Year - (g.LawyerGuarantor.TrainingStartDate ?? DateTime.Today).Year).ToString()) سنوات</td>
+                        <td></td>
+                        <td></td>
+                    }
+                    else
+                    {
+                        <td>@g.ExternalName</td>
+                        <td>@g.JobTitle في @g.Workplace</td>
+                        <td colspan="4">راتب صافي: @g.NetSalary?.ToString("N2")</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="signature-area">
+        توقيع الموظف المختص/ .........................
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        window.addEventListener("load", function () {
+            window.print();
+        });
+    </script>
+}

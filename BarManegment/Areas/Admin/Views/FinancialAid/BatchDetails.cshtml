@@ -1,0 +1,107 @@
+﻿@model IEnumerable<BarManegment.Models.LawyerFinancialAid>
+@{
+    ViewBag.Title = "تفاصيل الكشف والاعتماد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    string batchRef = ViewBag.BatchRef;
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="m-0 fw-bold text-primary"><i class="bi bi-file-earmark-text me-2"></i> كشف رقم: @batchRef</h5>
+            <div>
+                <span class="badge bg-secondary fs-6 me-1">عدد: @Model.Count()</span>
+                <span class="badge bg-success fs-6">إجمالي: @Model.Sum(x => x.Amount)</span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            @* شريط الإجراءات *@
+            <div class="row g-3 align-items-end bg-light p-3 rounded mb-4 border">
+                <div class="col-md-5">
+                    <label class="fw-bold mb-1">المصدر (حساب النقابة للخصم):</label>
+                    @Html.DropDownList("SourceBankAccountId", ViewBag.SourceBankAccounts as SelectList, new { @class = "form-select border-primary", id = "sourceBank" })
+                </div>
+                <div class="col-md-7 text-end">
+                    <div class="btn-group shadow-sm" role="group">
+                        <a href="@Url.Action("ExportBankExcel", new { batchRef = batchRef })" class="btn btn-outline-success">
+                            <i class="bi bi-file-earmark-excel me-1"></i> إكسل للبنك
+                        </a>
+                        <button type="button" class="btn btn-outline-dark" onclick="printBankLetter()">
+                            <i class="bi bi-printer me-1"></i> كتاب البنك
+                        </button>
+                        <button type="button" class="btn btn-primary fw-bold px-4" onclick="approveBatch()">
+                            <i class="bi bi-check-circle-fill me-2"></i> اعتماد مالي وصرف
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover text-center align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>المستفيد</th>
+                            <th>طريقة الدفع</th>
+                            <th>بيانات التحويل</th>
+                            <th>المبلغ</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-start">
+                                    <div class="fw-bold">@item.Lawyer.ArabicName</div>
+                                    <small class="text-muted">@item.Lawyer.NationalIdNumber</small>
+                                </td>
+                                <td>
+                                    @if (item.DisbursementMethod == "BankTransfer")
+                                    {<span class="badge bg-primary">بنك</span> }
+                                    else if (item.DisbursementMethod == "Wallet")
+                                    { <span class="badge bg-info text-dark">محفظة</span> }
+                                    else
+                                    { <span class="badge bg-secondary">نقد</span>}
+                                </td>
+                                <td class="small text-muted dir-ltr">
+                                    @if (item.DisbursementMethod == "BankTransfer")
+                                    {<span>@item.TargetBankName - @item.TargetIban</span> }
+                                else if (item.DisbursementMethod == "Wallet")
+                                { <span>@item.TargetWalletNumber</span>}
+                                </td>
+                                <td class="fw-bold text-success">@item.Amount</td>
+                                <td>
+                                    @if (item.IsPaid)
+                                    {<i class="bi bi-check-circle-fill text-success fs-5" title="تم الصرف"></i> }
+                                    else
+                                    { <i class="bi bi-hourglass-split text-warning fs-5" title="معلق"></i>}
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function approveBatch() {
+        var sourceId = $('#sourceBank').val();
+        if (confirm('هل أنت متأكد من الاعتماد المالي؟ سيتم إنشاء القيود المالية ولا يمكن التراجع.')) {
+            $.post('@Url.Action("ApproveBatch")', { batchRef: '@batchRef', sourceBankAccountId: sourceId }, function(res) {
+                if (res.success) { alert(res.message); location.reload(); }
+                else { alert(res.message); }
+            });
+        }
+    }
+    function printBankLetter() {
+        var sourceId = $('#sourceBank').val();
+        window.open('@Url.Action("PrintBankTransfer")' + '?batchRef=@batchRef&sourceBankAccountId=' + sourceId, '_blank');
+    }
+</script>

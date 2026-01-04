@@ -1,0 +1,52 @@
+﻿@model BarManegment.Models.TrainingLog
+@{
+    ViewBag.Title = "تقديم سجل تدريب شهري";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4>@ViewBag.Title</h4>
+    </div>
+    @using (Html.BeginForm("Create", "TrainingLog", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="card-body">
+            @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        @Html.EditorFor(model => model.Year, new { htmlAttributes = new { @class = "form-control", type = "number" } })
+                        @Html.LabelFor(model => model.Year)
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        @Html.EditorFor(model => model.Month, new { htmlAttributes = new { @class = "form-control", type = "number", min = "1", max = "12" } })
+                        @Html.LabelFor(model => model.Month)
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-floating mb-3">
+                @Html.TextAreaFor(model => model.WorkSummary, new { @class = "form-control", placeholder = " ", style = "height: 150px" })
+                @Html.LabelFor(model => model.WorkSummary)
+                @Html.ValidationMessageFor(model => model.WorkSummary, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="mb-3">
+                @Html.Label("uploadedFile", "ملف مرفق (اختياري)", new { @class = "form-label" })
+                <input type="file" name="uploadedFile" id="uploadedFile" class="form-control" />
+            </div>
+
+        </div>
+        <div class="card-footer text-end">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send me-1"></i> إرسال للمشرف
+            </button>
+            @Html.ActionLink("إلغاء", "Index", "Dashboard", null, new { @class = "btn btn-secondary" })
+        </div>
+    }
+</div>

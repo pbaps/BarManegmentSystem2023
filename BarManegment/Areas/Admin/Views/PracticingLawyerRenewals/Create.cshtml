@@ -1,0 +1,155 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CreatePracticingRenewalViewModel
+@{
+    ViewBag.Title = "إنشاء قسيمة تجديد مزاولة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card" style="max-width: 900px; margin: auto;">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+        </div>
+
+        @using (Html.BeginForm("Create", "PracticingLawyerRenewals", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.LawyerId)
+
+            <div class="card-body">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+                <div class="alert alert-info">
+                    <h5>بيانات المحامي</h5>
+                    <ul class="list-unstyled mb-0 row">
+                        <li class="col-md-6"><strong>الاسم:</strong> @Model.LawyerName</li>
+                        <li class="col-md-6"><strong>رقم العضوية:</strong> @Model.LawyerMembershipId</li>
+                    </ul>
+                </div>
+
+                @* ===
+                    === بداية التعديل: وضع السنة والتاريخ جنباً إلى جنب
+                    === *@
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            @Html.EditorFor(m => m.RenewalYear, new { htmlAttributes = new { @class = "form-control", type = "number" } })
+                            @Html.LabelFor(m => m.RenewalYear)
+                            @Html.ValidationMessageFor(m => m.RenewalYear, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            @Html.EditorFor(m => m.ExpiryDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                            @Html.LabelFor(m => m.ExpiryDate)
+                            @Html.ValidationMessageFor(m => m.ExpiryDate, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                @* === نهاية التعديل === *@
+
+                <hr />
+                <h5 class="mb-3">الرسوم المطلوبة (سيتم حساب رسوم التقاعد تلقائياً حسب عمر المحامي)</h5>
+
+                @* (جدول الرسوم) *@
+                <div id="feesContainer" class="table-responsive mb-3" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;"><i class="bi bi-check2-square"></i></th>
+                                <th>اسم الرسم</th>
+                                <th>البنك / الحساب (IBAN)</th>
+                                <th style="width: 130px;">المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.AvailableFees.Any())
+                            {
+                                for (int i = 0; i < Model.AvailableFees.Count; i++)
+                                {
+                                    @Html.HiddenFor(m => m.AvailableFees[i].FeeTypeId)
+                                    @Html.HiddenFor(m => m.AvailableFees[i].FeeTypeName)
+                                    @Html.HiddenFor(m => m.AvailableFees[i].CurrencySymbol)
+                                    @Html.HiddenFor(m => m.AvailableFees[i].BankName)
+                                    @Html.HiddenFor(m => m.AvailableFees[i].AccountNumber)
+                                    @Html.HiddenFor(m => m.AvailableFees[i].Iban)
+                                    <tr>
+                                        <td class="text-center align-middle">
+                                            @Html.CheckBoxFor(m => m.AvailableFees[i].IsSelected, new { @class = "form-check-input fee-checkbox" })
+                                        </td>
+                                        <td>
+                                            <label class="form-check-label" for="AvailableFees_@(i)__IsSelected">
+                                                @Model.AvailableFees[i].FeeTypeName
+                                            </label>
+                                        </td>
+                                        <td class="small text-muted" style="font-size: 0.75rem; line-height: 1.2;">
+                                            @Model.AvailableFees[i].BankName<br />
+                                            <small>@Model.AvailableFees[i].Iban</small>
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                @Html.TextBoxFor(m => m.AvailableFees[i].Amount, "{0:N2}", new { @class = "form-control fee-amount", type = "number", step = "0.01" })
+                                                <span class="input-group-text">@Model.AvailableFees[i].CurrencySymbol</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="4" class="text-center text-danger">لم يتم العثور على رسوم مزاولة نشطة في النظام.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-end mb-3 border-top pt-3">
+                    <h4 class="mb-0">المجموع الإجمالي: <span id="totalAmount" class="text-success fw-bold">0.00</span></h4>
+                </div>
+
+                <div class="form-floating mb-3">
+                    @Html.TextAreaFor(m => m.VoucherNotes, new { @class = "form-control", placeholder = " " })
+                    @Html.LabelFor(m => m.VoucherNotes)
+                </div>
+
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary" @(Model.AvailableFees.Any() ? "" : "disabled")>
+                    <i class="bi bi-file-earmark-medical me-1"></i> إصدار قسيمة الدفع
+                </button>
+                @Html.ActionLink("إلغاء", "SelectLawyer", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            // (السكريبت الخاص بحساب المجموع - يبقى كما هو)
+            function calculateTotal() {
+                var total = 0;
+                var currencySymbol = " JD"; // (الافتراضي)
+                $('#feesContainer tbody tr').each(function () {
+                    var row = $(this);
+                    var isSelected = row.find('.fee-checkbox').is(':checked');
+                    if (isSelected) {
+                        var amount = parseFloat(row.find('.fee-amount').val());
+                        if (!isNaN(amount)) {
+                            total += amount;
+                        }
+                        // (لتحديث العملة بناءً على أول عنصر مختار)
+                        if (total > 0 && currencySymbol == " JD") {
+                            currencySymbol = " " + row.find('.input-group-text').text();
+                        }
+                    }
+                });
+                $('#totalAmount').text(total.toFixed(2) + currencySymbol);
+            }
+            calculateTotal();
+            $('#feesContainer').on('change', '.fee-checkbox, .fee-amount', function () {
+                calculateTotal();
+            });
+        });
+    </script>
+}

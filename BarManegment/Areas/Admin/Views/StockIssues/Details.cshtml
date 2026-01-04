@@ -1,0 +1,165 @@
+﻿@model BarManegment.Models.StockIssue
+
+@{
+    ViewBag.Title = "تفاصيل إذن الصرف";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLayoutPurcher.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow border-0" id="printArea">
+
+        <div class="card-header bg-white text-center py-4 border-bottom-0">
+            <div class="row align-items-center">
+                <div class="col-4 text-end">
+                    <h6 class="text-muted fw-bold">نقابة المحامين</h6>
+                    <small>دائرة اللوازم والمستودعات</small>
+                </div>
+                <div class="col-4">
+                    <h3 class="fw-bold text-dark border-bottom border-warning border-3 d-inline-block pb-1">سند إخراج مخزني</h3>
+                    <div class="mt-2 badge bg-warning text-dark px-3 rounded-pill">إذن صرف مواد</div>
+                </div>
+                <div class="col-4 text-start">
+                    <h5 class="text-danger mb-1" dir="ltr">No: #@Model.Id</h5>
+                    <small class="text-muted fw-bold">التاريخ: @Model.IssueDate.ToString("yyyy/MM/dd")</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body px-5">
+            <div class="row mb-4 p-3 bg-light border rounded">
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted small fw-bold">الجهة الطالبة / القسم:</p>
+                    <h5 class="fw-bold text-primary">@Model.DepartmentName</h5>
+                </div>
+                <div class="col-md-6 border-start border-secondary">
+                    <p class="mb-1 text-muted small fw-bold">الموظف المستلم:</p>
+                    <h6 class="fw-bold">
+                        @(Model.EmployeeId.HasValue ? $"User ID: {Model.EmployeeId}" : "---")
+                        @* إذا كان لديك علاقة مع جدول الموظفين، يمكنك عرض الاسم هنا *@
+                    </h6>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div class="col-12 mt-3 pt-2 border-top">
+                        <p class="mb-1 text-muted small fw-bold">ملاحظات / الغرض من الصرف:</p>
+                        <p class="mb-0 text-dark">@Model.Notes</p>
+                    </div>
+                }
+            </div>
+
+            <h6 class="fw-bold mt-4 mb-2">قائمة المواد:</h6>
+            <table class="table table-bordered border-dark text-center align-middle">
+                <thead class="table-secondary text-dark fw-bold">
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th style="width: 15%">رقم الصنف</th>
+                        <th style="width: 50%">بيان الصنف (المادة)</th>
+                        <th style="width: 15%">الكمية المصروفة</th>
+                        <th style="width: 15%">الوحدة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int i = 1; }
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@(i++)</td>
+                            <td class="font-monospace">@item.Item.Code</td>
+                            <td class="text-end pe-4 fw-bold">@item.Item.Name</td>
+                            <td class="fs-5 fw-bold">@item.Quantity</td>
+                            <td>عدد</td>
+                        </tr>
+                    }
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-muted">لا توجد مواد</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="row mt-5 pt-5 mb-4 text-center page-break-inside-avoid">
+                <div class="col-4">
+                    <p class="fw-bold mb-4 text-decoration-underline">أمين المستودع</p>
+                    <br />
+                    <p class="text-muted">.........................</p>
+                </div>
+                <div class="col-4">
+                    <p class="fw-bold mb-4 text-decoration-underline">المدير المسؤول</p>
+                    <br />
+                    <p class="text-muted">.........................</p>
+                </div>
+                <div class="col-4">
+                    <p class="fw-bold mb-4 text-decoration-underline">توقيع المستلم</p>
+                    <p class="small text-muted mb-4">أقر باستلام المواد المذكورة أعلاه بحالة جيدة</p>
+                    <p class="text-muted">.........................</p>
+                </div>
+            </div>
+
+            @if (Model.JournalEntryId.HasValue)
+            {
+                <div class="alert alert-info d-print-none text-center small mt-3">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    تم ترحيل هذا السند مالياً تحت قيد مصروفات رقم: <strong>#@Model.JournalEntryId</strong>
+                </div>
+            }
+        </div>
+
+        <div class="card-footer bg-white text-center d-print-none py-3">
+            <button onclick="window.print()" class="btn btn-dark px-4 fw-bold shadow-sm">
+                <i class="bi bi-printer-fill me-2"></i> طباعة السند
+            </button>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary px-4 ms-2">عودة للقائمة</a>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* تنسيقات خاصة للطباعة */
+        @@media print {
+            /* إخفاء القوائم والأزرار */
+            #sidebar, .navbar, footer, .d-print-none, .btn {
+                display: none !important;
+            }
+            /* ضبط الهوامش والعرض */
+            body, .wrapper, #content, .container-fluid {
+                padding: 0 !important;
+                margin: 0 !important;
+                background-color: white !important;
+                width: 100% !important;
+            }
+
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+            }
+            /* تحسين ظهور الجدول والألوان */
+            table {
+                border: 2px solid #000 !important;
+            }
+
+            th, td {
+                border: 1px solid #000 !important;
+            }
+
+            .bg-light {
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .table-secondary {
+                background-color: #e2e3e5 !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .badge.bg-warning {
+                background-color: #ffc107 !important;
+                color: black !important;
+                border: 1px solid black;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+}

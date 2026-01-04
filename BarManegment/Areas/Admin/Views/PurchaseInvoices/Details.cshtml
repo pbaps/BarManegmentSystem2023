@@ -1,0 +1,68 @@
+﻿@model BarManegment.Models.PurchaseInvoice
+@{ ViewBag.Title = "تفاصيل الفاتورة";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLayoutPurcher.cshtml";
+ }
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow border-0" id="printArea">
+        <div class="card-header bg-white text-center py-3 border-bottom-0">
+            <h3 class="fw-bold">سند إدخال مخزني (فاتورة شراء)</h3>
+            <p class="text-muted">رقم المرجع: #@Model.Id | التاريخ: @Model.InvoiceDate.ToString("yyyy/MM/dd")</p>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-6">
+                    <h5 class="fw-bold text-primary">بيانات المورد</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>الاسم:</strong> @Model.Supplier.Name</li>
+                        <li><strong>رقم الفاتورة لديهم:</strong> @Model.SupplierInvoiceNumber</li>
+                    </ul>
+                </div>
+                <div class="col-6 text-start">
+                    <h5 class="fw-bold text-primary">المالية</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>طريقة الدفع:</strong> @Model.PaymentMethod</li>
+                        <li><strong>الإجمالي:</strong> @Model.TotalAmount.ToString("N2")</li>
+                        <li><strong>رقم القيد:</strong> @(Model.JournalEntryId ?? 0)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <table class="table table-bordered text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>الصنف</th>
+                        <th>الكمية</th>
+                        <th>سعر الوحدة</th>
+                        <th>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>@item.Item.Name</td>
+                            <td>@item.Quantity</td>
+                            <td>@item.UnitPrice.ToString("N2")</td>
+                            <td>@item.TotalLineAmount.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold">الإجمالي الكلي</td>
+                        <td class="fw-bold bg-light">@Model.TotalAmount.ToString("N2")</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="mt-4 text-muted">ملاحظات: @Model.Notes</div>
+        </div>
+        <div class="card-footer bg-white text-center d-print-none py-3">
+            <button onclick="window.print()" class="btn btn-dark"><i class="bi bi-printer"></i> طباعة</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">عودة</a>
+        </div>
+    </div>
+</div>

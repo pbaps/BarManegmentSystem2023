@@ -1,0 +1,35 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.PendingTrainingLogViewModel>
+@*
+    هذا الملف يعرض "بطاقة" لسجلات التدريب التي بانتظار موافقة هذا المحامي
+*@
+
+<div class="card-body p-0">
+    @if (!Model.Any())
+    {
+        <div class="p-3 text-center text-muted">
+            لا توجد سجلات تدريب بانتظار المراجعة.
+        </div>
+    }
+    else
+    {
+        <ul class="list-group list-group-flush">
+            @foreach (var log in Model)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">@log.TraineeName</h6>
+                        <small class="text-muted">
+                            سجل شهر: @log.Month/@log.Year (تاريخ التقديم: @log.SubmissionDate.ToString("yyyy/MM/dd"))
+                        </small>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("ReviewLog", "Dashboard", new { logId = log.LogId })"
+                           class="btn btn-sm btn-primary">
+                            مراجعة
+                        </a>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>

@@ -1,0 +1,142 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.LawyerFinancialBoxViewModel
+@{
+    ViewBag.Title = "الصندوق المالي للمحامي: " + Model.LawyerName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4">
+
+    <!-- 1. بطاقات الملخص (Dashboard) -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">الرصيد الجاهز للصرف</h6>
+                    <h3 class="text-primary fw-bold">@Model.PendingBalance.ToString("N2") ₪</h3>
+                    <small class="text-success"><i class="bi bi-check-circle"></i> متاح للتحويل</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">إجمالي المحول للبنك (تاريخي)</h6>
+                    <h3 class="text-success fw-bold">@Model.TransferredBalance.ToString("N2") ₪</h3>
+                    <small>مدفوعات سابقة</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">المبالغ المحجوزة</h6>
+                    <h3 class="text-warning fw-bold">@Model.HeldBalance.ToString("N2") ₪</h3>
+                    <small>موقوفة إدارياً</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">المديونية (القروض)</h6>
+                    <h3 class="text-danger fw-bold">@Model.TotalLoanDebt.ToString("N2") ₪</h3>
+                    <small>التزامات قائمة</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. كشف الحساب التفصيلي -->
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center bg-light">
+            <h5 class="mb-0"><i class="bi bi-list-columns-reverse"></i> كشف الحساب التفصيلي</h5>
+            <div>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-search"></i> بحث عن محامي آخر
+                </a>
+                <a href="@Url.Action("ExportStatement", new { id = Model.LawyerId })" class="btn btn-success btn-sm">
+                    <i class="bi bi-file-earmark-excel"></i> تصدير Excel
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle" id="financialTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>النوع</th>
+                            <th>البيان / التفاصيل</th>
+                            <th class="text-success">دائن (لك)</th>
+                            <th class="text-danger">مدين (عليك)</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Transactions)
+                        {
+                            <tr>
+                                <td>@item.Date.ToString("yyyy/MM/dd")</td>
+                                <td><span class="badge bg-secondary">@item.SourceType</span></td>
+                                <td>@item.Description</td>
+                                <td class="text-success fw-bold">
+                                    @if (item.CreditAmount > 0)
+                                    {<span>@item.CreditAmount.ToString("N2")</span>}
+                                </td>
+                                <td class="text-danger fw-bold">
+                                    @if (item.DebitAmount > 0)
+                                    {<span>@item.DebitAmount.ToString("N2")</span>}
+                                </td>
+                                <td>
+                                    <span class="badge bg-@item.StatusColor">@item.Status</span>
+                                </td>
+                                <td>
+                                    @if (item.IsHoldable)
+                                    {
+                                        using (Html.BeginForm("ToggleHold", "LawyerFinancialBox", new { area = "Admin" }, FormMethod.Post, new { style = "display:inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            @Html.Hidden("id", item.OriginalId)
+                                            @Html.Hidden("type", item.SourceTable)
+                                            @Html.Hidden("lawyerId", Model.LawyerId)
+
+                                            if (item.IsOnHold)
+                                            {
+                                                <button type="submit" class="btn btn-sm btn-outline-success" title="فك الحجز">
+                                                    <i class="bi bi-unlock-fill"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <input type="hidden" name="reason" value="حجز يدوي من الصندوق المالي" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="حجز المبلغ">
+                                                    <i class="bi bi-lock-fill"></i>
+                                                </button>
+                                            }
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#financialTable').DataTable({
+                "language": { "url": "https://cdn.datatables.net/plug-ins/1.13.8/i18n/ar.json" },
+                "order": [[0, "desc"]], // ترتيب حسب التاريخ تنازلياً
+                "pageLength": 50
+            });
+        });
+    </script>
+}

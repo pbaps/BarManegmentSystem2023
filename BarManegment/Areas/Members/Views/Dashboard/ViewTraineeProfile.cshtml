@@ -1,0 +1,355 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+@{
+    ViewBag.Title = "ملف المتدرب: " + Model.ArabicName;
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+
+    string photoUrl = !string.IsNullOrEmpty(Model.PersonalPhotoPath)
+                      ? Url.Content(Model.PersonalPhotoPath)
+                      : Url.Content("~/Content/Images/default-avatar.png");
+}
+
+@* --- (إضافة تنسيقات الجداول الفرعية) --- *@
+@section styles {
+    <style>
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        .profile-photo {
+            width: 140px;
+            height: 180px;
+            object-fit: cover;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .summary-table th {
+            width: 25%;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .summary-table td {
+            font-weight: 500;
+        }
+
+        .sub-table {
+            font-size: 0.9rem;
+        }
+
+            .sub-table th {
+                background-color: #f2f2f2;
+            }
+
+            .sub-table th, .sub-table td {
+                border: 1px solid #999;
+                padding: 5px;
+            }
+    </style>
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @* --- بطاقة معلومات المتدرب --- *@
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <img src="@photoUrl" class="profile-photo" alt="الصورة الشخصية">
+                </div>
+                <div class="col-md-10">
+                    <h3>@Model.ArabicName</h3>
+                    <p class="text-muted mb-1">@Model.EnglishName</p>
+                    <p><strong>رقم الهوية :</strong> @Model.NationalIdNumber</p>
+                    <div class="d-flex mb-2 align-items-center">
+                        <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">الحالة الحالية:</div>
+                        <div class="border p-2 rounded-end flex-grow-1">
+                            @if (Model.Status == "متدرب مقيد")
+                            {<span class="badge bg-success fs-6">@Model.Status</span> }
+                        else if (Model.Status == "متدرب موقوف")
+                        { <span class="badge bg-danger fs-6">@Model.Status</span> }
+                    else
+                    { <span class="badge bg-warning fs-6">@Model.Status</span>}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- تفاصيل الملف الشخصي والسجلات --- *@
+    <div class="row g-4">
+
+        @* --- بطاقة البيانات الأساسية --- *@
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><h5>البيانات الأساسية</h5></div>
+                <div class="card-body">
+                    <table class="table table-sm summary-table">
+                        <tr><th>الاسم بالعربية:</th><td colspan="3">@Model.ArabicName</td></tr>
+                        <tr><th>الرقم الوطني:</th><td>@Model.NationalIdNumber</td><th>الجنس:</th><td>@(Model.Gender?.Name)</td></tr>
+                        <tr><th>تاريخ الميلاد:</th><td>@Model.BirthDate.ToString("yyyy-MM-dd")</td><th>مكان الميلاد:</th><td>@Model.BirthPlace</td></tr>
+                        <tr><th>الحالة الحالية:</th><td><strong class="text-danger">@Model.Status</strong></td><th>الجنسية:</th><td>@Model.Nationality</td></tr>
+                        <tr><th>رقم المتدرب:</th><td><strong>@(Model.TraineeSerialNo ?? "N/A")</strong></td><th>تاريخ بدء التدريب:</th><td>@(Model.TrainingStartDate.HasValue ? Model.TrainingStartDate.Value.ToString("yyyy-MM-dd") : "N/A")</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @* --- بطاقة المحامي المشرف (أنت) --- *@
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><h5>المحامي المشرف</h5></div>
+                <div class="card-body">
+                    @if (Model.Supervisor != null)
+                    {
+                        <table class="table table-sm summary-table">
+                            <tr><th>اسم المشرف:</th><td>@Model.Supervisor.ArabicName</td></tr>
+                            <tr><th>رقم العضوية:</th><td>@Model.Supervisor.Id</td></tr>
+                        </table>
+                    }
+                    else
+                    { <div class="alert alert-warning">لا يوجد مشرف معين حالياً.</div>}
+                </div>
+            </div>
+        </div>
+
+        @* --- بيانات الاتصال --- *@
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5>بيانات الاتصال</h5></div>
+                <div class="card-body">
+                    @if (Model.ContactInfo != null)
+                    {
+                        <table class="table table-sm summary-table">
+                            <tr><th>الجوال:</th><td>@Model.ContactInfo.MobileNumber</td><th>البريد الإلكتروني:</th><td>@Model.ContactInfo.Email</td></tr>
+                            <tr><th>العنوان:</th><td colspan="3">@Model.ContactInfo.Governorate, @Model.ContactInfo.City, @Model.ContactInfo.Street</td></tr>
+                        </table>
+                    }
+                    else
+                    { <p class="text-muted">لا توجد بيانات اتصال.</p>}
+                </div>
+            </div>
+        </div>
+
+        @* --- سجل طلبات الوقف والنقل --- *@
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5>سجل طلبات الوقف / النقل (المقدمة من المتدرب)</h5></div>
+                <div class="card-body">
+                    @if (Model.SupervisorChangeRequests.Any())
+                    {
+                        <table class="table table-sm table-bordered sub-table">
+                            <thead><tr><th>نوع الطلب</th><th>تاريخ الطلب</th><th>الحالة</th><th>المشرف الجديد</th><th>ملاحظات اللجنة</th></tr></thead>
+                            <tbody>
+                                @foreach (var req in Model.SupervisorChangeRequests)
+                                {
+                                    <tr><td>@req.RequestType</td><td>@req.RequestDate.ToString("yyyy-MM-dd")</td><td><span class="badge bg-info">@req.Status</span></td><td>@(req.NewSupervisor?.ArabicName ?? "N/A")</td><td>@req.CommitteeNotes</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    { <p class="text-muted">لا توجد طلبات سابقة.</p>}
+                </div>
+            </div>
+        </div>
+
+        @* --- سجل الإيقافات الإدارية --- *@
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white"><h5><i class="bi bi-gavel me-2"></i> سجل الإيقافات الإدارية (قرارات اللجنة/المجلس)</h5></div>
+                <div class="card-body">
+                    @if (Model.CouncilSuspensions.Any())
+                    {
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light"><tr><th>السبب/القرار</th><th>تاريخ البدء</th><th>تاريخ الانتهاء</th><th>الحالة</th><th>الموظف المُدخل</th></tr></thead>
+                            <tbody>
+                                @foreach (var sus in Model.CouncilSuspensions)
+                                {
+                                    <tr>
+                                        <td>@sus.Reason</td>
+                                        <td>@sus.SuspensionStartDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@(sus.SuspensionEndDate.HasValue ? sus.SuspensionEndDate.Value.ToString("yyyy-MM-dd") : "إيقاف مفتوح")</td>
+                                        <td>
+                                            @if (sus.Status == "معتمد")
+                                            {<span class="badge bg-danger">@sus.Status (ساري)</span> }
+                                        else if (sus.Status.StartsWith("منتهية"))
+                                        { <span class="badge bg-secondary">@sus.Status</span> }
+                                    else
+                                    { <span class="badge bg-warning text-dark">@sus.Status</span>}
+                                        </td>
+                                        <td>@(sus.CreatedByUser?.FullNameArabic ?? "N/A")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    { <p class="text-muted">لا توجد قرارات إيقاف إدارية مسجلة.</p>}
+                </div>
+            </div>
+        </div>
+
+        @* --- سجل الأبحاث والامتحانات --- *@
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5>سجل الإنجاز الأكاديمي (الأبحاث والامتحانات)</h5></div>
+                <div class="card-body">
+                    @if (Model.LegalResearches.Any() || Model.ExamHistory.Any() || Model.OralExamHistory.Any())
+                    {
+                        <table class="table table-sm table-bordered sub-table">
+                            <thead class="table-light"><tr><th>البيان</th><th>النوع/اللجنة</th><th>التاريخ</th><th>الحالة/النتيجة</th><th>ملاحظات/الدرجة</th></tr></thead>
+                            <tbody>
+                                @foreach (var research in Model.LegalResearches)
+                                {
+                                    <tr>
+                                        <td>@research.Title</td>
+                                        <td>بحث قانوني (@(research.Committee?.CommitteeName ?? "N/A"))</td>
+                                        <td>@research.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@research.Status / @(research.Decisions.OrderByDescending(d => d.DecisionDate).FirstOrDefault()?.Result ?? "N/A")</td>
+                                        <td>-</td>
+                                    </tr>
+                                }
+                                @foreach (var exam in Model.ExamHistory)
+                                {
+                                    <tr>
+                                        <td>@exam.Exam.Title</td>
+                                        <td>@exam.Exam.ExamType.Name</td>
+                                        <td>@exam.Exam.StartTime.ToString("yyyy-MM-dd")</td>
+                                        <td>@exam.Result</td>
+                                        <td>@exam.Score?.ToString("N2")</td>
+                                    </tr>
+                                }
+                                @foreach (var oralExam in Model.OralExamHistory)
+                                {
+                                    <tr>
+                                        <td>اختبار شفوي</td>
+                                        <td>@(oralExam.OralExamCommittee?.CommitteeName ?? "N/A")</td>
+                                        <td>@oralExam.ExamDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@oralExam.Result</td>
+                                        <td>@(oralExam.Score?.ToString("N2")) (@oralExam.Notes)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    { <p class="text-muted">لا يوجد سجل أبحاث أو امتحانات.</p>}
+                </div>
+            </div>
+        </div>
+
+        @* --- سجل الدفعات المالية --- *@
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5>سجل الدفعات المالية (إيصالات القبض)</h5></div>
+                <div class="card-body">
+                    @if (Model.PaymentHistory.Any())
+                    {
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light"><tr><th>رقم الإيصال</th><th>تاريخ الدفع</th><th>المبلغ</th><th>بيان الرسوم</th></tr></thead>
+                            <tbody>
+                                @foreach (var receipt in Model.PaymentHistory)
+                                {
+                                    <tr>
+                                        <td>@receipt.ReceiptNumber</td>
+                                        <td>@receipt.BankPaymentDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@(receipt.PaymentVoucher?.TotalAmount.ToString("N2"))</td>
+                                        <td>
+                                            @string.Join(", ", receipt.PaymentVoucher?.VoucherDetails.Select(d => d.FeeType.Name) ?? new List<string>())
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    { <p class="text-muted">لا توجد دفعات مسجلة.</p>}
+                </div>
+            </div>
+        </div>
+
+        @* --- سجل التجديدات السنوية --- *@
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5>سجل التجديدات السنوية</h5></div>
+                <div class="card-body">
+                    @if (Model.Renewals.Any())
+                    {
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light"><tr><th>سنة التجديد</th><th>تاريخ التجديد (الدفع)</th><th>رقم الإيصال</th></tr></thead>
+                            <tbody>
+                                @foreach (var ren in Model.Renewals)
+                                {
+                                    <tr>
+                                        <td>@ren.RenewalYear</td>
+                                        <td>@ren.RenewalDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@(ren.Receipt != null ? ren.Receipt.ReceiptNumber : "مؤجل")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    { <p class="text-muted">لا توجد تجديدات مسجلة.</p>}
+                </div>
+            </div>
+        </div>
+
+        @* --- بطاقة المؤهلات --- *@
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5>المؤهلات العلمية</h5></div>
+                <div class="card-body">
+                    @if (Model.Qualifications.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var qual in Model.Qualifications)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@qual.QualificationType.Name:</strong> @qual.Specialization من @qual.UniversityName (@qual.GraduationYear)
+                                    @if (qual.GradePercentage.HasValue)
+                                    {<span>- @qual.GradePercentage.Value %</span>}
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    { <p class="text-muted">لا توجد مؤهلات مسجلة.</p>}
+                </div>
+            </div>
+        </div>
+
+        @* --- بطاقة المرفقات --- *@
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5>المرفقات</h5></div>
+                <div class="card-body">
+                    @if (Model.Attachments.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var att in Model.Attachments)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@att.AttachmentType.Name:</strong>
+                                    <a href="@Url.Content(att.FilePath)" target="_blank">@att.OriginalFileName</a>
+                                    (تاريخ الرفع: @att.UploadDate.ToString("yyyy-MM-dd"))
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    { <p class="text-muted">لا توجد مرفقات.</p>}
+                </div>
+            </div>
+        </div>
+
+    </div> @* نهاية .row.g-4 *@
+
+</div> @* --- نهاية .container-fluid --- *@

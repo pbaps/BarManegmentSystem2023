@@ -1,0 +1,424 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.ContractPrintViewModel
+@{
+    ViewBag.Title = "طباعة قسيمة دفع (تصديق)";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintWaselLayout.cshtml";
+
+    // (جلب بيانات الطرف الثاني - نفترض أنه أول طرف ثاني مُدخل)
+    var partyTwo = Model.Parties.FirstOrDefault(p => p.PartyType == 2);
+    string partyTwoName = partyTwo?.PartyName ?? "غير محدد";
+}
+
+@section styles {
+    @* (CSS Styles - تبقى كما هي) *@
+    <style>
+        .voucher-container {
+            border: 2px solid #4a4a4a;
+            padding: 25px;
+            margin-bottom: 40px;
+            background-color: #fdfdfd;
+            position: relative;
+        }
+
+        .voucher-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+            .voucher-header .logo-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+                .voucher-header .logo-container img {
+                    max-height: 80px;
+                    margin-left: 10px;
+                    margin-right: 10px;
+                }
+
+            .voucher-header .title-text {
+                font-size: 2.2rem;
+                font-weight: bold;
+                margin: 0;
+                color: #d90000;
+            }
+
+            .voucher-header .subtitle-text {
+                font-size: 1.5rem;
+                font-weight: bold;
+                margin: 0;
+                color: #333;
+            }
+
+            .voucher-header h4 {
+                margin-top: 5px;
+                color: #555;
+                border-bottom: 1px solid #dee2e6;
+                padding-bottom: 15px;
+            }
+
+        .contact-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+            .contact-info div {
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+                margin: 2px 8px;
+            }
+
+            .contact-info svg {
+                margin-left: 5px;
+                width: 14px;
+                height: 14px;
+                color: #d90000;
+            }
+
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            background-color: #f2f2f2;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 1.1rem;
+            width: calc(60% - 5px);
+            margin-bottom: 10px;
+        }
+
+            .info-box strong {
+                color: #333;
+            }
+        .info-box1 {
+            background-color: #f2f2f2;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 1.1rem;
+            width: calc(40% - 5px);
+            margin-bottom: 10px;
+        }
+
+            .info-box1 strong {
+                color: #333;
+            }
+
+        .parties-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+            .parties-box h6 {
+                border-bottom: 1px solid #eee;
+                padding-bottom: 5px;
+                margin-bottom: 10px;
+                font-weight: bold;
+            }
+
+            .parties-box ul {
+                padding-right: 20px;
+            }
+
+        .details-table th, .details-table td {
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .cash-instructions {
+            border: 2px solid #0d6efd;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #e7f1ff;
+            text-align: center;
+            font-weight: bold;
+            color: #0a58ca;
+        }
+
+        .signature-area {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+            .signature-area div {
+                text-align: center;
+            }
+
+        .cut-line {
+            position: relative;
+            text-align: center;
+            height: 40px;
+            margin: -20px 0 20px 0;
+        }
+
+        .cut-line-dashed {
+            border-top: 3px dashed #888;
+            width: 100%;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            z-index: 1;
+        }
+
+        .cut-line-icon {
+            background-color: white;
+            padding: 0 15px;
+            position: relative;
+            z-index: 2;
+            display: inline-block;
+        }
+
+            .cut-line-icon svg {
+                width: 32px;
+                height: 32px;
+                color: #555;
+                transform: rotate(90deg);
+            }
+
+        @@media print {
+            @@page {
+                size: A4;
+                margin: 1.5cm;
+            }
+
+            body {
+                font-size: 10pt;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .voucher-container {
+                page-break-inside: avoid !important;
+                border: 1px solid #666;
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+
+                .voucher-container:last-child {
+                    margin-bottom: 0;
+                }
+
+            .cut-line {
+                background-color: #fff !important;
+            }
+
+            .cut-line-icon {
+                background-color: #fff !important;
+            }
+
+            .voucher-header .logo-container img {
+                max-height: 60px;
+            }
+
+            .voucher-header .title-text {
+                font-size: 16pt;
+            }
+
+            .voucher-header .subtitle-text {
+                font-size: 12pt;
+            }
+
+            .voucher-header h4 {
+                font-size: 10pt;
+                padding-bottom: 8px;
+                margin-bottom: 10px;
+            }
+
+            .contact-info {
+                font-size: 0.75em;
+                margin-bottom: 10px;
+            }
+
+                .contact-info div {
+                    margin-left: 5px;
+                    margin-right: 5px;
+                }
+
+            .info-grid {
+                margin-bottom: 8px;
+            }
+
+            .info-box {
+                padding: 5px 8px;
+                font-size: 9pt;
+                width: calc(50% - 2.5px);
+                margin-bottom: 5px;
+            }
+
+            .parties-box {
+                padding: 8px;
+                font-size: 9pt;
+            }
+
+            .details-table th, .details-table td {
+                font-size: 9pt;
+                padding: 4px;
+            }
+
+            .details-table tfoot th {
+                font-size: 10pt;
+            }
+
+            .cash-instructions {
+                font-size: 9pt;
+                padding: 8px;
+                margin-top: 10px;
+                background-color: #e7f1ff !important;
+            }
+
+            .signature-area {
+                margin-top: 25px;
+                font-size: 9pt;
+            }
+        }
+    </style>
+}
+
+@* (دالة مساعدة لطباعة النسخ المتعددة) *@
+@helper RenderVoucherBody(string copyName)
+{
+    <div class="voucher-container">
+        <div class="voucher-header">
+            <div class="logo-container">
+                <img src="@Url.Content("~/Content/Images/logo.png")" alt="شعار نقابة المحامين" />
+                <div>
+                    <h2 class="title-text">نقابة المحامين الفلسطينيين</h2>
+                    <p class="subtitle-text">PALESTINIAN BAR ASSOCIATION</p>
+                </div>
+            </div>
+
+            <div class="contact-info">
+                @* (معلومات الاتصال) *@
+                <div><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg> <span>المركز الرئيسي: القدس</span></div>
+                <div><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg> <span>رام الله: شارع الإرسال</span></div>
+                <div><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg> <span>غزة: دوار النصر - شارع الخرطوم</span></div>
+                <div><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-telephone-fill" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.19-.547c.52-.13.975.016 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z" /></svg> <span>08-2641960</span></div>
+                <div><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16"><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4zm11 3H1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1m-4 8H7a1 1 0 0 1-1-1v-1h4v1a1 1 0 0 1-1 1" /></svg> <span>08-2641783</span></div>
+            </div>
+
+            <h4>قسيمة دفع (أمر تحصيل نقدي) - (@copyName)</h4>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <strong>اسم المحامي:</strong> @Model.LawyerName
+            </div>
+            <div class="info-box1">
+                <strong>رقم العضوية:</strong> @Model.LawyerMembershipId
+            </div>
+
+            <div class="info-box">
+                @* 💡💡 === بداية التعديل (حل الخطأ 1) === 💡💡 *@
+                <strong>تاريخ الإصدار:</strong> @(Model.IssueDate.HasValue ? Model.IssueDate.Value.ToString("yyyy/MM/dd") : "N/A")
+                @* 💡💡 === نهاية التعديل === 💡💡 *@
+            </div>
+            <div class="info-box1">
+                <strong>رقم القسيمة:</strong> @Model.VoucherId.ToString("D5")
+            </div>
+
+        </div>
+
+        @* === إضافة الأطراف === *@
+        <div class="parties-box">
+            <h6>أطراف المعاملة (رقم: @Model.TransactionId - @Model.ContractTypeName)</h6>
+            <p class="mb-1">
+                <strong>الطرف الأول:</strong>
+                @string.Join("، ", Model.Parties.Where(p => p.PartyType == 1).Select(p => p.PartyName + " (هـ: " + p.PartyIDNumber + ")"))
+ 
+            </p>
+            <p class="mb-0">
+                <strong>الطرف الثاني  (الدافع):</strong>
+                @string.Join("، ", Model.Parties.Where(p => p.PartyType == 2).Select(p => p.PartyName + " (هـ: " + p.PartyIDNumber + ")"))
+            </p>
+        </div>
+
+        @* (جدول الدفع النقدي) *@
+        <table class="table table-bordered details-table">
+            <thead class="table-light text-center">
+                <tr>
+                    <th>بيان الرسم</th>
+                    <th style="width: 30%">المبلغ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Details)
+                {
+                    <tr>
+                        <td>@item.FeeType.Name - @item.Description</td>
+
+                        @* 💡💡 === بداية التعديل (حل الخطأ 3) === 💡💡 *@
+                        <td class="text-nowrap">@item.Amount.ToString("N2") @item.FeeType.Currency.Symbol</td>
+                        @* 💡💡 === نهاية التعديل === 💡💡 *@
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="table-light" style="font-size: 1.2rem;">
+                    <th class="text-start">المجموع الكلي:</th>
+
+                    @* (استخدام العملة من النموذج الرئيسي) *@
+                    <th class="text-nowrap">@Model.TotalAmount.ToString("N2") @Model.CurrencySymbol</th>
+                </tr>
+            </tfoot>
+        </table>
+
+        @* (تعليمات الدفع النقدي) *@
+        <div class="cash-instructions">
+            <strong>تعليمات الدفع:</strong> يرجى سداد هذا المبلغ نقداً لدى موظف التحصيل المالي (المحاسب) في مقر النقابة.
+            <br />
+            @* 💡💡 === بداية التعديل (حل الخطأ 1) === 💡💡 *@
+            (تنتهي صلاحية هذه القسيمة بتاريخ: @(Model.ExpiryDate.HasValue ? Model.ExpiryDate.Value.ToString("yyyy/MM/dd") : "N/A"))
+            @* 💡💡 === نهاية التعديل === 💡💡 *@
+        </div>
+
+        <div class="signature-area">
+            <div>
+                <p>...................................</p>
+                <strong>توقيع الدافع (الطرف الثاني)</strong>
+            </div>
+            <div class="col-6 text-center">
+                <p>...................................</p>
+                <strong>توقيع وختم الموظف</strong>
+                <small>(الموظف: @Model.EmployeeName)</small>
+            </div>
+        </div>
+    </div>
+}
+
+@* (طباعة النسخ) *@
+<div class="container mt-4" dir="rtl">
+    @RenderVoucherBody("نسخة المحاسب")
+    <div class="cut-line" aria-hidden="true">
+        <div class="cut-line-dashed"></div>
+        <div class="cut-line-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+        </div>
+    </div>
+    @RenderVoucherBody("نسخة الدافع (المواطن)")
+</div>
+
+
+@section scripts {
+    <script>
+        window.addEventListener("load", function () {
+            window.print();
+        });
+    </script>
+}

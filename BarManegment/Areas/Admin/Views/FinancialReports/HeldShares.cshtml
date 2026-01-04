@@ -1,0 +1,47 @@
+﻿@model IEnumerable<BarManegment.Models.FeeDistribution>
+@{
+    ViewBag.Title = "الحصص المحجوزة (قيد المراجعة / قروض)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2><i class="bi bi-pause-circle-fill me-2 text-warning"></i> @ViewBag.Title</h2>
+<p class="text-muted">
+    هذه قائمة بالحصص التي تم تعليقها (<code>IsOnHold = true</code>) ولن تظهر في تقرير الإرسال للبنك.
+</p>
+<p>@Html.ActionLink("العودة للتقرير الرئيسي", "Index", null, new { @class = "btn btn-outline-secondary" })</p>
+<hr />
+
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <th>اسم المحامي</th>
+            <th>رقم المعاملة</th>
+            <th>المبلغ</th>
+            <th>سبب الحجز</th>
+            <th>الإجراء</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="5" class="text-center text-muted p-4">
+                    لا يوجد أي حصص محجوزة حالياً.
+                </td>
+            </tr>
+        }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Lawyer.ArabicName</td>
+                <td>@item.ContractTransactionId</td>
+                <td>@item.Amount.ToString("N2")</td>
+                <td>@Html.DisplayFor(modelItem => item.HoldReason)</td>
+                <td>
+                    @* (سنضيف دالة "إلغاء الحجز" هنا لاحقاً) *@
+                    <button class="btn btn-sm btn-outline-success" disabled>(إلغاء الحجز - قريباً)</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

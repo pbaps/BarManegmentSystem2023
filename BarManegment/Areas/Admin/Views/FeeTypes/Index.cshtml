@@ -1,0 +1,52 @@
+﻿@model IEnumerable<BarManegment.Models.FeeType>
+@{ ViewBag.Title = "إدارة أنواع الرسوم"; }
+
+<div class="container-fluid pt-4 px-4">
+    <p>@Html.ActionLink("إضافة نوع رسم جديد", "Create", null, new { @class = "btn btn-primary" })</p>
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Name)</th>
+                        <th>@Html.DisplayNameFor(model => model.FirstOrDefault().DefaultAmount)</th>
+                        <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Currency)</th>
+                        <th>@Html.DisplayNameFor(model => model.FirstOrDefault().BankAccount)</th>
+
+                        <th>@Html.DisplayNameFor(model => model.FirstOrDefault().LawyerPercentage)</th>
+                        <th>@Html.DisplayNameFor(model => model.FirstOrDefault().BarSharePercentage)</th>
+                        <th>@Html.DisplayNameFor(model => model.FirstOrDefault().IsActive)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                            <td>@item.DefaultAmount.ToString("N2")</td>
+                            <td>@Html.DisplayFor(modelItem => item.Currency.Symbol)</td>
+                            <td>@Html.DisplayFor(modelItem => item.BankAccount.AccountName)</td>
+
+                            <td>@item.LawyerPercentage.ToString("P0")</td>
+                            <td>@item.BarSharePercentage.ToString("P0")</td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">غير فعال</span>
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                @Html.ActionLink("تعديل", "Edit", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-warning" })
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

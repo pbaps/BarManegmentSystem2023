@@ -1,0 +1,541 @@
+﻿
+@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+@{
+    Layout = null; // لا نستخدم التخطيط العام، هذه صفحة طباعة مستقلة
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>نموذج انتهاء التدريب - @Model.ArabicName</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', 'Amiri', serif;
+            background-color: #525659; /* لون خلفية معاينة الطباعة */
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 10mm auto;
+            border: 1px solid #d3d3d3;
+            background: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            page-break-after: always;
+            box-sizing: border-box;
+        }
+
+            /* العلامة المائية الخلفية */
+            .page::before {
+                content: "";
+                position: absolute;
+                top: 25%;
+                left: 15%;
+                width: 70%;
+                height: 50%;
+                background-image: url('/Content/Images/pba-logo-watermark.png'); /* تأكد من وجود صورة باهتة للشعار */
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+                opacity: 0.05; /* شفافية عالية */
+                z-index: 0;
+            }
+
+        .content-layer {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* الترويسة */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px double #b91d1d; /* لون أحمر غامق مثل الصورة */
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header-logo img {
+            width: 100px;
+        }
+
+        .header-text {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+            .header-text h2 {
+                margin: 0;
+                color: #000;
+                font-weight: 700;
+                font-size: 24px;
+            }
+
+            .header-text h3 {
+                margin: 5px 0 0;
+                font-size: 16px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+        /* العناوين */
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+            .page-title h1 {
+                display: inline-block;
+                border-bottom: 2px solid #000;
+                padding-bottom: 5px;
+                font-size: 22px;
+                font-weight: 700;
+            }
+
+        /* النصوص والحقول */
+        .form-text {
+            font-size: 16px;
+            line-height: 2.2;
+            text-align: justify;
+        }
+
+        .fill-in {
+            display: inline-block;
+            border-bottom: 1px dotted #000;
+            min-width: 200px;
+            text-align: center;
+            font-weight: bold;
+            color: #003366;
+            padding: 0 10px;
+        }
+
+        /* التواقيع */
+        .signatures-section {
+            margin-top: 80px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .sig-box {
+            text-align: center;
+            width: 250px;
+        }
+
+        .sig-label {
+            font-weight: bold;
+            margin-bottom: 50px;
+        }
+
+        /* القوائم والمرفقات */
+        .attachment-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 30px;
+        }
+
+            .attachment-list li {
+                margin-bottom: 10px;
+                font-size: 14px;
+            }
+
+        .checkbox-box {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 1px solid #000;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* التذييل */
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 20mm;
+            right: 20mm;
+            border-top: 1px solid #b91d1d;
+            padding-top: 10px;
+            font-size: 10px;
+            text-align: center;
+            color: #555;
+        }
+
+        .footer-icons i {
+            margin: 0 5px;
+        }
+
+        @@media print {
+            body {
+                background-color: white;
+            }
+
+            .page {
+                margin: 0;
+                box-shadow: none;
+                border: none;
+                width: 100%;
+                height: 100%;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="position: fixed; top: 10px; left: 10px; z-index: 1000;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Cairo'; font-weight: bold;">
+            طباعة النموذج بالكامل
+        </button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- الصفحة 1: طلب عقد جلسة امتحان نهاية تدريب (tt1.jpg) -->
+    <!-- ======================================================== -->
+    <div class="page">
+        <div class="content-layer">
+            @RenderHeader()
+
+            <div class="page-title">
+                <h1>طلب عقد جلسة امتحان نهاية تدريب</h1>
+            </div>
+
+            <div class="form-text">
+                <div style="margin-bottom: 20px;">
+                    <strong>السادة / نقيب وأعضاء مجلس نقابة المحامين الفلسطينيين &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; المحترمين</strong>
+                    <br />
+                    <span style="margin-right: 200px;">تحية الحق والعدل وبعد ،،،</span>
+                </div>
+
+                <p>
+                    <strong>مقدمه / </strong> <span class="fill-in" style="width: 400px;">@Model.ArabicName</span>
+                </p>
+                <p>
+                    <strong>حيث أنني أنهيت فترة التدريب القانونية </strong>
+                </p>
+                <p>
+                    <strong>لدى مكتب الأستاذ/ة </strong> <span class="fill-in">@(Model.Supervisor?.ArabicName ?? "........................")</span>
+                    &nbsp;&nbsp;&nbsp;
+                    <strong>بتاريخ: </strong> <span class="fill-in">@DateTime.Now.ToString("yyyy/MM/dd")</span>
+                </p>
+                <br />
+                <p>
+                    لذلك آمل من سيادتكم النظر في دعوة مجلس النقابة للانعقاد وتحديد ميعاد لأداء اليمين القانونية كآخر متطلب من متطلبات الحصول على رخصة ممارسة مهنة المحاماة في فلسطين وتسجيل اسمي في السجل العام سجل المحامين المزاولين تبعا لذلك حسب الأصول.
+                </p>
+                <br />
+                <p style="text-align: center;"><strong>وتفضلوا بقبول فائق الاحترام والتقدير</strong></p>
+            </div>
+
+            <div style="margin-top: 40px; font-size: 14px;">
+                <strong>مرفقات الطلب:</strong>
+                <div style="column-count: 1; margin-top: 10px; line-height: 1.8;">
+                    1. شهادة خلو طرف من المالية العسكرية <span style="text-decoration: underline;">الأصل</span>.<br>
+                    2. شهادة خلو طرف من المالية المدنية <span style="text-decoration: underline;">الأصل</span>.<br>
+                    3. شهادة حسن سير وسلوك من وزارة الداخلية <span style="text-decoration: underline;">الأصل</span>.<br>
+                    4. تقرير المواظبة بالتدريب من قبل المدرب.<br>
+                    5. شهادة عدم محكومية من وزارة العدل <span style="text-decoration: underline;">الأصل</span>.<br>
+                    6. حلف اليمين.<br>
+                    7. شهادة انتهاء تدريب.<br>
+                    8. إقرار وتعهد من المتدرب.<br>
+                    9. احضار صور عن محاضر جلسات قام المتدرب بالمرافعة بها أمام المحكمة.
+                </div>
+            </div>
+
+            <div class="signatures-section">
+                <div class="sig-box" style="margin-right: auto;">
+                    <div class="sig-label">توقيع المحامي المتدرب</div>
+                    <div>____________________</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-label">حرر في :</div>
+                    <div>@DateTime.Now.ToString("yyyy/MM/dd")</div>
+                </div>
+            </div>
+
+            @RenderFooter()
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- الصفحة 2: إقرار وتعهد (tt2.jpg) -->
+    <!-- ======================================================== -->
+    <div class="page">
+        <div class="content-layer">
+            @RenderHeader()
+
+            <div class="page-title">
+                <h1>إقرار وتعهد</h1>
+            </div>
+
+            <div class="form-text">
+                <p>
+                    <strong>أقر انا المحامي المتدرب/ة: </strong> <span class="fill-in" style="width: 350px;">@Model.ArabicName</span>
+                </p>
+                <p>
+                    <strong>من سكان / </strong> <span class="fill-in">@(Model.ContactInfo?.City ?? "................")</span>
+                    &nbsp;&nbsp;
+                    <strong>وأحمل رقم هوية / </strong> <span class="fill-in">@Model.NationalIdNumber</span>
+                </p>
+                <p>
+                    <strong>بأنني قد تدربت لدى مكتب المحامي المدرب الأستاذ/ة: </strong> <span class="fill-in">@(Model.Supervisor?.ArabicName ?? "........................")</span>
+                </p>
+                <p>
+                    <strong>من تاريخ: </strong> <span class="fill-in">@(Model.TrainingStartDate?.ToString("yyyy/MM/dd") ?? "................")</span>
+                </p>
+                <br />
+                <p>
+                    وأنني كنت ملتزماً بالتدريب ولم اخالف نظام التدريب وتعديلاته او قرارات مجلس النقابة وانني لم أزاول أي عمل يخالف التصريح المشفوع بالقسم الذي قدمته للنقابة وفي حالة ظهور عكس ذلك أتحمل المسؤولية القانونية كاملة ويحق لمجلس النقابة اتخاذ الإجراءات القانونية اللازمة بحقي.
+                </p>
+            </div>
+
+            <div class="signatures-section" style="margin-top: 100px;">
+                <div class="sig-box" style="margin-right: auto;">
+                    <div class="sig-label">توقيع المحامي المتدرب/ة</div>
+                    <div>____________________</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-label">حرر في :</div>
+                    <div>@DateTime.Now.ToString("yyyy/MM/dd")</div>
+                </div>
+            </div>
+
+            @RenderFooter()
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- الصفحة 3: شهادة انتهاء تدريب (tt3.jpg) -->
+    <!-- ======================================================== -->
+    <div class="page">
+        <div class="content-layer">
+            @RenderHeader()
+
+            <div class="page-title">
+                <h1>شهادة انتهاء تدريب</h1>
+            </div>
+
+            <div class="form-text">
+                <p>
+                    <strong>أقر انا المحامي /ة: </strong> <span class="fill-in" style="width: 400px;">@(Model.Supervisor?.ArabicName ?? "........................")</span>
+                </p>
+                <p>
+                    مارست مهنة المحاماة لمدة اكثر من خمس سنوات ومجاز بممارسة مهنة المحاماة في فلسطين ويحق لي ان اكون استاذاً للمحامين المتدربين الذين يقضون مدة التدريب.
+                </p>
+                <p>
+                    <strong>ولي مكتب في/ </strong> <span class="fill-in">@(Model.Supervisor?.ContactInfo?.City ?? "................")</span>
+                    &nbsp;&nbsp;&nbsp;
+                    <strong>أعلن ان الأستاذ/ة </strong> <span class="fill-in">@Model.ArabicName</span>
+                </p>
+                <p>
+                    <strong>تدرب/ت في مكتبي إبتداءً من : </strong> <span class="fill-in">@(Model.TrainingStartDate?.ToString("yyyy/MM/dd") ?? "................")</span>
+                    &nbsp;&nbsp;
+                    <strong>إلى: </strong> <span class="fill-in">@DateTime.Now.ToString("yyyy/MM/dd")</span>
+                </p>
+                <br />
+                <p><strong>وانه خلال هذه المدة :</strong></p>
+                <ol>
+                    <li>قد ثابر/ت بانتظام على الحضور باستثناء الأوقات التي تغيب/ت فيها من مرض أو أعياد أو أي سبب قاهر</li>
+                    <li>قد تدرب/ت في الأشغال القضائية في مكتبي.</li>
+                    <li>لم أعلم انه يمارس اية حرفة أو مهنة أخرى.</li>
+                    <li>لم يزد مقدار تغيبه/ا عن شهر واحد طيلة مدة التدريب (ما عدا أيام الأعياد).</li>
+                </ol>
+            </div>
+
+            <div class="signatures-section" style="margin-top: 80px;">
+                <div class="sig-box" style="margin-right: auto;">
+                    <div class="sig-label">توقيع وختم المحامي المدرب/ة</div>
+                    <div>____________________</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-label">حرر في :</div>
+                    <div>@DateTime.Now.ToString("yyyy/MM/dd")</div>
+                </div>
+            </div>
+
+            @RenderFooter()
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- الصفحة 4: تصريح مشفوع باليمين (tt4.jpg) -->
+    <!-- ======================================================== -->
+    <div class="page">
+        <div class="content-layer">
+            @RenderHeader()
+
+            <div class="page-title">
+                <h1>تصريح مشفوع باليمين</h1>
+            </div>
+
+            <div class="form-text">
+                <p>
+                    <strong>انا الموقع/ة أدناه / </strong> <span class="fill-in" style="width: 400px;">@Model.ArabicName</span>
+                </p>
+                <p>
+                    <strong>من سكان / </strong> <span class="fill-in">@(Model.ContactInfo?.City ?? "................")</span>
+                    &nbsp;&nbsp;
+                    <strong>احمل هوية رقم / </strong> <span class="fill-in">@Model.NationalIdNumber</span>
+                </p>
+                <br />
+                <p><strong>اصرح بما يلي:</strong></p>
+                <ol>
+                    <li>أنني كنت مقيماً في فلسطين اثناء فترة التدريب على مهنة المحاماة ولم أغادر قطاع غزة.</li>
+                    <li>أنني لم اعمل في أي حرفة ولم اعمل في محل تجاري ، خاص أو غير ذلك ولا انوي ان اعمل أو اشتغل بصورة مباشرة أو غير مباشرة في أي عمل تجاري أو اية مهنة أو حرفة ما دام اسمي مسجلاً في سجل المحامين.</li>
+                    <li>انني لم أمارس أي عمل أو حرفة ولم اشتغل أي وظيفة في أي مؤسسة خاصة أو عامة وانني كنت متفرغ تفرغاً كاملاً اثناء فترة التدريب.</li>
+                    <li>انني لست موظفاً ولم اعمل لدى أي جهة رسمية أو غير رسمية ، مدنية أو عسكرية لا بصورة دائمة ولا مؤقتة ولا براتب ولا بمكافأة أو عقد أثناء فترة التدريب.</li>
+                    <li>انني لست مفلساً ولم يرد لي اعتباري.</li>
+                    <li>لم يصدر بحقي أي حكم من أي محكمة يقضي بارتكابي أي جرم مخل بالشرف والأمانة ولم يصدر بحقي اي لوائح اتهام لارتكابي اي جريمة مخلة بالشرف والأمانة.</li>
+                    <li>أتحمل المسؤولية القانونية كاملة عن صحة ما ورد في هذا التصريح.</li>
+                </ol>
+            </div>
+
+            <div class="signatures-section" style="margin-top: 60px;">
+                <div class="sig-box" style="margin-right: auto;">
+                    <div class="sig-label">مُعطي التصريح</div>
+                    <div>____________________</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-label">حرر في :</div>
+                    <div>@DateTime.Now.ToString("yyyy/MM/dd")</div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 50px;">
+                <p><strong>لقد حضر امامي المذكور أعلاه واقسم اليمين القانونية على صحة ما ورد أعلاه</strong></p>
+                <br />
+                <strong>توقيع القاضي المحلف</strong>
+                <br /><br />
+                ____________________
+            </div>
+
+            @RenderFooter()
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- الصفحة 5: شهادة لمن يهمه الأمر - المكتبة (tt5.jpg) -->
+    <!-- ======================================================== -->
+    <div class="page">
+        <div class="content-layer">
+            @RenderHeader()
+
+            <div class="page-title">
+                <h1>شهادة لمن يهمه الأمر</h1>
+            </div>
+
+            <div class="form-text" style="text-align: center; margin-top: 50px;">
+                <p style="text-align: right;"><strong>يشهد امين المكتبة بأن الأستاذ/ة: </strong> <span class="fill-in">@Model.ArabicName</span></p>
+                <br /><br />
+                <h3>
+                    لم يستعير أي كتاب من المكتبة طوال الفترة السابقة أو/ و قد قام بارجاع جميع الكتب المستعارة
+                    <br />
+                    وان ذمته خالية تجاه مكتبة النقابة.
+                </h3>
+            </div>
+
+            <div class="signatures-section" style="margin-top: 150px;">
+                <div class="sig-box" style="margin-right: auto;">
+                    <div class="sig-label">توقيع امين المكتبة</div>
+                    <div>____________________</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-label">حرر في :</div>
+                    <div>@DateTime.Now.ToString("yyyy/MM/dd")</div>
+                </div>
+            </div>
+
+            @*    @RenderFooter()  *@
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+            <!-- الصفحة 6: مرفقات الطلب (المرفقات.jpg) -->
+            <!-- ======================================================== -->
+            <div class="page">
+                <div class="content-layer">
+                    @RenderHeader()
+
+                    <div class="page-title">
+                        <h1>مرفقات الطلب / خاص بالنقابة</h1>
+                    </div>
+
+                    <div class="form-text">
+                        <ul class="attachment-list" style="font-size: 18px; padding-right: 50px;">
+                            @{
+                                var items = new List<string> {
+                            "نموذج تسجيل في سجل المحامين المتدربين",
+                            "طلب موافقة على التسجيل في سجل المحامين المتدربين",
+                            "شهادة ابتداء تدريب وتعهد",
+                            "اقرار وتعهد والتزام",
+                            "تصريح مشفوع بالقسم",
+                            "تحديث بيانات المحامي المتدرب",
+                            "صورة الهوية",
+                            "شهادة الميلاد",
+                            "صورة شهادة الثانوية العامة مصدقة",
+                            "صورة الشهادة الجامعية مصدقة",
+                            "صورة كشف الدرجات مصدقة",
+                            "شهادة خلو طرف من المالية المدنية",
+                            "شهادة خلو طرف من المالية العسكرية",
+                            "شهادة حسن سير وسلوك من وزارة الداخلية",
+                            "شهادة عدم محكومية من وزارة العدل",
+                            "كشف المحامي المدرب",
+                            "كتاب استيعاب من المحامي المدرب"
+                        };
+                            }
+
+                            @foreach (var item in items)
+                            {
+                                <li style="display: flex; justify-content: space-between; width: 80%; margin-bottom: 12px;">
+                                    <span>@item</span>
+                                    <span class="checkbox-box"></span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    @RenderFooter()
+                </div>
+            </div>
+
+</body>
+</html>
+
+@helper RenderHeader()
+{
+    <div class="header">
+        <div class="header-text">
+            <h2>نقابة المحامين الفلسطينيين</h2>
+            <h3>Palestinian Bar Association</h3>
+        </div>
+        <div class="header-logo">
+            <!-- شعار النقابة -->
+         
+            <img src="~/Content/Images/logo.png"  alt="PBA Logo"  />
+        </div>
+    </div>
+}
+
+@helper RenderFooter()
+{
+    <div class="footer">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <i class="bi bi-geo-alt-fill"></i> Head Office: Jerusalem &nbsp; | &nbsp; Ramallah: Al-Irsal St. &nbsp; | &nbsp; Gaza: Anser Square - El khartom St.
+            </div>
+            <div>
+                <i class="bi bi-telephone-fill"></i> 08-2641960 &nbsp; | &nbsp; <i class="bi bi-phone-fill"></i> 08-2641783
+            </div>
+        </div>
+    </div>
+}

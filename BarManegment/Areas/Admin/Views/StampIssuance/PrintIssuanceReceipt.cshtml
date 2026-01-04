@@ -1,0 +1,305 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.StampIssuanceReceiptViewModel 
+  @using BarManegment.Helpers
+
+@{
+    ViewBag.Title = "إيصال صرف طوابع رقم " + Model.ReceiptFullNumber;
+    Layout = "~/Areas/Admin/Views/Shared/_PrintWaselLayout.cshtml";
+    string applicantTitle = "السيد"; // المتعهد دائماً "السيد"
+    string tafqeetResult = Model.TotalAmountInWords;
+}
+
+@* ===
+     (تعريف الدالة المساعدة RenderReceiptBody)
+    === *@
+@helper RenderReceiptBody(string copyName, string tafqeetText, string title)
+{
+    <div class="receipt-copy">
+        <div class="receipt-header " style="padding-top: 30px;">
+            <div class="logo-container">
+                <img src="@Url.Content("~/Content/Images/logo.png")" alt="شعار نقابة المحامين" />
+                <div>
+                    <h2 class="title-text">نقابة المحامين الفلسطينيين</h2>
+                    <p class="subtitle-text">PALESTINIAN BAR ASSOCIATION</p>
+                </div>
+            </div>
+            <div class="contact-info">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
+                    <span>المركز الرئيسي: القدس</span>
+                </div>
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
+                    <span>رام الله: شارع الإرسال</span>
+                </div>
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
+                    <span>غزة: دوار النصر - شارع الخرطوم</span>
+                </div>
+            </div>
+            <div class="receipt-title-container">
+                <div class="title-block">
+                    <h4>إيصال قبض (صرف طوابع)</h4>
+                    <h6>(وصل مقبوضات رسمي)</h6>
+                </div>
+                <div class="copy-info">
+                    <strong>@copyName</strong><br />
+                    <span class="text-danger">رقم: @Model.ReceiptFullNumber</span><br />
+                    التاريخ: @Model.PaymentDate.ToString("yyyy/MM/dd")
+                </div>
+            </div>
+        </div>
+
+        <div class="receipt-body small-text-receipt">
+            <div class="info-grid">
+                <div class="info-box"><strong>استلمنا من @(title):</strong> @Model.ContractorName</div>
+                <div class="info-box"><strong>رقم القسيمة:</strong> @Model.ReceiptId.ToString("D5")</div>
+                <div class="info-box"><strong>تاريخ السداد:</strong> @Model.PaymentDate.ToString("yyyy/MM/dd")</div>
+                <div class="info-box"><strong>طريقة الدفع:</strong> دفع نقدي (طوابع)</div>
+            </div>
+
+            <p>
+                مبلغاً وقدره: <strong>@Model.TotalAmount.ToString("N2") @Model.CurrencySymbol</strong>
+                <br />
+                <span style="font-weight: 600;">
+                    (@tafqeetText)
+                </span>
+            </p>
+            <p>
+                وذلك عن الرسوم التالية:
+            </p>
+
+            <table class="table table-bordered table-sm details-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>بيان الصرف (الدفاتر)</th>
+                        <th style="width: 25%">المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Details)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@item.Description</strong>
+                            </td>
+                            <td class="text-center">@item.Amount.ToString("N2") @Model.CurrencySymbol</td>
+                        </tr>
+                    }
+                    <tr class="table-light fw-bold">
+                        <td class="text-end">المجموع</td>
+                        <td class="text-center">@Model.TotalAmount.ToString("N2") @Model.CurrencySymbol</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="receipt-footer">
+            <div class="signature-block">
+                <strong>المستلم (@title)</strong>
+                <div class="sig-line"></div>
+                <small>الاسم: @Model.ContractorName</small><br />
+                <small>التوقيع:</small>
+            </div>
+            <div class="signature-block">
+                <strong>أمين الصندوق / المحاسب</strong>
+                <div class="sig-line"></div>
+                <small>(الموظف: @Model.IssuedByUserName)</small>
+            </div>
+        </div>
+    </div>
+}
+
+<div style="width: 100%;">
+    @RenderReceiptBody($"النسخة الأصلية - {applicantTitle}", tafqeetResult, applicantTitle)
+    @RenderReceiptBody("نسخة ثانية - للمحاسبة", tafqeetResult, applicantTitle)
+    @RenderReceiptBody("نسخة ثالثة - للملف", tafqeetResult, applicantTitle)
+</div>
+
+@section styles {
+    <style>
+        .receipt-body.small-text-receipt {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .receipt-copy {
+            border: 1px dashed #777;
+            padding: 20px;
+            margin-bottom: 10mm;
+            page-break-inside: avoid;
+            display: flex;
+            flex-direction: column;
+            min-height: 8cm;
+        }
+
+            .receipt-copy:last-child {
+                margin-bottom: 0;
+            }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+            .receipt-header .logo-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+                .receipt-header .logo-container img {
+                    max-height: 70px;
+                    margin-left: 10px;
+                    margin-right: 10px;
+                }
+
+            .receipt-header .title-text {
+                font-size: 1.8rem;
+                font-weight: bold;
+                margin: 0;
+                color: #d90000;
+            }
+
+            .receipt-header .subtitle-text {
+                font-size: 1.2rem;
+                font-weight: bold;
+                margin: 0;
+                color: #333;
+            }
+
+            .receipt-header .contact-info {
+                font-size: 0.8em;
+                color: #666;
+                margin-top: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+
+        .contact-info div {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            margin: 2px 8px;
+        }
+
+        .contact-info svg {
+            margin-left: 5px;
+            width: 14px;
+            height: 14px;
+            color: #d90000;
+        }
+
+        .receipt-title-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+            .receipt-title-container .title-block {
+                text-align: right;
+            }
+
+                .receipt-title-container .title-block h4 {
+                    font-weight: 700;
+                    font-size: 1.5rem;
+                    margin-bottom: 0;
+                    color: #d90000;
+                }
+
+                .receipt-title-container .title-block h6 {
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    color: #333;
+                }
+
+            .receipt-title-container .copy-info {
+                text-align: left;
+                font-size: 1.1rem;
+            }
+
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 1rem;
+            width: calc(50% - 5px);
+            margin-bottom: 5px;
+        }
+
+        .receipt-body {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            flex-grow: 1;
+        }
+
+            .receipt-body strong {
+                font-weight: 700;
+                color: #000;
+            }
+
+        .details-table {
+            font-size: 0.9rem;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+            .details-table th {
+                background-color: #f2f2f2;
+                text-align: center;
+            }
+
+            .details-table td {
+                vertical-align: middle;
+            }
+
+        .receipt-footer {
+            margin-top: auto;
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .signature-block {
+            text-align: center;
+            width: 40%;
+        }
+
+            .signature-block .sig-line {
+                border-bottom: 1px dotted #000;
+                height: 20px;
+                margin-bottom: 5px;
+                margin-top: 20px;
+            }
+
+        @@media print {
+            .receipt-copy {
+                border: 1px dashed #777;
+                padding: 15px;
+                margin-bottom: 5mm;
+                page-break-inside: avoid;
+                display: flex;
+                flex-direction: column;
+                min-height: 8cm;
+            }
+        }
+    </style>
+}

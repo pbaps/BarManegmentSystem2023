@@ -1,0 +1,65 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.CommitteeMemberSelection
+
+@{
+    // 💡 حل مشكلة CS1973: تحويل القيمة الديناميكية إلى int صريح
+    int index = 0;
+    if (ViewBag.Index != null)
+    {
+        index = (int)ViewBag.Index;
+    }
+    else
+    {
+        index = Guid.NewGuid().GetHashCode();
+    }
+
+    // استلام القوائم
+    var membersList = ViewBag.AvailableMembers as SelectList;
+    var rolesList = ViewBag.AvailableRoles as List<string>;
+    var rolesSelect = rolesList != null ? new SelectList(rolesList, Model.Role) : null;
+}
+
+<div class="row g-2 mb-2 align-items-end member-row" data-index="@index">
+    <div class="col-md-6">
+        <label class="form-label small text-muted">اسم العضو (المحامي)</label>
+        <!-- استخدام المتغير index الصريح هنا يمنع الخطأ -->
+        @Html.DropDownList("Members[" + index + "].MemberLawyerId", membersList, "--- اختر المحامي ---", new { @class = "form-select member-select select2-searchable" })
+        @Html.ValidationMessage("Members[" + index + "].MemberLawyerId", "", new { @class = "text-danger small" })
+    </div>
+
+    <div class="col-md-5">
+        <label class="form-label small text-muted">الدور في اللجنة</label>
+        @if (rolesSelect != null)
+        {
+            @Html.DropDownList("Members[" + index + "].Role", rolesSelect, "--- اختر الدور ---", new { @class = "form-select role-select" })
+        }
+        else
+        {
+            @Html.TextBox("Members[" + index + "].Role", Model.Role, new { @class = "form-control role-input", placeholder = "أدخل الدور" })
+        }
+        @Html.ValidationMessage("Members[" + index + "].Role", "", new { @class = "text-danger small" })
+    </div>
+
+    <div class="col-md-1">
+        <button type="button" class="btn btn-outline-danger w-100 remove-member-btn" tabindex="-1" title="حذف العضو">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+
+    <!-- حقول مخفية لربط القائمة -->
+    <input type="hidden" name="Members.Index" value="@index" />
+
+    @if (Model.MemberLawyerId > 0)
+    {
+        <input type="hidden" name="Members[@index].MemberLawyerId" value="@Model.MemberLawyerId" disabled class="original-value" />
+    }
+
+    <script>
+        $(function() {
+            if ($.fn.select2) {
+                $('.member-row[data-index="@index"] .select2-searchable').select2({
+                    dir: "rtl", width: '100%', placeholder: "--- ابحث واختر المحامي ---", allowClear: true, language: "ar"
+                });
+            }
+        });
+    </script>
+</div>

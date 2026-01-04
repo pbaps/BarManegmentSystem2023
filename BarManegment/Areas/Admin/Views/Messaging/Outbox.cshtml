@@ -1,0 +1,54 @@
+﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.MessageListItemViewModel>
+@{
+    ViewBag.Title = "صندوق الصادر";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2><i class="bi bi-send-fill me-2"></i> @ViewBag.Title</h2>
+
+<p>
+    @Html.ActionLink("رسالة جديدة", "Compose", null, new { @class = "btn btn-primary" })
+    @Html.ActionLink("عرض صندوق الوارد", "Inbox", null, new { @class = "btn btn-outline-secondary ms-2" })
+</p>
+<hr />
+
+<div class="table-responsive">
+    <table class="table table-hover table-striped align-middle">
+        <thead>
+            <tr>
+                <th>الحالة</th>
+                <th><i class="bi bi-person"></i> المستقبل</th>
+                <th><i class="bi bi-card-text"></i> الموضوع</th>
+                <th><i class="bi bi-clock"></i> التاريخ</th>
+                <th class="text-center"><i class="bi bi-paperclip"></i></th>
+                <th class="text-center"><i class="bi bi-reply-all"></i></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted p-4">
+                        لا يوجد رسائل في صندوق الصادر حالياً.
+                    </td>
+                </tr>
+            }
+
+            @foreach (var item in Model)
+            {
+                <tr class="@(item.IsRead ? "table-light" : "table-info fw-bold")">
+                    <td>@(item.IsRead ? "مقروءة" : "تم الإرسال")</td>
+                    <td>@Html.DisplayFor(modelItem => item.RecipientName)</td>
+                    <td>@Html.ActionLink(item.Subject, "Details", new { id = item.Id })</td>
+                    <td>@item.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="text-center">@(item.HasAttachment ? "📎" : "")</td>
+                    <td class="text-center">@item.ReplyCount</td>
+                    <td>
+                        @Html.ActionLink("عرض", "Details", new { id = item.Id }, new { @class = "btn btn-sm btn-info" })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

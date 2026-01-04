@@ -1,0 +1,125 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.BalanceSheetViewModel
+
+@{
+    ViewBag.Title = "الميزانية العمومية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm mb-4 no-print">
+        <div class="card-body bg-light">
+            @using (Html.BeginForm("BalanceSheet", "AccountingReports", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">الميزانية كما هي في تاريخ:</label>
+                    <input type="date" name="asOfDate" value="@(Model.AsOfDate.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">تحديث</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="@Url.Action("PrintBalanceSheet", new { asOfDate = Model.AsOfDate })" target="_blank" class="btn btn-dark w-100">
+                        <i class="bi bi-printer"></i> طباعة
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-dark text-white text-center py-3">
+            <h3 class="fw-bold mb-1">الميزانية العمومية (المركز المالي)</h3>
+            <p class="mb-0 text-white-50">كما هي في @Model.AsOfDate.ToString("dd/MM/yyyy")</p>
+        </div>
+        <div class="card-body p-0">
+            <div class="row g-0">
+
+                <div class="col-md-6 border-end">
+                    <div class="bg-light p-2 fw-bold text-center border-bottom text-primary">الأصول (Assets)</div>
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            @foreach (var item in Model.Assets)
+                            {
+                                <tr>
+                                    <td class="ps-3">@item.AccountName <small class="text-muted">(@item.AccountCode)</small></td>
+                                    <td class="text-end pe-3 fw-bold">@item.Amount.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-primary">
+                                <td class="ps-3 fw-bold">إجمالي الأصول</td>
+                                <td class="text-end pe-3 fw-bold">@Model.TotalAssets.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="bg-light p-2 fw-bold text-center border-bottom text-danger">الخصوم (Liabilities)</div>
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            @foreach (var item in Model.Liabilities)
+                            {
+                                <tr>
+                                    <td class="ps-3">@item.AccountName <small class="text-muted">(@item.AccountCode)</small></td>
+                                    <td class="text-end pe-3 fw-bold">@item.Amount.ToString("N2")</td>
+                                </tr>
+                            }
+                            <tr class="bg-secondary bg-opacity-10">
+                                <td class="ps-3 fw-bold">إجمالي الخصوم</td>
+                                <td class="text-end pe-3 fw-bold">@Model.TotalLiabilities.ToString("N2")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="bg-light p-2 fw-bold text-center border-top border-bottom text-success mt-2">حقوق الملكية (Equity)</div>
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            @foreach (var item in Model.Equity)
+                            {
+                                <tr>
+                                    <td class="ps-3">@item.AccountName <small class="text-muted">(@item.AccountCode)</small></td>
+                                    <td class="text-end pe-3 fw-bold">@item.Amount.ToString("N2")</td>
+                                </tr>
+                            }
+
+                            <tr class="@(Model.NetIncome >= 0 ? "text-success" : "text-danger")">
+                                <td class="ps-3 fw-bold">
+                                    @(Model.NetIncome >= 0 ? "صافي الفائض (أرباح مدورة)" : "صافي العجز المتراكم")
+                                </td>
+                                <td class="text-end pe-3 fw-bold">@Model.NetIncome.ToString("N2")</td>
+                            </tr>
+
+                            <tr class="bg-secondary bg-opacity-10">
+                                <td class="ps-3 fw-bold">إجمالي حقوق الملكية</td>
+                                <td class="text-end pe-3 fw-bold">@( (Model.TotalEquity + Model.NetIncome).ToString("N2") )</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-danger">
+                                <td class="ps-3 fw-bold">إجمالي الخصوم وحقوق الملكية</td>
+                                <td class="text-end pe-3 fw-bold">@Model.TotalLiabilitiesAndEquity.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer text-center py-3">
+            @if (Model.IsBalanced)
+            {
+                <div class="text-success fw-bold fs-5">
+                    <i class="bi bi-check-circle-fill"></i> الميزانية متوازنة تماماً
+                </div>
+            }
+            else
+            {
+                <div class="text-danger fw-bold fs-5">
+                    <i class="bi bi-exclamation-octagon-fill"></i> الميزانية غير متوازنة! (الفرق: @(Model.TotalAssets - Model.TotalLiabilitiesAndEquity))
+                </div>
+            }
+        </div>
+    </div>
+</div>

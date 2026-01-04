@@ -1,0 +1,280 @@
+﻿@model BarManegment.ViewModels.LawyerFamilyViewModel
+@{
+    ViewBag.Title = "السجل العائلي والصحي";
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    @* --- رسائل التنبيه --- *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i> السجل العائلي والصحي</h5>
+            <a href="@Url.Action("Index", "Dashboard", new { area = "Members" })" class="btn btn-sm btn-light bg-opacity-25 text-white border-0">
+                <i class="bi bi-arrow-right"></i> عودة للرئيسية
+            </a>
+        </div>
+        <div class="card-body p-4">
+            @using (Html.BeginForm("EditFamilyRecord", "Profile", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.LawyerId)
+
+                @* ================================================================= *@
+                @* 1. البيانات الاجتماعية *@
+                @* ================================================================= *@
+                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-person-lines-fill me-2"></i> 1. البيانات الاجتماعية</h5>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">الحالة الاجتماعية</label>
+                        @Html.DropDownListFor(m => m.PersonalData.MaritalStatus, new SelectList(new[] { "أعزب", "متزوج", "مطلق", "أرمل" }), "اختر...", new { @class = "form-select", id = "maritalStatus" })
+                        @Html.ValidationMessageFor(m => m.PersonalData.MaritalStatus, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">محافظة النزوح (مكان السكن الحالي)</label>
+                        @Html.DropDownListFor(m => m.PersonalData.DisplacementGovernorate, new SelectList(new[] { "شمال غزة", "غزة", "الوسطى", "خانيونس", "رفح", "خارج القطاع" }), "اختر المحافظة...", new { @class = "form-select" })
+                    </div>
+                </div>
+
+                @* --- قسم الزوجات (ديناميكي) --- *@
+                <div id="wivesSection" style="display:none;" class="mb-4 p-3 rounded bg-light border">
+                    <h6 class="fw-bold text-dark"><i class="bi bi-gender-female me-2"></i> بيانات الزوجة / الزوجات</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered bg-white" id="wivesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الاسم الرباعي</th>
+                                    <th>رقم الهوية</th>
+                                    <th>نوع العمل</th>
+                                    <th>مكان العمل</th>
+                                    <th style="width: 50px;">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.SpousesList.Count; i++)
+                                {
+                                    <tr>
+                                        <td>@Html.TextBoxFor(m => m.SpousesList[i].FullName, new { @class = "form-control", placeholder = "الاسم كاملاً" })</td>
+                                        <td>@Html.TextBoxFor(m => m.SpousesList[i].NationalId, new { @class = "form-control" })</td>
+                                        <td>@Html.DropDownListFor(m => m.SpousesList[i].OccupationType, new SelectList(new[] { "ربة منزل", "موظفة", "عمل خاص", "أخرى" }, Model.SpousesList[i].OccupationType), new { @class = "form-select" })</td>
+                                        <td>@Html.TextBoxFor(m => m.SpousesList[i].WorkPlace, new { @class = "form-control" })</td>
+                                        <td><button type="button" class="btn btn-danger btn-sm remove-row"><i class="bi bi-trash"></i></button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSpouseRow()">
+                        <i class="bi bi-plus-lg"></i> إضافة زوجة
+                    </button>
+                </div>
+
+                @* --- قسم الأبناء (ديناميكي) --- *@
+                <div class="mb-4 p-3 rounded bg-light border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-people me-2"></i> بيانات الأبناء (إن وجد)</h6>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="addChildRow()">
+                            <i class="bi bi-plus-lg"></i> إضافة ابن/ابنة
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered bg-white" id="childrenTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الاسم الرباعي</th>
+                                    <th>رقم الهوية</th>
+                                    <th>تاريخ الميلاد</th>
+                                    <th>الجنس</th>
+                                    <th style="width: 50px;">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.ChildrenList.Count; i++)
+                                {
+                                    <tr>
+                                        <td>@Html.TextBoxFor(m => m.ChildrenList[i].FullName, new { @class = "form-control", placeholder = "الاسم" })</td>
+                                        <td>@Html.TextBoxFor(m => m.ChildrenList[i].NationalId, new { @class = "form-control" })</td>
+                                        <td>@Html.TextBoxFor(m => m.ChildrenList[i].BirthDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })</td>
+                                        <td>@Html.DropDownListFor(m => m.ChildrenList[i].Gender, new SelectList(new[] { "ذكر", "أنثى" }, Model.ChildrenList[i].Gender), new { @class = "form-select" })</td>
+                                        <td><button type="button" class="btn btn-danger btn-sm remove-row"><i class="bi bi-trash"></i></button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @* ================================================================= *@
+                @* 2. الحالة الصحية *@
+                @* ================================================================= *@
+                <h5 class="text-danger border-bottom pb-2 mt-5 mb-3"><i class="bi bi-heart-pulse-fill me-2"></i> 2. الحالة الصحية</h5>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">الحالة الصحية العامة</label>
+                        @Html.DropDownListFor(m => m.HealthRecord.GeneralHealthStatus, new SelectList(new[] { "سليم", "مصاب", "مريض مزمن" }), "اختر...", new { @class = "form-select", id = "healthStatus" })
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check mt-4">
+                            @Html.CheckBoxFor(m => m.HealthRecord.HasHealthInsurance, new { @class = "form-check-input", id = "hasInsurance" })
+                            <label class="form-check-label" for="hasInsurance">هل تمتلك تأمين صحي؟</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4" id="insuranceDetails" style="display:none;">
+                        <label class="form-label fw-bold">رقم التأمين الصحي</label>
+                        @Html.TextBoxFor(m => m.HealthRecord.HealthInsuranceNumber, new { @class = "form-control" })
+                    </div>
+                </div>
+
+                @* تفاصيل المرض والأدوية *@
+                <div id="healthDetailsSection" style="display:none;" class="mb-4 p-3 bg-danger bg-opacity-10 rounded border border-danger">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">قائمة الأدوية التي تتناولها (إن وجدت):</label>
+                            @Html.TextAreaFor(m => m.MedicationsText, new { @class = "form-control", rows = 2, placeholder = "اكتب أسماء الأدوية مفصولة بفواصل..." })
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">إرفاق تقرير طبي حديث (PDF/صور):</label>
+                            <input type="file" name="MedicalReportFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                            <div class="form-text">يفضل إرفاق تقرير يوضح الحالة والإصابة إن وجدت.</div>
+                        </div>
+                    </div>
+                </div>
+
+                @* ================================================================= *@
+                @* 3. الملف الأمني (الاعتقال) *@
+                @* ================================================================= *@
+                <h5 class="text-dark border-bottom pb-2 mt-5 mb-3"><i class="bi bi-shield-lock-fill me-2"></i> 3. ملف الاعتقال</h5>
+
+                <div class="form-check mb-3">
+                    @Html.CheckBoxFor(m => m.HealthRecord.WasDetained, new { @class = "form-check-input", id = "wasDetained" })
+                    <label class="form-check-label fw-bold" for="wasDetained">هل تعرضت للاعتقال سابقاً؟</label>
+                </div>
+
+                <div id="detentionDetails" style="display:none;" class="row g-3 p-3 bg-secondary bg-opacity-10 rounded border mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">تاريخ الاعتقال</label>
+                        @Html.TextBoxFor(m => m.HealthRecord.DetentionStartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">تاريخ الإفراج</label>
+                        @Html.TextBoxFor(m => m.HealthRecord.DetentionEndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">مكان الاعتقال / السجن</label>
+                        @Html.TextBoxFor(m => m.HealthRecord.DetentionPlace, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">إرفاق إفادة بالاعتقال (صليب أحمر/محامي)</label>
+                        <input type="file" name="DetentionProofFile" class="form-control" accept=".pdf,.jpg,.png" />
+                        @if (!string.IsNullOrEmpty(Model.HealthRecord.DetentionAffidavitPath))
+                        {
+                            <div class="mt-1">
+                                <a href="@Url.Content(Model.HealthRecord.DetentionAffidavitPath)" target="_blank" class="badge bg-success text-decoration-none">
+                                    <i class="bi bi-file-earmark-check"></i> تم إرفاق ملف سابقاً
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="d-grid mt-5">
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                        <i class="bi bi-save me-2"></i> حفظ وتحديث البيانات
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // 1. إظهار/إخفاء قسم الزوجات
+            function toggleWives() {
+                var status = $('#maritalStatus').val();
+                if (status && status !== 'أعزب') {
+                    $('#wivesSection').slideDown();
+                } else {
+                    $('#wivesSection').slideUp();
+                }
+            }
+            $('#maritalStatus').change(toggleWives);
+            toggleWives(); // تشغيل عند التحميل
+
+            // 2. إظهار/إخفاء التفاصيل الصحية
+            function toggleHealth() {
+                var status = $('#healthStatus').val();
+                if (status === 'مصاب' || status === 'مريض مزمن') {
+                    $('#healthDetailsSection').slideDown();
+                } else {
+                    $('#healthDetailsSection').slideUp();
+                }
+            }
+            $('#healthStatus').change(toggleHealth);
+            toggleHealth();
+
+            // 3. إظهار/إخفاء التأمين
+            $('#hasInsurance').change(function () {
+                $('#insuranceDetails').toggle(this.checked);
+            });
+            if ($('#hasInsurance').is(':checked')) $('#insuranceDetails').show();
+
+            // 4. إظهار/إخفاء الاعتقال
+            $('#wasDetained').change(function () {
+                $('#detentionDetails').toggle(this.checked);
+            });
+            if ($('#wasDetained').is(':checked')) $('#detentionDetails').show();
+
+            // --- حذف الصفوف ---
+            $(document).on('click', '.remove-row', function () {
+                $(this).closest('tr').remove();
+                // (اختياري: يمكن إضافة كود هنا لإعادة ترتيب الـ Index إذا لزم الأمر، لكن الـ Binder قد يقبل الفجوات في بعض الحالات)
+            });
+        });
+
+        // --- دوال إضافة الصفوف الديناميكية ---
+
+        function addSpouseRow() {
+            var index = $('#wivesTable tbody tr').length;
+            var html = `<tr>
+                <td><input name="SpousesList[${index}].FullName" class="form-control" type="text" placeholder="الاسم" /></td>
+                <td><input name="SpousesList[${index}].NationalId" class="form-control" type="text" /></td>
+                <td>
+                    <select name="SpousesList[${index}].OccupationType" class="form-select">
+                        <option>ربة منزل</option><option>موظفة</option><option>عمل خاص</option><option>أخرى</option>
+                    </select>
+                </td>
+                <td><input name="SpousesList[${index}].WorkPlace" class="form-control" type="text" /></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-row"><i class="bi bi-trash"></i></button></td>
+            </tr>`;
+            $('#wivesTable tbody').append(html);
+        }
+
+        function addChildRow() {
+            var index = $('#childrenTable tbody tr').length;
+            var html = `<tr>
+                <td><input name="ChildrenList[${index}].FullName" class="form-control" type="text" placeholder="الاسم" /></td>
+                <td><input name="ChildrenList[${index}].NationalId" class="form-control" type="text" /></td>
+                <td><input name="ChildrenList[${index}].BirthDate" class="form-control" type="date" /></td>
+                <td>
+                    <select name="ChildrenList[${index}].Gender" class="form-select">
+                        <option>ذكر</option><option>أنثى</option>
+                    </select>
+                </td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-row"><i class="bi bi-trash"></i></button></td>
+            </tr>`;
+            $('#childrenTable tbody').append(html);
+        }
+    </script>
+}

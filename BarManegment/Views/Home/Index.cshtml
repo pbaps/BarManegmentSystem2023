@@ -1,0 +1,306 @@
+﻿@{
+    ViewBag.Title = "البوابة الرئيسية - نقابة المحامين";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --overlay-color: rgba(15, 23, 42, 0.85); /* كحلي غامق شفاف */
+            --hover-overlay: rgba(30, 58, 138, 0.9); /* أزرق مؤسساتي */
+            --gold-accent: #c5a059;
+            --text-white: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #111;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- الهيدر العائم --- */
+        .top-header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            pointer-events: none;
+        }
+
+        .brand-area {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .brand-area .logo-img {
+            margin-left: 15px; /* مسافة للشعار */
+        }
+
+        .logo-img { height: 70px; width: auto; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        .brand-text h1 { color: white; font-size: 1.6rem; font-weight: 800; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .brand-text p { color: var(--gold-accent); margin: 0; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; }
+
+        /* --- الحاوية الرئيسية للأعمدة --- */
+        .columns-container {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* --- تصميم العمود الواحد --- */
+        .column-card {
+            flex: 1;
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow: hidden;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+
+            /* إعدادات الخلفية مفصلة لتجنب تحذيرات VS */
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+
+        /* --- الصور المعبرة الجديدة --- */
+
+        /* 1. صورة مكتبة قانونية (للخريجين) */
+        .col-grads {
+            background-image: url('https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1000&auto=format&fit=crop');
+        }
+
+        /* 2. صورة أعمدة محكمة فخمة (للمحامين) */
+        .col-members {
+            background-image: url('https://images.unsplash.com/photo-1567473030492-533b30c5494c?q=80&w=1000&auto=format&fit=crop');
+        }
+
+        /* 3. صورة مكتب إداري حديث (للإدارة) */
+        .col-admin {
+            background-image: url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1000&auto=format&fit=crop');
+        }
+
+        /* طبقة التعتيم */
+        .column-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--overlay-color);
+            transition: all 0.4s ease;
+            z-index: 1;
+        }
+
+        /* المحتوى داخل العمود */
+        .column-content {
+            position: relative; z-index: 2;
+            text-align: center;
+            color: white;
+            padding: 2rem;
+            transform: translateY(0);
+            transition: all 0.4s ease;
+        }
+
+        .col-icon { font-size: 3.5rem; margin-bottom: 1rem; color: var(--gold-accent); transition: transform 0.4s; }
+        .col-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        .col-desc { font-size: 0.95rem; opacity: 0.7; max-width: 300px; margin: 0 auto; line-height: 1.6; }
+
+        .action-btn {
+            margin-top: 2rem;
+            padding: 10px 30px;
+            border: 2px solid var(--gold-accent);
+            color: var(--gold-accent);
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 50px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            display: inline-block;
+        }
+
+        .action-btn:hover { background: var(--gold-accent); color: #000; }
+
+        /* --- تأثيرات التحويم (Hover) --- */
+        .column-card:hover { flex: 1.5; }
+        .column-card:hover .column-overlay { background: var(--hover-overlay); }
+        .column-card:hover .col-icon { transform: scale(1.1); color: white; }
+        .column-card:hover .col-title { color: var(--gold-accent); }
+        .column-card:hover .action-btn { opacity: 1; transform: translateY(0); }
+
+        /* --- شريط المطور (Footer) --- */
+        .dev-footer {
+            background-color: #000;
+            border-top: 3px solid var(--gold-accent);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+            z-index: 200;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dev-footer span, .dev-footer a { margin: 0 10px; }
+
+        .dev-name { font-weight: 700; color: #fff; }
+        .dev-contact {
+            color: var(--gold-accent);
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            padding: 5px 15px;
+            background: rgba(197, 160, 89, 0.1);
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+
+        .dev-contact i { margin-left: 8px; }
+
+        .dev-contact:hover { background: var(--gold-accent); color: #000; }
+
+        /* --- تجاوب الموبايل --- */
+        @@media (max-width: 768px) {
+            body { height: auto; overflow-y: auto; }
+            .columns-container { flex-direction: column; height: auto; }
+            .column-card { height: 350px; flex: none; border-left: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .top-header { position: relative; background: #0f172a; }
+            .action-btn { opacity: 1; transform: translateY(0); margin-top: 1rem; }
+        }
+
+        /* --- قائمة منبثقة --- */
+        .links-modal {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .links-content { background: #1e293b; padding: 2rem; border-radius: 15px; border: 1px solid var(--gold-accent); width: 90%; max-width: 400px; text-align: center; }
+        .modal-btn { display: block; width: 100%; padding: 12px; margin: 10px 0; background: white; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        .modal-btn:hover { background: var(--gold-accent); }
+    </style>
+</head>
+<body>
+
+    <header class="top-header">
+        <div class="brand-area">
+            <img src="~/Content/Images/logo.png" onerror="this.src='https://placehold.co/100x100/FFFFFF/000000?text=LOGO'" alt="Logo" class="logo-img">
+            <div class="brand-text">
+                <h1>نقابة المحامين الفلسطينيين</h1>
+                <p>PALESTINIAN BAR ASSOCIATION</p>
+            </div>
+        </div>
+        <div class="d-none d-md-block text-white opacity-50 small">
+            <i class="bi bi-calendar-check me-1"></i> @DateTime.Now.ToString("dd MMMM yyyy")
+        </div>
+    </header>
+
+    <div class="columns-container">
+
+        <div class="column-card col-grads" onclick="openModal('graduates')">
+            <div class="column-overlay"></div>
+            <div class="column-content">
+                <i class="bi bi-mortarboard-fill col-icon"></i>
+                <h2 class="col-title">الخريجين والتدريب</h2>
+                <p class="col-desc">للمتقدمين الجدد، الامتحانات، وطلبات الالتحاق بالنقابة.</p>
+                <span class="action-btn">دخول القسم <i class="bi bi-arrow-left"></i></span>
+            </div>
+        </div>
+
+        <div class="column-card col-members" onclick="window.location.href='@Url.Action("Login", "Account", new { area = "Members" })'">
+            <div class="column-overlay"></div>
+            <div class="column-content">
+                <i class="bi bi-briefcase-fill col-icon"></i>
+                <h2 class="col-title">بوابة المحامين</h2>
+                <p class="col-desc">الدخول الموحد للمحامين المزاولين والمتدربين لإدارة ملفاتهم.</p>
+                <span class="action-btn">تسجيل الدخول <i class="bi bi-box-arrow-in-left"></i></span>
+            </div>
+        </div>
+
+        <div class="column-card col-admin" onclick="window.location.href='@Url.Action("Login", "AdminLogin", new { area = "Admin" })'">
+            <div class="column-overlay"></div>
+            <div class="column-content">
+                <i class="bi bi-building-fill-lock col-icon"></i>
+                <h2 class="col-title">الموظفين والإدارة</h2>
+                <p class="col-desc">لوحة التحكم الخاصة بموظفي النقابة والطاقم الإداري.</p>
+                <span class="action-btn">لوحة التحكم <i class="bi bi-shield-lock"></i></span>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="dev-footer">
+        <span class="dev-name">
+            <i class="bi bi-code-slash text-warning me-1"></i>
+            تصميم وبرمجة المهندس محمد العمري
+        </span>
+        <span class="text-secondary">|</span>
+        <a href="https://wa.me/972598910120" target="_blank" class="dev-contact">
+            <i class="bi bi-whatsapp"></i> 00972598910120
+        </a>
+    </footer>
+
+    <div id="grad-modal" class="links-modal" onclick="closeModal(event)">
+        <div class="links-content animate__animated animate__fadeInUp">
+            <h3 class="text-white mb-4 border-bottom pb-2 border-secondary">خدمات الخريجين</h3>
+
+            <a href="@Url.Content("~/ExamRegistration/Create")" class="modal-btn">
+                <i class="bi bi-pencil-fill me-2"></i> تسجيل امتحان جديد
+            </a>
+            <a href="@Url.Content("~/ExamPortal/ExamLogin/Index")" class="modal-btn">
+                <i class="bi bi-laptop me-2"></i> الدخول لقاعة الامتحان
+            </a>
+            <a href="@Url.Action("Register", "Account", new { area = "Members" })" class="modal-btn bg-success text-white border-0">
+                <i class="bi bi-person-plus-fill me-2"></i> إنشاء حساب متدرب جديد
+            </a>
+
+            <button onclick="document.getElementById('grad-modal').style.display='none'" class="btn btn-outline-light mt-3 rounded-pill px-4">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        function openModal(type) {
+            if (type === 'graduates') {
+                document.getElementById('grad-modal').style.display = 'flex';
+            }
+        }
+
+        function closeModal(e) {
+            if (e.target.classList.contains('links-modal')) {
+                e.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

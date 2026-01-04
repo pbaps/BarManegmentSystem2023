@@ -1,0 +1,138 @@
+﻿@model BarManegment.Models.DiscussionCommittee
+@{
+    ViewBag.Title = "نماذج تقييم الأبحاث";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintDocumentsLayout.cshtml";
+}
+
+<style>
+    .sheet-page {
+        page-break-after: always;
+        padding: 20px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+
+    .sheet-header {
+        text-align: center;
+        border-bottom: 2px double #333;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+    }
+
+    .info-box {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    .criteria-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+        .criteria-table th, .criteria-table td {
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .criteria-table th {
+            background-color: #eee;
+            text-align: center;
+        }
+
+    .criteria-label {
+        text-align: right !important;
+        font-weight: bold;
+    }
+
+    @@media print {
+        .sheet-page {
+            border: none;
+            margin: 0;
+            height: 100vh;
+        }
+    }
+</style>
+@if (Model.Researches == null || !Model.Researches.Any())
+{
+    <div class="alert alert-warning text-center m-5">
+        <h4>لا يوجد أبحاث معينة لهذه اللجنة لطباعة نماذج التقييم لها.</h4>
+        <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-primary mt-3">العودة للتفاصيل وتعيين أبحاث</a>
+    </div>
+}
+else
+{
+    <!-- تكرار النموذج لكل بحث في اللجنة -->
+    foreach (var research in Model.Researches)
+    {
+        <div class="sheet-page">
+            <div class="sheet-header">
+                <h2>نقابة المحامين الفلسطينيين</h2>
+                <h3>محضر مناقشة وتقييم بحث قانوني</h3>
+            </div>
+
+            <div class="info-box">
+                <div class="row">
+                    <div class="col-12 mb-2"><strong>عنوان البحث:</strong> @research.Title</div>
+                    <div class="col-6"><strong>إعداد المتدرب:</strong> @research.Trainee.ArabicName</div>
+                    <div class="col-6"><strong>رقم العضوية:</strong> @research.Trainee.TraineeSerialNo</div>
+                    <div class="col-6 mt-2"><strong>تاريخ المناقشة:</strong> @DateTime.Now.ToString("yyyy/MM/dd")</div>
+                    <div class="col-6 mt-2"><strong>اللجنة:</strong> @Model.CommitteeName</div>
+                </div>
+            </div>
+
+            <h5 style="font-weight: bold; margin-bottom: 10px;">بنود التقييم:</h5>
+            <table class="criteria-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">المعيار</th>
+                        <th style="width: 15%;">الدرجة العظمى</th>
+                        <th style="width: 15%;">الدرجة المستحقة</th>
+                        <th style="width: 20%;">ملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td class="criteria-label">أهمية الموضوع وحداثته</td><td>10</td><td></td><td></td></tr>
+                    <tr><td class="criteria-label">خطة البحث ومنهجيته</td><td>15</td><td></td><td></td></tr>
+                    <tr><td class="criteria-label">الأمانة العلمية والتوثيق</td><td>15</td><td></td><td></td></tr>
+                    <tr><td class="criteria-label">عمق التحليل القانوني وشخصية الباحث</td><td>30</td><td></td><td></td></tr>
+                    <tr><td class="criteria-label">سلامة اللغة والصياغة</td><td>15</td><td></td><td></td></tr>
+                    <tr><td class="criteria-label">المناقشة والدفاع عن البحث</td><td>15</td><td></td><td></td></tr>
+                    <tr style="background-color: #f0f0f0;">
+                        <td class="criteria-label">المجموع الكلي</td>
+                        <td><strong>100</strong></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 20px; border: 1px solid #000; padding: 10px; height: 100px;">
+                <strong>القرار والتوصيات:</strong>
+                <br>
+                (   ) قبول البحث كما هو. &nbsp;&nbsp;&nbsp; (   ) قبول مع تعديلات طفيفة. &nbsp;&nbsp;&nbsp; (   ) تعديلات جوهرية وإعادة عرض. &nbsp;&nbsp;&nbsp; (   ) رفض البحث.
+            </div>
+
+            <div style="margin-top: 50px; display: flex; justify-content: space-around; text-align: center;">
+                @foreach (var member in Model.Members)
+                {
+                    <div>
+                        <strong>@member.Role</strong>
+                        <br>@member.MemberLawyer.ArabicName
+                        <br><br>__________________
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="no-print text-center mt-4">
+        <button onclick="window.print()" class="btn btn-primary btn-lg"><i class="bi bi-printer"></i> طباعة كافة النماذج</button>
+        <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary btn-lg">عودة</a>
+    </div>
+}

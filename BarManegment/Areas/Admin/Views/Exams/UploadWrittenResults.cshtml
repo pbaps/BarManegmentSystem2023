@@ -1,0 +1,49 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.UploadExamResultsViewModel
+@{
+    ViewBag.Title = "رفع نتائج امتحان تحريري";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+            <p class="text-muted mb-0">للامتحان: @Model.ExamTitle</p>
+        </div>
+        <div class="card-body">
+
+            <div class="alert alert-info">
+                <strong>تعليمات:</strong>
+                <ul class="mb-0">
+                    <li>الرجاء تحميل النموذج الرسمي لضمان تطابق الأعمدة.</li>
+                    <li>النظام سيقوم بتحديث نتائج المتدربين المسجلين في هذا الامتحان فقط بناءً على الرقم الوطني.</li>
+                    <li>الأعمدة المطلوبة: (الرقم الوطني)، (النتيجة: 'ناجح' أو 'راسب').</li>
+                </ul>
+            </div>
+
+            <p>
+                @Html.ActionLink("1. تحميل نموذج الإدخال (Excel)", "DownloadWrittenExamTemplate", null, new { @class = "btn btn-success" })
+            </p>
+
+            <hr />
+
+            @using (Html.BeginForm("UploadWrittenResults", "Exams", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ExamId)
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.UploadedFile, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(m => m.UploadedFile, new { type = "file", @class = "form-control", accept = ".xlsx" })
+                    @Html.ValidationMessageFor(m => m.UploadedFile, "", new { @class = "text-danger" })
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-upload me-1"></i> 2. رفع الملف وتحديث النتائج
+                </button>
+                @Html.ActionLink("إلغاء", "Details", new { id = Model.ExamId }, new { @class = "btn btn-secondary" })
+            }
+        </div>
+    </div>
+</div>

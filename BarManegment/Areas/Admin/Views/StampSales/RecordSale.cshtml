@@ -1,0 +1,327 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.RecordStampSaleViewModel
+@{
+    ViewBag.Title = "تسجيل بيع طابع لمحامي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .form-control-plaintext.is-invalid {
+            color: #dc3545;
+        }
+
+        .form-control-plaintext.is-valid {
+            color: #198754;
+        }
+
+        .stamps-available-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h5 class="m-0 font-weight-bold text-primary">تسجيل عملية بيع طابع لمحامي</h5>
+    </div>
+    <div class="card-body">
+        @using (Html.BeginForm("RecordSale", "StampSales", new { area = "Admin" }, FormMethod.Post, new { id = "saleForm" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.LawyerId, new { id = "lawyerIdInput" })
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>1. بيانات الطابع والمتعهد</h5>
+                    <hr />
+
+                    @if ((bool)ViewBag.IsContractorUser)
+                    {
+                        @Html.HiddenFor(m => m.ContractorId)
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">المتعهد البائع:</label>
+                            <p class="form-control-plaintext fs-5 text-success">
+                                <strong>@Session["FullName"]</strong>
+                                <small>(تسجيل لحسابك الخاص)</small>
+                            </p>
+                        </div>
+
+                        <h6 class="mt-4">الطوابع المتاحة لديك (@Model.AvailableStamps.Count)</h6>
+                        <div class="stamps-available-list mb-3">
+                            <table class="table table-sm table-striped table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>الرقم التسلسلي</th>
+                                        <th>القيمة</th>
+                                        <th>(اختر)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!Model.AvailableStamps.Any())
+                                    {
+                                        <tr><td colspan="3" class="text-center text-muted">لا توجد طوابع متاحة بحوزتك.</td></tr>
+                                    }
+                                    @foreach (var stamp in Model.AvailableStamps)
+                                    {
+                                        <tr>
+                                            <td>@stamp.SerialNumber</td>
+                                            <td>@stamp.Value.ToString("N0") ₪</td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-primary select-stamp-btn" data-serial="@stamp.SerialNumber">
+                                                    اختر
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">المتعهد البائع</label>
+                            @Html.DropDownListFor(m => m.ContractorId, (SelectList)ViewBag.ContractorsList, "-- اختر المتعهد --", new { @class = "form-select", required = "required", id = "contractorSelect" })
+                            @Html.ValidationMessageFor(m => m.ContractorId, "", new { @class = "text-danger" })
+                        </div>
+                        <div id="contractorStampsContainer" style="display: none;">
+                            <h6 class="mt-4">الطوابع المتاحة للمتعهد المختار</h6>
+                            <div class="stamps-available-list mb-3">
+                                <table class="table table-sm table-striped table-hover" id="contractorStampsTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>الرقم التسلسلي</th>
+                                            <th>القيمة</th>
+                                            <th>(اختر)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">من الرقم التسلسلي</label>
+                                @Html.TextBoxFor(m => m.StartSerial, new { @class = "form-control", id = "StartSerial", placeholder = "أدخل الرقم الأول", required = "required" })
+                                @Html.ValidationMessageFor(m => m.StartSerial, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">إلى الرقم التسلسلي</label>
+                                @Html.TextBoxFor(m => m.EndSerial, new { @class = "form-control", id = "EndSerial", placeholder = "(اتركه فارغاً لبيع طابع واحد)" })
+                                @Html.ValidationMessageFor(m => m.EndSerial, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h5>2. بيانات المحامي المشتري</h5>
+                    <hr />
+                    <label class="form-label fw-bold">رقم العضوية أو اسم المحامي</label>
+                    <div class="input-group mb-3">
+                        @Html.TextBoxFor(m => m.LawyerSearchKey, new { @class = "form-control", id = "lawyerSearchInput", placeholder = "مثال: 1234 أو 'محمد'", required = "required" })
+                        <button class="btn btn-outline-info" type="button" id="checkLawyerBtn">
+                            <i class="bi bi-search"></i> فحص الحالة
+                        </button>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.LawyerSearchKey, "", new { @class = "text-danger" })
+                    <div id="lawyerCheckResult" class="mb-3"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم المحامي (المُثبت)</label>
+                        @Html.TextBoxFor(m => m.LawyerName, new { @class = "form-control-plaintext", id = "lawyerNameInput", @readonly = "readonly", required = "required" })
+                        @Html.ValidationMessageFor(m => m.LawyerName, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">اسم البنك</label>
+                        @Html.TextBoxFor(m => m.LawyerBankName, new { @class = "form-control", id = "lawyerBankNameInput", placeholder = "سيتم جلبه آلياً إن وجد" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">فرع البنك</label>
+                        @Html.TextBoxFor(m => m.LawyerBankBranch, new { @class = "form-control", id = "lawyerBankBranchInput", placeholder = "سيتم جلبه آلياً إن وجد" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الحساب</label>
+                        @Html.TextBoxFor(m => m.LawyerAccountNumber, new { @class = "form-control", id = "lawyerAccountNumberInput", placeholder = "سيتم جلبه آلياً إن وجد" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الآيبان (IBAN)</label>
+                        @Html.TextBoxFor(m => m.LawyerIban, new { @class = "form-control", id = "lawyerIbanInput", placeholder = "سيتم جلبه آلياً إن وجد" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer text-end mt-4">
+                <button type="submit" class="btn btn-success btn-lg" id="submitButton" disabled>
+                    <i class="bi bi-check-lg"></i> حفظ عملية البيع
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // (تعريف المتغيرات)
+            var submitBtn = $('#submitButton');
+            var nameInput = $('#lawyerNameInput');
+            var idInput = $('#lawyerIdInput');
+            var resultDiv = $('#lawyerCheckResult');
+            // (إضافة حقول البنك)
+            var ibanInput = $('#lawyerIbanInput');
+            var bankNameInput = $('#lawyerBankNameInput');
+            var bankBranchInput = $('#lawyerBankBranchInput');
+            var accountNumberInput = $('#lawyerAccountNumberInput');
+
+            function allowSubmit(allow) {
+                if (allow) {
+                    submitBtn.prop('disabled', false);
+                    nameInput.addClass('is-valid').removeClass('is-invalid');
+                    resultDiv.html('<div class="alert alert-success small p-2"><b>المحامي مزاول.</b> جاهز للبيع.</div>');
+                } else {
+                    submitBtn.prop('disabled', true);
+                    nameInput.addClass('is-invalid').removeClass('is-valid');
+                }
+            }
+
+            // (دالة لمسح بيانات المحامي)
+            function clearLawyerData() {
+                 allowSubmit(false);
+                 resultDiv.html('');
+                 nameInput.val('');
+                 idInput.val('');
+                 ibanInput.val('');
+                 bankNameInput.val('');
+                 bankBranchInput.val('');
+                 accountNumberInput.val('');
+            }
+
+            // (فحص المحامي)
+            $('#checkLawyerBtn').on('click', function () {
+                var searchKey = $('#lawyerSearchInput').val();
+
+                if (!searchKey) {
+                    resultDiv.html('<div class="alert alert-warning small p-2">الرجاء إدخال رقم العضوية أو الاسم أولاً.</div>');
+                    return;
+                }
+
+                resultDiv.html('<div class="alert alert-light small p-2">جاري الفحص...</div>');
+                clearLawyerData(); // (مسح البيانات القديمة)
+
+                $.ajax({
+                    url: '@Url.Action("CheckLawyer", "StampSales", new { area = "Admin" })',
+                    type: 'POST',
+                    data: {
+                        searchKey: searchKey,
+                        '__RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            nameInput.val(response.lawyerName);
+                            idInput.val(response.lawyerId);
+
+                            // --- ⬇️ ⬇️ (التعديل 1: ملء كل بيانات البنك) ⬇️ ⬇️ ---
+                            ibanInput.val(response.lawyerIban || '');
+                            bankNameInput.val(response.lawyerBankName || '');
+                            bankBranchInput.val(response.lawyerBankBranch || '');
+                            accountNumberInput.val(response.lawyerAccountNumber || '');
+                            // --- ⬆️ ⬆️ (نهاية التعديل) ⬆️ ⬆️ ---
+
+                            if (response.isPracticing) {
+                                allowSubmit(true);
+                            } else {
+                                resultDiv.html('<div class="alert alert-danger small p-2"><b>غير مزاول!</b> لا يمكن البيع لهذا المحامي.</div>');
+                            }
+                        } else {
+                            resultDiv.html('<div class="alert alert-warning small p-2">' + response.message + '</div>');
+                        }
+                    },
+                    error: function () {
+                        resultDiv.html('<div class="alert alert-danger small p-2">حدث خطأ أثناء الاتصال.</div>');
+                    }
+                });
+            });
+
+            // (إعادة حظر الزر إذا قام المستخدم بتغيير الرقم يدوياً)
+            $('#lawyerSearchInput').on('input', function() {
+                 clearLawyerData();
+            });
+
+            // --- ⬇️ ⬇️ (التعديل 2: النقر على الطابع) ⬇️ ⬇️ ---
+            // (هام: نستخدم 'body' لضمان عمل الأزرار التي يتم تحميلها بـ AJAX)
+            $('body').on('click', '.select-stamp-btn', function() {
+                var serial = $(this).data('serial');
+                $('#StartSerial').val(serial); // (تعبئة حقل "من")
+                $('#EndSerial').val(''); // (تفريغ حقل "إلى")
+
+                // (اختياري: توجيه المستخدم للأعلى)
+                $('html, body').animate({
+                    scrollTop: $("#saleForm").offset().top
+                }, 200);
+            });
+            // --- ⬆️ ⬆️ (نهاية التعديل) ⬆️ ⬆️ ---
+
+            // --- ⬇️ ⬇️ (جديد: جلب طوابع المتعهد عند الاختيار) ⬇️ ⬇️ ---
+            $('#contractorSelect').on('change', function() {
+                var contractorId = $(this).val();
+                var container = $('#contractorStampsContainer');
+                var tableBody = $('#contractorStampsTable tbody');
+
+                if (!contractorId) {
+                    container.hide();
+                    return;
+                }
+
+                tableBody.html('<tr><td colspan="3" class="text-center">جاري تحميل الطوابع...</td></tr>');
+                container.show();
+
+                $.ajax({
+                    url: '@Url.Action("GetContractorStamps", "StampSales", new { area = "Admin" })', // (سنحتاج لإضافة هذا الـ Action)
+                    type: 'GET',
+                    data: { contractorId: contractorId },
+                    success: function (stamps) {
+                        tableBody.empty();
+                        if (stamps.length === 0) {
+                            tableBody.html('<tr><td colspan="3" class="text-center text-muted">لا توجد طوابع متاحة بحوزة هذا المتعهد.</td></tr>');
+                        } else {
+                            $.each(stamps, function(i, stamp) {
+                                var row = '<tr>' +
+                                    '<td>' + stamp.SerialNumber + '</td>' +
+                                    '<td>' + stamp.Value.toFixed(0) + ' ₪</td>' +
+                                    '<td><button type="button" class="btn btn-sm btn-outline-primary select-stamp-btn" data-serial="' + stamp.SerialNumber + '">اختر</button></td>' +
+                                    '</tr>';
+                                tableBody.append(row);
+                            });
+                        }
+                    },
+                    error: function () {
+                         tableBody.html('<tr><td colspan="3" class="text-center text-danger">حدث خطأ أثناء جلب الطوابع.</td></tr>');
+                    }
+                });
+            });
+            // --- ⬆️ ⬆️ (نهاية الإضافة) ⬆️ ⬆️ ---
+
+        });
+    </script>
+}

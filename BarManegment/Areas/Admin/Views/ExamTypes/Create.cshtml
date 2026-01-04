@@ -1,0 +1,27 @@
+﻿@model BarManegment.Models.ExamType
+@{
+    ViewBag.Title = "إضافة نوع امتحان جديد";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header"><h4>@ViewBag.Title</h4></div>
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                <div class="form-floating mb-3">
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
+                    @Html.LabelFor(model => model.Name)
+                    @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <input type="submit" value="إنشاء" class="btn btn-primary" />
+                @Html.ActionLink("العودة", "Index", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>
+

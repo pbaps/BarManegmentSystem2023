@@ -1,0 +1,212 @@
+﻿@model BarManegment.Models.Employee
+
+@{
+    ViewBag.Title = "إضافة موظف جديد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-person-lines-fill me-2"></i> ملف موظف شامل</h5>
+        </div>
+        <div class="card-body p-4">
+            @using (Html.BeginForm("Create", "Employees", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+
+                if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">@Html.ValidationSummary()</div>
+                }
+
+                <ul class="nav nav-tabs mb-4" id="employeeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab">1. البيانات الشخصية</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab">2. الرواتب والعلاوات</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">3. البنك والتأمين</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="employeeTabsContent">
+
+                    <div class="tab-pane fade show active" id="personal" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3">
+                                <img src="https://placehold.co/150x150/e9ecef/6c757d?text=Photo" class="img-thumbnail rounded-circle mb-2" style="width: 150px; height: 150px; object-fit: cover;" id="previewImg" />
+                                <div class="mt-2">
+                                    <label class="btn btn-sm btn-outline-primary w-100">
+                                        <i class="bi bi-upload"></i> اختر صورة
+                                        <input type="file" name="ImageFile" style="display: none;" onchange="document.getElementById('previewImg').src = window.URL.createObjectURL(this.files[0])" />
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">الاسم الرباعي <span class="text-danger">*</span></label>
+                                        @Html.EditorFor(model => model.FullName, new { htmlAttributes = new { @class = "form-control" } })
+                                        @Html.ValidationMessageFor(model => model.FullName, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">رقم الهوية</label>
+                                        @Html.EditorFor(model => model.NationalId, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">رقم الهاتف</label>
+                                        @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">القسم <span class="text-danger">*</span></label>
+                                        @Html.DropDownList("DepartmentId", null, "اختر...", new { @class = "form-select select2" })
+                                        @Html.ValidationMessageFor(model => model.DepartmentId, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">المسمى الوظيفي <span class="text-danger">*</span></label>
+                                        @Html.DropDownList("JobTitleId", null, "اختر...", new { @class = "form-select select2" })
+                                        @Html.ValidationMessageFor(model => model.JobTitleId, "", new { @class = "text-danger small" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">تاريخ التعيين</label>
+                                        @Html.EditorFor(model => model.HireDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted">ربط بمستخدم (للدخول)</label>
+                                        @Html.DropDownList("UserId", null, "بدون مستخدم", new { @class = "form-select select2" })
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <div class="form-check form-switch w-100">
+                                            @Html.EditorFor(model => model.IsActive, new { htmlAttributes = new { @class = "form-check-input", @checked = "checked" } })
+                                            <label class="form-check-label fw-bold" for="IsActive">الموظف على رأس عمله (Active)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="financial" role="tabpanel">
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold fs-5 text-primary">الراتب الأساسي</label>
+                                @Html.EditorFor(model => model.BasicSalary, new { htmlAttributes = new { @class = "form-control form-control-lg border-primary" } })
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">بدل مواصلات</label>
+                                @Html.EditorFor(model => model.TransportAllowance, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+
+                        <div class="row bg-success bg-opacity-10 p-3 rounded mx-0 border border-success mb-4">
+                            <div class="col-12 mb-2">
+                                <h6 class="fw-bold text-success mb-0"><i class="bi bi-graph-up-arrow me-2"></i> إعدادات الزيادة السنوية</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">نسبة الزيادة السنوية (%)</label>
+                                @Html.EditorFor(model => model.AnnualIncrementPercent, new { htmlAttributes = new { @class = "form-control" } })
+                                <small class="text-muted">تضاف سنوياً بناءً على سنوات الخدمة.</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">الحد الأقصى للسنوات</label>
+                                @Html.EditorFor(model => model.MaxIncrementYears, new { htmlAttributes = new { @class = "form-control" } })
+                                <small class="text-muted">تتوقف الزيادة بعد مرور هذا العدد من السنوات.</small>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold mt-4 border-bottom pb-2">العلاوات الثابتة</h6>
+                        <div class="row bg-light p-3 rounded mx-0 border">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">علاوة مدير</label>
+                                @Html.EditorFor(model => model.ManagerAllowance, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">علاوة رئيس قسم</label>
+                                @Html.EditorFor(model => model.HeadOfDeptAllowance, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">علاوة ماجستير</label>
+                                @Html.EditorFor(model => model.MasterDegreeAllowance, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">علاوة دكتوراه</label>
+                                @Html.EditorFor(model => model.PhdDegreeAllowance, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">علاوة تخصص (مهنة)</label>
+                                @Html.EditorFor(model => model.SpecializationAllowance, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="bank" role="tabpanel">
+                        <h6 class="fw-bold mb-3 border-bottom pb-2 text-success">بيانات الحساب البنكي</h6>
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">اسم البنك</label>
+                                @Html.EditorFor(model => model.BankName, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: بنك فلسطين" } })
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">الفرع</label>
+                                @Html.EditorFor(model => model.BankBranch, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">رقم الحساب</label>
+                                @Html.EditorFor(model => model.BankAccountNumber, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">IBAN</label>
+                                @Html.EditorFor(model => model.IBAN, new { htmlAttributes = new { @class = "form-control", placeholder = "PS..." } })
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold mb-3 border-bottom pb-2 text-danger">التأمين والمعاشات والخصومات</h6>
+                        <div class="row bg-warning bg-opacity-10 p-3 rounded mx-0 border border-warning">
+                            <div class="col-12 mb-2">
+                                <div class="alert alert-warning py-1 small">
+                                    <i class="bi bi-exclamation-circle-fill me-1"></i> يتم حساب التأمين من: (الراتب الأساسي + علاوة المؤهل + علاوة التخصص).
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">نسبة استقطاع الموظف (%)</label>
+                                @Html.EditorFor(model => model.EmployeePensionPercent, new { htmlAttributes = new { @class = "form-control" } })
+                                <small class="text-muted">حصة الموظف (افتراضي 7%)</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">نسبة مساهمة النقابة (%)</label>
+                                @Html.EditorFor(model => model.EmployerPensionPercent, new { htmlAttributes = new { @class = "form-control" } })
+                                <small class="text-muted">تضاف من النقابة (افتراضي 9%)</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">خصومات شهرية أخرى</label>
+                                @Html.EditorFor(model => model.OtherMonthlyDeduction, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="d-flex justify-content-between pt-4 mt-3 border-top">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary px-4">إلغاء</a>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold"><i class="bi bi-check-circle-fill me-2"></i> حفظ واعتماد الملف</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({ theme: "bootstrap-5", width: '100%', dir: "rtl" });
+        });
+    </script>
+}

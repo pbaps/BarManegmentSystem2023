@@ -1,0 +1,89 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.LawyerFinancialDataViewModel
+
+@{
+    ViewBag.Title = "تعديل البيانات المالية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid p-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-credit-card-2-front me-2"></i> البيانات المالية للمحامي</h5>
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-light bg-opacity-25 text-white border-0">عودة للبحث</a>
+                </div>
+                <div class="card-body p-4">
+
+                    @* --- بيانات المحامي (للقراءة فقط) --- *@
+                    <div class="bg-light p-3 rounded border mb-4 d-flex align-items-center">
+                        <div class="me-3">
+                            <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 50px; height: 50px;">
+                                <i class="bi bi-person-fill fs-3 text-secondary"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1">@Model.LawyerName</h5>
+                            <div class="text-muted small">
+                                <span class="me-3"><i class="bi bi-card-heading me-1"></i> هوية: @Model.NationalId</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.LawyerId)
+
+                        <div class="row g-4">
+                            @* === القسم البنكي === *@
+                            <div class="col-12">
+                                <h6 class="text-primary fw-bold border-bottom pb-2 mb-3"><i class="bi bi-bank2 me-2"></i> بيانات الحساب البنكي</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">اسم البنك</label>
+                                        @Html.EditorFor(model => model.BankName, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: بنك فلسطين" } })
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">الفرع</label>
+                                        @Html.EditorFor(model => model.BankBranch, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">رقم الحساب</label>
+                                        @Html.EditorFor(model => model.AccountNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">الآيبان (IBAN)</label>
+                                        @Html.EditorFor(model => model.Iban, new { htmlAttributes = new { @class = "form-control text-uppercase", placeholder = "PS..." } })
+                                        @Html.ValidationMessageFor(model => model.Iban, "", new { @class = "text-danger small" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* === قسم المحفظة === *@
+                            <div class="col-12">
+                                <h6 class="text-primary fw-bold border-bottom pb-2 mb-3 mt-2"><i class="bi bi-wallet2 me-2"></i> المحفظة الإلكترونية</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">مزود الخدمة</label>
+                                        @Html.DropDownListFor(model => model.WalletProviderId, ViewBag.WalletProviderId as SelectList, "اختر المزود...", new { @class = "form-select" })
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">رقم المحفظة (رقم الجوال)</label>
+                                        @Html.EditorFor(model => model.WalletNumber, new { htmlAttributes = new { @class = "form-control", placeholder = "059xxxxxxx" } })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold">
+                                <i class="bi bi-save-fill me-2"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,100 @@
+﻿@model BarManegment.Models.Account
+
+@{
+    ViewBag.Title = "تعديل حساب مالي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark d-flex align-items-center">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-pencil-square me-2"></i> تعديل بيانات الحساب: @Model.Name
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+                        @Html.HiddenFor(model => model.Level)
+                        @Html.HiddenFor(model => model.IsTransactional)
+                        @Html.HiddenFor(model => model.OpeningBalance)
+
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                @Html.ValidationSummary(false, "حدث خطأ، يرجى مراجعة البيانات:", new { @class = "mb-0" })
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        }
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">رقم الحساب (Code) <span class="text-danger">*</span></label>
+                                @Html.EditorFor(model => model.Code, new { htmlAttributes = new { @class = "form-control font-monospace", dir = "ltr" } })
+                                @Html.ValidationMessageFor(model => model.Code, "", new { @class = "text-danger small" })
+                                <div class="form-text text-muted">تغيير الكود قد يؤثر على ترتيب الحساب في الدليل.</div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">اسم الحساب <span class="text-danger">*</span></label>
+                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">يتبع للحساب الرئيسي</label>
+                            @Html.DropDownList("ParentId", null, "--- حساب رئيسي (جذر) ---", htmlAttributes: new { @class = "form-select select2" })
+                            @Html.ValidationMessageFor(model => model.ParentId, "", new { @class = "text-danger small" })
+                            <div class="form-text">نقل الحساب لأب جديد سيغير مستواه الشجري تلقائياً.</div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">نوع الحساب (طبيعة الحساب)</label>
+                                @Html.EnumDropDownListFor(model => model.AccountType, new { @class = "form-select bg-light", @disabled = "disabled" })
+                                @Html.HiddenFor(model => model.AccountType)
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">طبيعة الحركة</label>
+                                <input type="text" class="form-control bg-light" value="@(Model.IsTransactional ? "حساب فرعي (يقبل قيود)" : "حساب تجميعي (رئيسي)")" readonly />
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="@Url.Action("AccountsIndex")" class="btn btn-secondary px-4">إلغاء وعودة</a>
+                            <button type="submit" class="btn btn-warning px-5 fw-bold shadow-sm">
+                                <i class="bi bi-check-circle-fill me-1"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تفعيل مكتبة Select2 للقوائم المنسدلة (للبحث السريع)
+            $('.select2').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                dir: "rtl",
+                language: {
+                    noResults: function () {
+                        return "لا توجد نتائج";
+                    }
+                }
+            });
+        });
+    </script>
+}

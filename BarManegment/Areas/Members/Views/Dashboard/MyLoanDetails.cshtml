@@ -1,0 +1,83 @@
+﻿@model BarManegment.Areas.Members.ViewModels.MemberLoanViewModel
+@{
+    ViewBag.Title = "تفاصيل القرض رقم " + Model.LoanId;
+    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+}
+
+<h2>@ViewBag.Title</h2>
+<p>
+    @Html.ActionLink("العودة إلى سجل القروض", "MyLoans", null, new { @class = "btn btn-outline-secondary" })
+</p>
+<hr />
+
+@* --- 1. تفاصيل القرض --- *@
+<div class="card shadow-sm mb-4">
+    <div class="card-header"><h5 class="mb-0">تفاصيل القرض</h5></div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.LoanTypeName)</dt>
+            <dd class="col-sm-9">@Model.LoanTypeName</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Amount)</dt>
+            <dd class="col-sm-9">@Model.Amount.ToString("N2")</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.InstallmentCount)</dt>
+            <dd class="col-sm-9">@Model.InstallmentCount</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Status)</dt>
+            <dd class="col-sm-9">@Model.Status</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.IsDisbursed)</dt>
+            <dd class="col-sm-9">@(Model.IsDisbursed ? "نعم" : "لا")</dd>
+        </dl>
+    </div>
+</div>
+
+@* --- 2. جدول الأقساط --- *@
+<div class="card shadow-sm mb-4">
+    <div class="card-header"><h5 class="mb-0">جدول الأقساط</h5></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.Installments.First().InstallmentNumber)</th>
+                        <th>@Html.DisplayNameFor(model => model.Installments.First().DueDate)</th>
+                        <th>@Html.DisplayNameFor(model => model.Installments.First().Amount)</th>
+                        <th>@Html.DisplayNameFor(model => model.Installments.First().Status)</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Installments)
+                    {
+                        string statusClass = "";
+                        if (item.Status == "مدفوع") { statusClass = "table-success"; }
+                        if (item.Status == "متأخر") { statusClass = "table-danger"; }
+
+                        <tr class="@statusClass">
+                            <td>@item.InstallmentNumber</td>
+                            <td>@item.DueDate.ToString("yyyy-MM-dd")</td>
+                            <td>@item.Amount.ToString("N2")</td>
+                            <td>@item.Status</td>
+                            <td>
+                                @if (item.Status == "مستحق" && item.PaymentVoucherId.HasValue)
+                                {
+                                    @* (رابط لطباعة القسيمة من المتحكم الإداري) *@
+                                    <a href="@Url.Action("PrintVoucher", "PaymentVouchers", new { area = "Admin", id = item.PaymentVoucherId })" target="_blank" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-printer"></i> طباعة القسيمة (للدفع)
+                                    </a>
+                                }
+                                else if (item.Status == "مدفوع" && item.ReceiptId.HasValue)
+                                {
+                                    @* (رابط لطباعة الإيصال من متحكم الداشبورد) *@
+                                    @Html.ActionLink("طباعة الإيصال", "PrintReceipt", new { id = item.ReceiptId }, new { @class = "btn btn-sm btn-outline-success", target = "_blank" })
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

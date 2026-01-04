@@ -1,0 +1,49 @@
+﻿@model int?
+
+@{
+    // إذا كانت القيمة فارغة نعتبرها صفر
+    int count = Model ?? 0;
+}
+
+<li class="nav-item align-self-center mx-2">
+    <a class="nav-link position-relative" href="@Url.Action("Index", "CoordinatorInbox", new { area = "Admin" })"  title="طلبات واردة بانتظار التنسيق">
+        <i class="bi bi-bell-fill fs-5 text-secondary"></i>
+
+        @if (count > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6em;">
+                @count
+                <span class="visually-hidden">طلبات جديدة</span>
+            </span>
+
+            <style>
+                .bi-bell-fill {
+                    animation: swing 2s ease infinite;
+                    display: inline-block;
+                }
+
+                @@keyframes swing {
+                    0%, 100% {
+                        transform: rotate(0deg);
+                    }
+
+                    20% {
+                        transform: rotate(15deg);
+                    }
+
+                    40% {
+                        transform: rotate(-10deg);
+                    }
+
+                    60% {
+                        transform: rotate(5deg);
+                    }
+
+                    80% {
+                        transform: rotate(-5deg);
+                    }
+                }
+            </style>
+        }
+    </a>
+</li>

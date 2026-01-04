@@ -1,0 +1,46 @@
+﻿@{
+    ViewBag.Title = "استيراد بيانات المتدربين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+        </div>
+        <div class="card-body">
+            <p>
+                لتجنب الأخطاء، يرجى تحميل النموذج الرسمي، وتعبئته بالبيانات، ثم إعادة رفعه.
+            </p>
+            <div class="alert alert-info">
+                <strong>ملاحظات هامة:</strong>
+                <ul class="mb-0">
+                    <li>الأعمدة (الاسم، الرقم الوطني، تاريخ الميلاد، الجنس، الجوال، الإيميل، المحافظة) إلزامية.</li>
+                    <li>الأعمدة (الحالة، المشرف، تاريخ البدء، رقم المتدرب) اختيارية وسيتم ملؤها بالقيم الافتراضية إذا تركت فارغة.</li>
+                    <li>عند إدخال "الحالة"، يرجى الاختيار من القائمة المنسدلة في الإكسل.</li>
+                    <li>عند إدخال "المشرف"، يرجى استخدام <strong>الرقم الوطني</strong> للمحامي المشرف.</li>
+                </ul>
+            </div>
+
+            <p>
+                @Html.ActionLink("1. تحميل نموذج الاستيراد الشامل (Excel)", "DownloadImportTemplate", null, new { @class = "btn btn-success" })
+            </p>
+
+            <hr />
+
+            @using (Html.BeginForm("Import", "TraineeQuery", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label for="excelFile" class="form-label fw-bold">2. اختر الملف (.xlsx)</label>
+                    <input type="file" name="excelFile" id="excelFile" class="form-control" accept=".xlsx" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-upload me-1"></i> بدء الاستيراد
+                </button>
+            }
+        </div>
+    </div>
+</div>

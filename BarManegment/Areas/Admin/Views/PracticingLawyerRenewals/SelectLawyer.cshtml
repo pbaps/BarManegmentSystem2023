@@ -1,0 +1,79 @@
+﻿@model IEnumerable<BarManegment.Models.GraduateApplication>
+@{
+    ViewBag.Title = "إدارة المحامين (تجديدات / ملفات)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>@ViewBag.Title</h4>
+            <p class="text-muted">ابحث عن المحامي لعرض ملفه، أو إصدار قسيمة تجديد له.</p>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("SelectLawyer", "PracticingLawyerRenewals", FormMethod.Get, new { @class = "d-flex gap-2 mb-3" }))
+            {
+                <input class="form-control" type="search" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="ابحث بالاسم، الرقم الوطني، أو رقم العضوية...">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                if (!string.IsNullOrWhiteSpace((string)ViewBag.SearchTerm))
+                {
+                    <a href="@Url.Action("SelectLawyer")" class="btn btn-outline-secondary">إلغاء</a>
+                }
+            }
+
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم العضوية</th>
+                            <th>الاسم</th>
+                            <th>الرقم الوطني</th>
+                            <th>الحالة الحالية</th>
+                            <th class="text-end">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><strong>@item.MembershipId</strong></td>
+                                <td>@item.ArabicName</td>
+                                <td>@item.NationalIdNumber</td>
+                                <td>
+                                    @if (item.ApplicationStatus.Name == "محامي مزاول")
+                                    {<span class="badge bg-success">@item.ApplicationStatus.Name</span> }
+                                else
+                                { <span class="badge bg-warning text-dark">@item.ApplicationStatus.Name</span>}
+                                </td>
+                                <td class="text-end">
+                                    @* زر التجديد يظهر للمحامين الذين يحتاجون تجديداً *@
+                                    @if (item.ApplicationStatus.Name == "محامي غير مزاول" ||
+                                         item.ApplicationStatus.Name == "بانتظار تجديد المزاولة" ||
+                                         item.ApplicationStatus.Name == "محامي مزاول")
+                                    {
+                                        <a href="@Url.Action("Create", "PracticingLawyerRenewals", new { id = item.Id })" class="btn btn-primary btn-sm" title="إنشاء تجديد مزاولة">
+                                            <i class="bi bi-plus-circle me-1"></i> تجديد
+                                        </a>
+                                    }
+
+                                    @* زر التفاصيل يوجه للملف الشامل (المتحكم الموحد) *@
+                                    <a href="@Url.Action("Details", "LawyerProfile", new { id = item.Id })" class="btn btn-info btn-sm" title="عرض الملف الشامل للمحامي">
+                                        <i class="bi bi-person-vcard"></i> تفاصيل
+                                    </a>
+
+                                    <a href="@Url.Action("Edit", "LawyerProfile", new { id = item.Id })" class="btn btn-warning btn-sm" title="تعديل البيانات الأساسية">
+                                        <i class="bi bi-pencil"></i> تعديل
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any() && !string.IsNullOrWhiteSpace((string)ViewBag.SearchTerm))
+                        {
+                            <tr><td colspan="5" class="text-center text-muted">لا توجد نتائج مطابقة للبحث.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
