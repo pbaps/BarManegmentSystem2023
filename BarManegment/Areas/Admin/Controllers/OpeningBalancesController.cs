@@ -1,5 +1,4 @@
-﻿using BarManegment.Areas.Admin.ViewModels;
-using BarManegment.Helpers;
+﻿using BarManegment.Helpers;
 using BarManegment.Models;
 using BarManegment.Services;
 using System;
@@ -10,134 +9,248 @@ using System.Web.Mvc;
 
 namespace BarManegment.Areas.Admin.Controllers
 {
-    [CustomAuthorize(Permission = "FinancialReports")] // تأكد من الصلاحية
+    [CustomAuthorize(Permission = "FinancialSetup")] // أو FinancialReports حسب رغبتك
     public class OpeningBalancesController : BaseController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
-        // 1. عرض الأرصدة الافتتاحية
+        // 1. التوجيه الافتراضي
         public ActionResult Index()
         {
-            // نفترض أن الأرصدة الافتتاحية هي قيد من نوع "OpeningBalance"
-            var openingEntries = db.JournalEntries
-                // .Include(j => j.FiscalYear)
-                .Where(j => j.SourceModule == "OpeningBalance")
-                .OrderByDescending(j => j.EntryDate)
-                .ToList();
-
-            return View(openingEntries);
+            return RedirectToAction("Create");
         }
 
-        // 2. إنشاء قيد افتتاحي
+        // 2. عرض شاشة الإدخال (GET)
+        // ✅ هذه الدالة ترسل قائمة الحسابات كما يطلب الـ View
+        // 2. عرض شاشة الإدخال (GET)
         public ActionResult Create()
         {
             var currentYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
             if (currentYear == null)
             {
-                TempData["ErrorMessage"] = "لا توجد سنة مالية مفتوحة.";
-                return RedirectToAction("Index");
+                TempData["ErrorMessage"] = "لا توجد سنة المالية مفتوحة.";
+                return RedirectToAction("Index", "Home");
             }
 
             ViewBag.FiscalYearName = currentYear.Name;
 
-            // جلب الحسابات لاستخدامها في الـ View
-            var accounts = db.Accounts.Where(a => a.IsTransactional).Select(a => new { a.Id, Name = a.Code + " - " + a.Name }).ToList();
-            ViewBag.Accounts = new SelectList(accounts, "Id", "Name");
+            // فحص هل تم إدخال القيد مسبقاً؟
+            bool isSavedBefore = db.JournalEntries.Any(j => j.FiscalYearId == currentYear.Id && j.SourceModule == "OpeningBalance");
+            ViewBag.IsSaved = isSavedBefore; // سنستخدم هذا في الواجهة
 
-            return View(new JournalEntryViewModel { EntryDate = currentYear.StartDate });
+            // جلب الحسابات
+            var accounts = db.Accounts
+                             .Where(a => a.IsTransactional)
+                             .OrderBy(a => a.Code)
+                             .AsNoTracking()
+                             .ToList();
+
+            // إذا كان محفوظاً مسبقاً، سنعرض القيم المحفوظة بدلاً من الأصفار (اختياري، للتحسين)
+            if (isSavedBefore)
+            {
+                // كود إضافي لجلب القيم الحالية وعرضها (يمكنك تجاهله إذا أردت فقط زر الحذف)
+            }
+
+            return View(accounts);
         }
 
+        // 3. حفظ الأرصدة وترحيلها (POST)
+        // ✅ تستقبل البيانات من الفورم وتعالجها
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(JournalEntryViewModel model)
+        public ActionResult SaveOpeningBalances(DateTime entryDate, List<OpeningBalanceItemDto> items)
         {
-            if (ModelState.IsValid)
+            if (items == null || !items.Any())
             {
-                // التحقق من التوازن
-                decimal totalDebit = model.Lines.Sum(l => l.Debit);
-                decimal totalCredit = model.Lines.Sum(l => l.Credit);
+                TempData["ErrorMessage"] = "لا توجد بيانات للحفظ.";
+                return RedirectToAction("Create");
+            }
 
-                if (totalDebit != totalCredit)
+            // 1. تصفية الحسابات الصفرية (التي لم يتم إدخال قيم لها)
+            var activeItems = items.Where(x => x.Debit > 0 || x.Credit > 0).ToList();
+
+            if (!activeItems.Any())
+            {
+                TempData["ErrorMessage"] = "يجب إدخال قيم لأحد الحسابات على الأقل.";
+                return RedirectToAction("Create");
+            }
+
+            // 2. التحقق من التوازن
+            decimal totalDebit = activeItems.Sum(l => l.Debit);
+            decimal totalCredit = activeItems.Sum(l => l.Credit);
+
+            if (totalDebit != totalCredit)
+            {
+                TempData["ErrorMessage"] = $"القيد غير متوازن! الفرق: {Math.Abs(totalDebit - totalCredit)}";
+                return RedirectToAction("Create");
+            }
+
+            using (var transaction = db.Database.BeginTransaction())
+            {
+                try
                 {
-                    ModelState.AddModelError("", $"القيد غير متوازن. الفرق: {Math.Abs(totalDebit - totalCredit)}");
+                    var currentYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
+                    if (currentYear == null) throw new Exception("السنة المالية مغلقة.");
 
-                    var accounts = db.Accounts.Where(a => a.IsTransactional).Select(a => new { a.Id, Name = a.Code + " - " + a.Name }).ToList();
-                    ViewBag.Accounts = new SelectList(accounts, "Id", "Name");
-                    return View(model);
-                }
+                    // 3. حذف القيد الافتتاحي القديم إن وجد (لتجنب التكرار عند التعديل)
+                    var oldEntry = db.JournalEntries
+                        .Include(j => j.JournalEntryDetails)
+                        .FirstOrDefault(j => j.FiscalYearId == currentYear.Id && j.SourceModule == "OpeningBalance");
 
-                var currentYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
-                if (currentYear == null) return HttpNotFound("السنة المالية مغلقة");
-
-                // توليد رقم القيد (نصي)
-                string nextEntryNo = "1";
-                if (db.JournalEntries.Any(j => j.FiscalYearId == currentYear.Id))
-                {
-                    var lastEntry = db.JournalEntries
-                                      .Where(j => j.FiscalYearId == currentYear.Id)
-                                      .OrderByDescending(j => j.Id)
-                                      .FirstOrDefault();
-
-                    if (lastEntry != null && int.TryParse(lastEntry.EntryNumber, out int lastNo))
-                        nextEntryNo = (lastNo + 1).ToString();
-                    else
-                        nextEntryNo = (db.JournalEntries.Count(j => j.FiscalYearId == currentYear.Id) + 1).ToString();
-                }
-
-                var entry = new JournalEntry
-                {
-                    FiscalYearId = currentYear.Id,
-                    EntryNumber = nextEntryNo, // أصبح string
-                    EntryDate = model.EntryDate,
-                    Description = "قيد افتتاحي - " + model.Description,
-                    SourceModule = "OpeningBalance",
-                    IsPosted = true, // ترحيل مباشر للأرصدة الافتتاحية
-                    PostedDate = DateTime.Now,
-                    PostedByUserId = (int?)Session["UserId"] ?? 1,
-                    TotalDebit = totalDebit,
-                    TotalCredit = totalCredit,
-                    JournalEntryDetails = new List<JournalEntryDetail>() // الاسم الجديد
-                };
-
-                foreach (var line in model.Lines)
-                {
-                    if (line.Debit == 0 && line.Credit == 0) continue;
-
-                    entry.JournalEntryDetails.Add(new JournalEntryDetail
+                    if (oldEntry != null)
                     {
-                        AccountId = line.AccountId,
-                        Debit = line.Debit,
-                        Credit = line.Credit,
-                        Description = line.LineDescription ?? "رصيد افتتاحي"
-                    });
+                        // تصفير الأرصدة في جدول الحسابات أولاً
+                        foreach (var detail in oldEntry.JournalEntryDetails)
+                        {
+                            var acc = db.Accounts.Find(detail.AccountId);
+                            if (acc != null) acc.OpeningBalance = 0;
+                        }
+
+                        db.JournalEntryDetails.RemoveRange(oldEntry.JournalEntryDetails);
+                        db.JournalEntries.Remove(oldEntry);
+                        db.SaveChanges();
+                    }
+
+                    // 4. إنشاء القيد الجديد
+                    var entry = new JournalEntry
+                    {
+                        FiscalYearId = currentYear.Id,
+                        EntryNumber = "OP-" + currentYear.Name, // رقم مميز
+                        EntryDate = entryDate,
+                        Description = "القيد الافتتاحي للسنة المالية " + currentYear.Name,
+                        SourceModule = "OpeningBalance",
+                        IsPosted = true,
+                        PostedDate = DateTime.Now,
+                        PostedByUserId = (int?)Session["UserId"] ?? 1,
+                        TotalDebit = totalDebit,
+                        TotalCredit = totalCredit,
+                        JournalEntryDetails = new List<JournalEntryDetail>()
+                    };
+
+                    // 5. إضافة التفاصيل وتحديث رصيد الحساب
+                    foreach (var item in activeItems)
+                    {
+                        // أ. إضافة سطر القيد
+                        entry.JournalEntryDetails.Add(new JournalEntryDetail
+                        {
+                            AccountId = item.AccountId,
+                            Debit = item.Debit,
+                            Credit = item.Credit,
+                            Description = "رصيد افتتاحي"
+                        });
+
+                        // ب. تحديث حقل "OpeningBalance" في جدول Accounts
+                        var account = db.Accounts.Find(item.AccountId);
+                        if (account != null)
+                        {
+                            // الرصيد الافتتاحي = المدين - الدائن (بشكل عام)
+                            account.OpeningBalance = item.Debit - item.Credit;
+                            db.Entry(account).State = EntityState.Modified;
+                        }
+                    }
+
+                    db.JournalEntries.Add(entry);
+                    db.SaveChanges();
+                    transaction.Commit();
+
+                    TempData["SuccessMessage"] = "تم حفظ وترحيل الأرصدة الافتتاحية بنجاح.";
+                    return RedirectToAction("Index", "Home");
                 }
-
-                db.JournalEntries.Add(entry);
-                db.SaveChanges();
-
-                AuditService.LogAction("Create Opening Balance", "OpeningBalances", $"Entry #{entry.EntryNumber}");
-                TempData["SuccessMessage"] = "تم حفظ الأرصدة الافتتاحية بنجاح.";
-                return RedirectToAction("Index");
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    TempData["ErrorMessage"] = "خطأ أثناء الحفظ: " + ex.Message;
+                    return RedirectToAction("Create");
+                }
             }
-
-            return View(model);
         }
-
-        // 3. الحذف (اختياري - بحذر)
+        // =========================================================
+        // حذف القيد الافتتاحي (بشروط صارمة جداً)
+        // =========================================================
         [HttpPost]
-        [CustomAuthorize(Permission = "CanDelete")]
-        public ActionResult Delete(int id)
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteOpeningBalance()
         {
-            var entry = db.JournalEntries.Include(j => j.JournalEntryDetails).FirstOrDefault(j => j.Id == id);
-            if (entry != null && entry.SourceModule == "OpeningBalance")
+            // 1. التحقق من الصلاحية (فقط المسؤول العام رقم 1)
+            // افترضنا أن UserTypeId = 1 هو المسؤول
+            int userTypeId = (int?)Session["UserTypeId"] ?? 0;
+            if (userTypeId != 1)
             {
-                // الحذف من الجدول الأصلي JournalEntryDetails
-                db.JournalEntryDetails.RemoveRange(entry.JournalEntryDetails);
-                db.JournalEntries.Remove(entry);
-                db.SaveChanges();
-                TempData["SuccessMessage"] = "تم حذف القيد الافتتاحي.";
+                TempData["ErrorMessage"] = "عذراً، عملية حذف القيد الافتتاحي مسموحة للمسؤول العام فقط.";
+                return RedirectToAction("Create");
             }
-            return RedirectToAction("Index");
+
+            using (var transaction = db.Database.BeginTransaction())
+            {
+                try
+                {
+                    // 2. جلب السنة المالية الحالية
+                    var currentYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
+                    if (currentYear == null) throw new Exception("السنة المالية مغلقة أو غير محددة.");
+
+                    // 3. جلب القيد الافتتاحي الموجود
+                    var openingEntry = db.JournalEntries
+                        .Include(j => j.JournalEntryDetails)
+                        .FirstOrDefault(j => j.FiscalYearId == currentYear.Id && j.SourceModule == "OpeningBalance");
+
+                    if (openingEntry == null) throw new Exception("لا يوجد قيد افتتاحي لحذفه.");
+
+                    // 4. (الشرط الأهم) التحقق من وجود بيانات أخرى
+                    // هل يوجد أي قيد آخر في النظام لهذه السنة غير القيد الافتتاحي؟
+                    bool hasOtherData = db.JournalEntries
+                        .Any(j => j.FiscalYearId == currentYear.Id && j.Id != openingEntry.Id);
+
+                    if (hasOtherData)
+                    {
+                        throw new Exception("تنبيه هام: لا يمكن حذف القيد الافتتاحي لأن هناك قيوداً مالية أو سندات تم إدخالها بالفعل في هذه السنة. يجب حذف جميع الحركات المالية أولاً.");
+                    }
+
+                    // 5. تصفير أرصدة الحسابات قبل الحذف
+                    foreach (var detail in openingEntry.JournalEntryDetails)
+                    {
+                        var account = db.Accounts.Find(detail.AccountId);
+                        if (account != null)
+                        {
+                            account.OpeningBalance = 0; // إعادة الرصيد لصفر
+                            db.Entry(account).State = EntityState.Modified;
+                        }
+                    }
+
+                    // 6. الحذف النهائي
+                    db.JournalEntryDetails.RemoveRange(openingEntry.JournalEntryDetails);
+                    db.JournalEntries.Remove(openingEntry);
+
+                    db.SaveChanges();
+                    transaction.Commit();
+
+                    // تسجيل في Audit Log
+                    AuditService.LogAction("Delete Opening Balance", "OpeningBalances", $"Deleted Entry #{openingEntry.EntryNumber}");
+
+                    TempData["SuccessMessage"] = "تم حذف القيد الافتتاحي وتصفير الأرصدة بنجاح. يمكنك الآن الإدخال من جديد.";
+                    return RedirectToAction("Create");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    TempData["ErrorMessage"] = ex.Message;
+                    return RedirectToAction("Create");
+                }
+            }
         }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) db.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
+    // =========================================================
+    // DTO لاستقبال البيانات من الجدول في الـ View
+    // =========================================================
+    public class OpeningBalanceItemDto
+    {
+        public int AccountId { get; set; }
+        public decimal Debit { get; set; }
+        public decimal Credit { get; set; }
     }
 }

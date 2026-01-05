@@ -8,17 +8,10 @@
 
     <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
     <link href="~/Content/font/bootstrap-icons.css" rel="stylesheet" />
-    
-
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-
     <link href="~/Content/select2.min.css" rel="stylesheet" />
     <link href="~/Content/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-
     <link href="~/Content/css/site.css" rel="stylesheet" />
-
-
-    
 
     <style>
         :root {
@@ -229,7 +222,6 @@
 
                 @* === الشؤون المالية === *@
                 @{
-                    // 1. تحديث شرط الظهور ليشمل LawyerFinancialData
                     bool canViewFinance = PermissionHelper.HasPermission("PaymentVouchers") ||
                                           PermissionHelper.HasPermission("Receipts") ||
                                           PermissionHelper.HasPermission("GeneralExpenses") ||
@@ -238,7 +230,7 @@
                                           PermissionHelper.HasPermission("FinancialSetup") ||
                                           PermissionHelper.HasPermission("CheckPortfolio") ||
                                           PermissionHelper.HasPermission("FinancialAid") ||
-                                          PermissionHelper.HasPermission("LawyerFinancialData"); // 👈 جديد
+                                          PermissionHelper.HasPermission("LawyerFinancialData");
                 }
                 @if (canViewFinance)
                 {
@@ -297,6 +289,7 @@
                             <li class="text-muted small px-3 mt-3 mb-1" style="font-size: 0.75rem; color: #64748b;">الإعدادات</li>
                             @if (PermissionHelper.HasPermission("FinancialSetup"))
                             {
+                                <li><a href="@Url.Action("Index", "FiscalYears", new { area = "Admin" })"><i class="bi bi-calendar-range"></i> السنوات المالية</a></li>
                                 <li><a href="@Url.Action("AccountsIndex", "FinancialSetup", new { area = "Admin" })"><i class="bi bi-diagram-2"></i> دليل الحسابات</a></li>
                                 <li><a href="@Url.Action("CostCentersIndex", "FinancialSetup", new { area = "Admin" })"><i class="bi bi-diagram-3"></i> مراكز التكلفة</a></li>
                                 <li><a href="@Url.Action("Index", "ExchangeRates", new { area = "Admin" })"><i class="bi bi-currency-exchange"></i> أسعار الصرف</a></li>
@@ -321,9 +314,6 @@
                                 <li><a href="@Url.Action("Index", "FinancialAid", new { area = "Admin" })"><i class="bi bi-heart-pulse-fill"></i> المساعدات المالية</a></li>
                             }
 
-                            <li class="text-muted small px-3 mt-3 mb-1" style="font-size: 0.75rem; color: #64748b;">الإدارة المالية</li>
-
-                            @* === 💡 الرابط الجديد: بيانات المحامين المالية === *@
                             @if (PermissionHelper.HasPermission("LawyerFinancialData"))
                             {
                                 <li>
@@ -332,18 +322,10 @@
                                     </a>
                                 </li>
                             }
-                            @* ================================================= *@
-
-                            @if (PermissionHelper.HasPermission("CheckPortfolio") || PermissionHelper.HasPermission("FinancialReports"))
-                            {
-                                <li><a href="@Url.Action("Index", "CheckPortfolio", new { area = "Admin" })"><i class="bi bi-wallet2"></i> حافظة الشيكات</a></li>
-                            }
                         </ul>
                     </li>
                     <li class="sidebar-divider"><hr /></li>
                 }
-
-
 
                 @* === المستودع والمشتريات === *@
                 @{
@@ -867,22 +849,19 @@
     <script src="~/Scripts/jquery.min.js"></script>
     <script src="~/Scripts/jquery-3.7.1.min.js"></script>
     <script src="~/Scripts/bootstrap.bundle.min.js"></script>
-
     <script src="~/Scripts/select2.min.js"></script>
-
     <script src="~/Scripts/qrious.min.js"></script>
-
     <script src="~/Scripts/chart.js"></script>
 
     <script type="text/javascript">
         $(document).ready(function () {
-            // تفعيل القائمة الجانبية
+            // Toggle Sidebar
             $('#sidebarCollapse').on('click', function () {
                 $('#sidebar').toggleClass('active');
                 $('#content').toggleClass('active');
             });
 
-            // تفعيل Select2
+            // Initialize Select2
             $('.select2').select2({
                 theme: "bootstrap-5",
                 width: '100%',
@@ -890,7 +869,6 @@
             });
         });
     </script>
- 
 
     @RenderSection("scripts", required: false)
 </body>

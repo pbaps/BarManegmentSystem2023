@@ -16,7 +16,7 @@ namespace BarManegment.Services
         }
 
         // ============================================================
-        // 1. دوال مساعدة (Helpers)
+        // 1. Helpers
         // ============================================================
         private decimal GetExchangeRate(string currencySymbol)
         {
@@ -76,7 +76,7 @@ namespace BarManegment.Services
         }
 
         // ============================================================
-        // 2. قيد سند قبض (Receipts)
+        // 2. Generate Entry For Receipt
         // ============================================================
         public bool GenerateEntryForReceipt(int receiptId, int userId)
         {
@@ -88,17 +88,30 @@ namespace BarManegment.Services
                     .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.BankAccount))
                     .FirstOrDefault(r => r.Id == receiptId);
 
-                if (receipt == null) return false;
+                if (receipt == null)
+                {
+                    AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Receipt with ID {receiptId} not found.");
+                    return false;
+                }
+
                 if (db.JournalEntries.Any(j => j.SourceModule == "Receipts" && j.SourceId == receiptId)) return true;
 
                 var fiscalYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
-                if (fiscalYear == null) return false;
+                if (fiscalYear == null)
+                {
+                    AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", "No open fiscal year found.");
+                    return false;
+                }
 
                 string debitAccountCode = (receipt.PaymentVoucher.PaymentMethod == "نقدي") ? "1101" : "1102";
                 var debitAccount = db.Accounts.FirstOrDefault(a => a.Code == debitAccountCode)
                                    ?? db.Accounts.FirstOrDefault(a => a.Code.StartsWith(debitAccountCode));
 
-                if (debitAccount == null) return false;
+                if (debitAccount == null)
+                {
+                    AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Debit account with code {debitAccountCode} not found.");
+                    return false;
+                }
 
                 var firstDetail = receipt.PaymentVoucher.VoucherDetails.FirstOrDefault();
                 string currencySymbol = firstDetail?.FeeType?.Currency?.Symbol ?? "₪";
@@ -122,11 +135,11 @@ namespace BarManegment.Services
                     JournalEntryDetails = new List<JournalEntryDetail>()
                 };
 
-                // المدين
+                // Debit
                 decimal totalAmountBase = Math.Round(receipt.PaymentVoucher.TotalAmount * exchangeRate, 2);
                 entry.JournalEntryDetails.Add(new JournalEntryDetail { AccountId = debitAccount.Id, Debit = totalAmountBase, Credit = 0, Description = "تحصيل سند قبض" });
 
-                // الدائن
+                // Credit
                 foreach (var detail in receipt.PaymentVoucher.VoucherDetails)
                 {
                     string code = "42";
@@ -141,11 +154,14 @@ namespace BarManegment.Services
 
                     var creditAcc = db.Accounts.FirstOrDefault(a => a.Code == code) ?? db.Accounts.FirstOrDefault(a => a.Code.StartsWith("4"));
 
-                    if (creditAcc != null)
+                    if (creditAcc == null)
                     {
-                        decimal lineBase = Math.Round(detail.Amount * exchangeRate, 2);
-                        entry.JournalEntryDetails.Add(new JournalEntryDetail { AccountId = creditAcc.Id, Debit = 0, Credit = lineBase, Description = detail.Description });
+                        AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Credit account with code {code} not found for detail {name}.");
+                        return false;
                     }
+
+                    decimal lineBase = Math.Round(detail.Amount * exchangeRate, 2);
+                    entry.JournalEntryDetails.Add(new JournalEntryDetail { AccountId = creditAcc.Id, Debit = 0, Credit = lineBase, Description = detail.Description });
                 }
 
                 BalanceEntry(entry);
@@ -153,11 +169,15 @@ namespace BarManegment.Services
                 db.SaveChanges();
                 return true;
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Exception: {ex.Message}");
+                return false;
+            }
         }
 
         // ============================================================
-        // 3. قيد سند صرف (GeneralExpenses)
+        // 3. Generate Entry For Expense
         // ============================================================
         public bool GenerateEntryForExpense(int expenseId, int userId)
         {
@@ -209,7 +229,7 @@ namespace BarManegment.Services
         }
 
         // ============================================================
-        // 4. قيد تسوية بيع طوابع (Stamp Sales)
+        // 4. Generate Entry For Stamp Sale
         // ============================================================
         public bool GenerateEntryForStampSale(List<StampSale> sales, int userId)
         {
@@ -262,7 +282,7 @@ namespace BarManegment.Services
         }
 
         // ============================================================
-        // 5. قيد صرف قرض (Loan Disbursement)
+        // 5. Generate Entry For Loan Disbursement
         // ============================================================
         public bool GenerateEntryForLoanDisbursement(int loanId, int userId)
         {
@@ -312,7 +332,7 @@ namespace BarManegment.Services
         }
 
         // ============================================================
-        // 6. تحصيل شيك (Collect Check) - ✅ حل المشكلة الأولى
+        // 6. Collect Check
         // ============================================================
         public bool CollectCheck(int checkId, int targetBankAccountId, DateTime collectionDate, int userId)
         {
@@ -324,7 +344,7 @@ namespace BarManegment.Services
                 var fiscalYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
                 if (fiscalYear == null) return false;
 
-                var checksAccount = db.Accounts.FirstOrDefault(a => a.Code == "1104"); // شيكات برسم التحصيل
+                var checksAccount = db.Accounts.FirstOrDefault(a => a.Code == "1104");
                 var bankAccount = db.Accounts.Find(targetBankAccountId);
                 if (checksAccount == null || bankAccount == null) return false;
 
@@ -365,7 +385,7 @@ namespace BarManegment.Services
         }
 
         // ============================================================
-        // 7. ارتجاع شيك (Bounce Check) - ✅ حل المشكلة الثانية
+        // 7. Bounce Check
         // ============================================================
         public bool BounceCheck(int checkId, string reason, int userId)
         {
@@ -416,8 +436,9 @@ namespace BarManegment.Services
             }
             catch { return false; }
         }
+
         // ============================================================
-        // 8. قيد صرف مساعدة مالية (Financial Aid Disbursement)
+        // 8. Generate Entry For Financial Aid - ✅ Corrected
         // ============================================================
         public bool GenerateEntryForFinancialAid(int aidId, int bankAccountId, int userId)
         {
@@ -426,21 +447,15 @@ namespace BarManegment.Services
                 var aid = db.LawyerFinancialAids.Include(a => a.Lawyer).Include(a => a.AidType).Include(a => a.Currency).FirstOrDefault(a => a.Id == aidId);
                 if (aid == null) return false;
 
-                // منع التكرار
                 if (db.JournalEntries.Any(j => j.SourceModule == "FinancialAid" && j.SourceId == aidId)) return true;
 
                 var fiscalYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
                 if (fiscalYear == null) return false;
 
-                // تحديد الحسابات
-                // 1. حساب البنك (الدائن)
-                var creditAccount = db.Accounts.Find(bankAccountId); // الحساب الذي تم اختياره في الصرف
-
-                // 2. حساب مصروف المساعدات (المدين) - نفترض الكود "5205" أو نبحث بالاسم
+                var creditAccount = db.Accounts.Find(bankAccountId);
                 var debitAccount = db.Accounts.FirstOrDefault(a => a.Name.Contains("مساعدات") && a.AccountType == AccountType.Expense)
                                    ?? db.Accounts.FirstOrDefault(a => a.Code == "5205");
 
-                // إذا لم يوجد حساب مساعدات، نستخدم حساب المصروفات العام مؤقتاً
                 if (debitAccount == null) debitAccount = db.Accounts.FirstOrDefault(a => a.Code.StartsWith("5"));
 
                 if (creditAccount == null || debitAccount == null) return false;
@@ -460,7 +475,6 @@ namespace BarManegment.Services
                     IsPosted = true,
                     PostedDate = DateTime.Now,
                     CreatedBy = "System Auto",
-                    CreatedByUserId = userId,
                     ExchangeRate = exchangeRate,
                     CurrencyId = aid.CurrencyId,
                     TotalDebit = amountBase,
@@ -468,7 +482,6 @@ namespace BarManegment.Services
                     JournalEntryDetails = new List<JournalEntryDetail>()
                 };
 
-                // الطرف المدين (المصروف)
                 entry.JournalEntryDetails.Add(new JournalEntryDetail
                 {
                     AccountId = debitAccount.Id,
@@ -479,7 +492,6 @@ namespace BarManegment.Services
                     ExchangeRate = exchangeRate
                 });
 
-                // الطرف الدائن (البنك)
                 entry.JournalEntryDetails.Add(new JournalEntryDetail
                 {
                     AccountId = creditAccount.Id,
@@ -496,6 +508,7 @@ namespace BarManegment.Services
             }
             catch { return false; }
         }
+
         public void Dispose()
         {
             if (db != null) db.Dispose();

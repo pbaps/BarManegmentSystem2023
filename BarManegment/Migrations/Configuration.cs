@@ -42,7 +42,7 @@
             context.SaveChanges();
 
             var jodiCurrency = context.Currencies.FirstOrDefault(c => c.Symbol == "JD");
-            var jodiId = jodiCurrency != null ? jodiCurrency.Id : 2;
+            var jodiId = jodiCurrency != null ? jodiCurrency.Id : 1;
 
             // ============================================================
             // 3. Add Contract Types
@@ -69,11 +69,11 @@
             // 4. Register Modules
             // ============================================================
             context.Modules.AddOrUpdate(m => m.ControllerName,
-              // --- HR & Payroll (جديد ومحدث) ---
+              // --- HR & Payroll ---
               new ModuleModel { NameArabic = "سجل الموظفين", ControllerName = "Employees" },
               new ModuleModel { NameArabic = "إدارة الأقسام", ControllerName = "Departments" },
               new ModuleModel { NameArabic = "المسميات الوظيفية", ControllerName = "JobTitles" },
-              new ModuleModel { NameArabic = "إدارة الرواتب", ControllerName = "Payroll" }, // 👈 جديد
+              new ModuleModel { NameArabic = "إدارة الرواتب", ControllerName = "Payroll" },
 
               // --- Admissions ---
               new ModuleModel { NameArabic = "طلبات امتحان القبول", ControllerName = "ExamApplications" },
@@ -125,6 +125,9 @@
               new ModuleModel { NameArabic = "إدارة حسابات البنوك", ControllerName = "BankAccounts" },
               new ModuleModel { NameArabic = "إدارة العملات", ControllerName = "Currencies" },
               new ModuleModel { NameArabic = "الصندوق المالي للمحامي", ControllerName = "LawyerFinancialBox" },
+              new ModuleModel { NameArabic = "السنوات المالية", ControllerName = "FiscalYears" },
+
+              // ✅✅✅ الإضافة الجديدة هنا ✅✅✅
               new ModuleModel { NameArabic = "إدارة البيانات المالية للمحامين", ControllerName = "LawyerFinancialData" },
 
               // --- Inventory & Procurement ---
@@ -264,24 +267,25 @@
                 new SystemSetting { SettingKey = "MinHighSchoolScore", SettingValue = "50" },
                 new SystemSetting { SettingKey = "MinBachelorScore", SettingValue = "60" },
                 new SystemSetting { SettingKey = "RenewalGracePeriodEndDate", SettingValue = $"{DateTime.Now.Year}-03-31" },
-
-                // 👇👇👇 الإضافات الجديدة للرواتب 👇👇👇
-                new SystemSetting { SettingKey = "AnnualIncrementPercent", SettingValue = "5" }, // نسبة الزيادة السنوية 5%
-                new SystemSetting { SettingKey = "EmployeePensionPercent", SettingValue = "7" }, // نسبة استقطاع الموظف 7%
-                new SystemSetting { SettingKey = "EmployerPensionPercent", SettingValue = "9" }  // نسبة مساهمة النقابة 9%
-
-
-
-                );
+                new SystemSetting { SettingKey = "AnnualIncrementPercent", SettingValue = "5" },
+                new SystemSetting { SettingKey = "EmployeePensionPercent", SettingValue = "7" },
+                new SystemSetting { SettingKey = "EmployerPensionPercent", SettingValue = "9" }
+            );
             context.SaveChanges();
 
             // ============================================================
-            // 7. Bank Accounts and Fee Types
+            // 7. FINANCIAL SYSTEM SEEDING - (تم التصحيح)
+            // ============================================================
+            SeedFinancialSystem(context);
+
+            // ============================================================
+            // 8. Bank Accounts and Fee Types (Depends on Financial Seed)
             // ============================================================
             var shekelCurrencyId = context.Currencies.FirstOrDefault(c => c.Symbol == "₪")?.Id;
             var jodiCurrencyId = context.Currencies.FirstOrDefault(c => c.Symbol == "JD")?.Id;
-            int defaultBankAccountId = 0;
 
+            // التأكد من وجود حساب بنكي افتراضي (نستخدم حساب "النقدية بالبنوك" 1102 مؤقتاً إذا لم ننشئ حسابات تفصيلية)
+            // أو نضيف حسابات بنكية تفصيلية
             if (shekelCurrencyId.HasValue)
             {
                 context.BankAccounts.AddOrUpdate(b => b.AccountNumber,
@@ -289,8 +293,9 @@
                     new BankAccount { BankName = "البنك الإسلامي", AccountName = "حساب الرسوم", AccountNumber = "654321", CurrencyId = shekelCurrencyId.Value, IsActive = true, Iban = "PSXXPALI0450XXXXXX00654321001" }
                 );
                 context.SaveChanges();
-                defaultBankAccountId = context.BankAccounts.FirstOrDefault()?.Id ?? 0;
             }
+
+            int defaultBankAccountId = context.BankAccounts.FirstOrDefault()?.Id ?? 0;
 
             if (defaultBankAccountId > 0 && jodiCurrencyId.HasValue && shekelCurrencyId.HasValue)
             {
@@ -324,7 +329,7 @@
             }
 
             // ============================================================
-            // 8. Fake Supervisors and Financial Records
+            // 9. Fake Supervisors and Financial Records
             // ============================================================
             var practicingStatusId = context.ApplicationStatuses.FirstOrDefault(s => s.Name == "محامي مزاول")?.Id;
             var idTypeId = context.NationalIdTypes.FirstOrDefault()?.Id;
@@ -400,7 +405,7 @@
             }
 
             // ============================================================
-            // 9. Create Admin User
+            // 10. Create Admin User
             // ============================================================
             var adminRole = context.UserTypes.FirstOrDefault(ut => ut.NameEnglish == "Administrator");
             if (adminRole != null && !context.Users.Any(u => u.Username == "admin"))
@@ -419,7 +424,7 @@
             }
 
             // ============================================================
-            // 9. Grant Permissions to Admin (تحديث الصلاحيات)
+            // 11. Grant Permissions to Admin
             // ============================================================
             var adminTypeId = context.UserTypes.FirstOrDefault(ut => ut.NameEnglish == "Administrator")?.Id;
             if (adminTypeId.HasValue)
@@ -435,7 +440,7 @@
             }
 
             // ============================================================
-            // 10. Grant Committee Portal Access
+            // 12. Grant Committee Portal Access
             // ============================================================
             var committeePortalModule = context.Modules.FirstOrDefault(m => m.ControllerName == "CommitteePortal");
             if (committeePortalModule != null)
@@ -465,12 +470,7 @@
             }
 
             // ============================================================
-            // 11. FINANCIAL SYSTEM SEEDING
-            // ============================================================
-            SeedFinancialSystem(context);
-
-            // ============================================================
-            // 12. HR Initial Data (New)
+            // 13. HR Initial Data
             // ============================================================
             context.Departments.AddOrUpdate(d => d.Name,
                 new Department { Name = "الإدارة العامة" },
@@ -488,159 +488,155 @@
             context.SaveChanges();
         }
 
+        // =========================================================================================
+        // الدالة المساعدة لإنشاء النظام المالي (تم التعديل لإزالة شروط التحقق من البيانات الفارغة)
+        // =========================================================================================
         private void SeedFinancialSystem(ApplicationDbContext context)
         {
             // 1. Years
-            if (!context.FiscalYears.Any())
-            {
-                context.FiscalYears.AddOrUpdate(y => y.Name,
-                    new FiscalYear { Name = "2024", StartDate = new DateTime(2024, 1, 1), EndDate = new DateTime(2024, 12, 31), IsClosed = true, IsCurrent = false },
-                    new FiscalYear { Name = "2025", StartDate = new DateTime(2025, 1, 1), EndDate = new DateTime(2025, 12, 31), IsClosed = false, IsCurrent = true }
-                );
-                context.SaveChanges();
-            }
+            context.FiscalYears.AddOrUpdate(y => y.Name,
+                new FiscalYear { Name = "2024", StartDate = new DateTime(2024, 1, 1), EndDate = new DateTime(2024, 12, 31), IsClosed = true, IsCurrent = false },
+                new FiscalYear { Name = "2025", StartDate = new DateTime(2025, 1, 1), EndDate = new DateTime(2025, 12, 31), IsClosed = true, IsCurrent = false },
+                new FiscalYear { Name = "2026", StartDate = new DateTime(2026, 1, 1), EndDate = new DateTime(2026, 12, 31), IsClosed = false, IsCurrent = true }
+            );
+            context.SaveChanges();
 
             // 2. Cost Centers
-            if (!context.CostCenters.Any())
-            {
-                context.CostCenters.AddOrUpdate(c => c.Code,
-                    new CostCenter { Code = "100", Name = "الإدارة العامة" },
-                    new CostCenter { Code = "200", Name = "لجنة التدريب" },
-                    new CostCenter { Code = "300", Name = "لجنة الحريات" },
-                    new CostCenter { Code = "400", Name = "المقر - غزة" },
-                    new CostCenter { Code = "500", Name = "المقر - خانيونس" }
-                );
-                context.SaveChanges();
-            }
+            context.CostCenters.AddOrUpdate(c => c.Code,
+                new CostCenter { Code = "100", Name = "الإدارة العامة" },
+                new CostCenter { Code = "200", Name = "لجنة التدريب" },
+                new CostCenter { Code = "300", Name = "لجنة الحريات" },
+                new CostCenter { Code = "400", Name = "المقر - غزة" },
+                new CostCenter { Code = "500", Name = "المقر - خانيونس" }
+            );
+            context.SaveChanges();
 
             // 3. Chart of Accounts (COA)
-            if (!context.Accounts.Any())
+            // --- المستوى الأول ---
+            var assets = new Account { Code = "1", Name = "الأصول", AccountType = AccountType.Asset, Level = 1, IsTransactional = false };
+            var liabilities = new Account { Code = "2", Name = "الخصوم", AccountType = AccountType.Liability, Level = 1, IsTransactional = false };
+            var equity = new Account { Code = "3", Name = "حقوق الملكية", AccountType = AccountType.Equity, Level = 1, IsTransactional = false };
+            var revenues = new Account { Code = "4", Name = "الإيرادات", AccountType = AccountType.Revenue, Level = 1, IsTransactional = false };
+            var expenses = new Account { Code = "5", Name = "المصروفات", AccountType = AccountType.Expense, Level = 1, IsTransactional = false };
+
+            context.Accounts.AddOrUpdate(a => a.Code, assets, liabilities, equity, revenues, expenses);
+            context.SaveChanges();
+
+            var assetsId = context.Accounts.FirstOrDefault(a => a.Code == "1").Id;
+            var liabilitiesId = context.Accounts.FirstOrDefault(a => a.Code == "2").Id;
+            var revenuesId = context.Accounts.FirstOrDefault(a => a.Code == "4").Id;
+            var expensesId = context.Accounts.FirstOrDefault(a => a.Code == "5").Id;
+
+            // --- المستوى الثاني (أصول) ---
+            context.Accounts.AddOrUpdate(a => a.Code,
+                new Account { Code = "11", Name = "الأصول المتداولة", ParentId = assetsId, AccountType = AccountType.Asset, Level = 2, IsTransactional = false },
+                new Account { Code = "12", Name = "الأصول الثابتة", ParentId = assetsId, AccountType = AccountType.Asset, Level = 2, IsTransactional = false }
+            );
+            context.SaveChanges();
+
+            var currentAssetsId = context.Accounts.FirstOrDefault(a => a.Code == "11").Id;
+            var fixedAssetsId = context.Accounts.FirstOrDefault(a => a.Code == "12").Id;
+
+            // --- المستوى الثالث (الأصول المتداولة) ---
+            if (currentAssetsId > 0)
             {
-                // --- المستوى الأول ---
-                var assets = new Account { Code = "1", Name = "الأصول", AccountType = AccountType.Asset, Level = 1, IsTransactional = false };
-                var liabilities = new Account { Code = "2", Name = "الخصوم", AccountType = AccountType.Liability, Level = 1, IsTransactional = false };
-                var equity = new Account { Code = "3", Name = "حقوق الملكية", AccountType = AccountType.Equity, Level = 1, IsTransactional = false };
-                var revenues = new Account { Code = "4", Name = "الإيرادات", AccountType = AccountType.Revenue, Level = 1, IsTransactional = false };
-                var expenses = new Account { Code = "5", Name = "المصروفات", AccountType = AccountType.Expense, Level = 1, IsTransactional = false };
-
-                context.Accounts.AddOrUpdate(a => a.Code, assets, liabilities, equity, revenues, expenses);
-                context.SaveChanges();
-
-                // --- المستوى الثاني (أصول) ---
                 context.Accounts.AddOrUpdate(a => a.Code,
-                    new Account { Code = "11", Name = "الأصول المتداولة", ParentId = assets.Id, AccountType = AccountType.Asset, Level = 2, IsTransactional = false },
-                    new Account { Code = "12", Name = "الأصول الثابتة", ParentId = assets.Id, AccountType = AccountType.Asset, Level = 2, IsTransactional = false }
+                    new Account { Code = "1101", Name = "النقدية بالصندوق", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1102", Name = "النقدية بالبنوك", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1103", Name = "الذمم المدينة (المحامين)", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1104", Name = "شيكات برسم التحصيل", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1105", Name = "ذمم شيكات مرتجعة", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1106", Name = "مخزون الطوابع", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1107", Name = "الذمم المدينة (المتعهدين)", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1108", Name = "سلف وقروض الموظفين", ParentId = currentAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true }
                 );
-                context.SaveChanges();
-
-                var currentAssets = context.Accounts.FirstOrDefault(a => a.Code == "11");
-                var fixedAssets = context.Accounts.FirstOrDefault(a => a.Code == "12");
-
-                // --- المستوى الثالث (الأصول المتداولة) - هنا الترتيب الجديد ---
-                if (currentAssets != null)
-                {
-                    context.Accounts.AddOrUpdate(a => a.Code,
-                        new Account { Code = "1101", Name = "النقدية بالصندوق", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        new Account { Code = "1102", Name = "النقدية بالبنوك", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        new Account { Code = "1103", Name = "الذمم المدينة (المحامين)", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        // الحساب الجديد للشيكات (هام جداً)
-                        new Account { Code = "1104", Name = "شيكات برسم التحصيل", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        // الحساب الجديد للذمم المرتجعة
-                        new Account { Code = "1105", Name = "ذمم شيكات مرتجعة", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-
-                        // إعادة ترتيب الباقي
-                        new Account { Code = "1106", Name = "مخزون الطوابع", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        new Account { Code = "1107", Name = "الذمم المدينة (المتعهدين)", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        new Account { Code = "1108", Name = "سلف وقروض الموظفين", ParentId = currentAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true }
-                    );
-                }
-
-                // --- المستوى الثالث (الأصول الثابتة) ---
-                if (fixedAssets != null)
-                {
-                    context.Accounts.AddOrUpdate(a => a.Code,
-                        new Account { Code = "1201", Name = "الأراضي والمباني", ParentId = fixedAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        new Account { Code = "1202", Name = "الأثاث والمفروشات", ParentId = fixedAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
-                        new Account { Code = "1203", Name = "أجهزة كمبيوتر وبرمجيات", ParentId = fixedAssets.Id, AccountType = AccountType.Asset, Level = 3, IsTransactional = true }
-                    );
-                }
-
-                // --- المستوى الثاني (الخصوم) ---
-                context.Accounts.AddOrUpdate(a => a.Code,
-                    new Account { Code = "21", Name = "الخصوم المتداولة", ParentId = liabilities.Id, AccountType = AccountType.Liability, Level = 2, IsTransactional = false }
-                );
-                context.SaveChanges();
-                var currentLiabilities = context.Accounts.FirstOrDefault(a => a.Code == "21");
-
-                if (currentLiabilities != null)
-                {
-                    context.Accounts.AddOrUpdate(a => a.Code,
-                        new Account { Code = "2101", Name = "الذمم الدائنة (موردين)", ParentId = currentLiabilities.Id, AccountType = AccountType.Liability, Level = 3, IsTransactional = true },
-                        new Account { Code = "2102", Name = "أمانات الطوابع (حصة النقابة)", ParentId = currentLiabilities.Id, AccountType = AccountType.Liability, Level = 3, IsTransactional = true },
-                        new Account { Code = "2103", Name = "رسوم محصلة مقدماً", ParentId = currentLiabilities.Id, AccountType = AccountType.Liability, Level = 3, IsTransactional = true }
-                    );
-                }
-
-                // --- المستوى الثاني (الإيرادات) ---
-                context.Accounts.AddOrUpdate(a => a.Code,
-                    new Account { Code = "41", Name = "إيرادات العضوية", ParentId = revenues.Id, AccountType = AccountType.Revenue, Level = 2, IsTransactional = false },
-                    new Account { Code = "42", Name = "إيرادات الخدمات", ParentId = revenues.Id, AccountType = AccountType.Revenue, Level = 2, IsTransactional = false }
-                );
-                context.SaveChanges();
-                var memberRev = context.Accounts.FirstOrDefault(a => a.Code == "41");
-                var serviceRev = context.Accounts.FirstOrDefault(a => a.Code == "42");
-
-                if (memberRev != null)
-                {
-                    context.Accounts.AddOrUpdate(a => a.Code,
-                        new Account { Code = "4101", Name = "رسوم الانتساب", ParentId = memberRev.Id, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
-                        new Account { Code = "4102", Name = "رسوم الاشتراك السنوي", ParentId = memberRev.Id, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
-                        new Account { Code = "4103", Name = "رسوم إعادة القيد", ParentId = memberRev.Id, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true }
-                    );
-                }
-
-                if (serviceRev != null)
-                {
-                    context.Accounts.AddOrUpdate(a => a.Code,
-                        new Account { Code = "4201", Name = "إيرادات بيع الطوابع", ParentId = serviceRev.Id, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
-                        new Account { Code = "4202", Name = "رسوم تصديق العقود", ParentId = serviceRev.Id, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
-                        new Account { Code = "4203", Name = "رسوم الدورات التدريبية", ParentId = serviceRev.Id, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
-                        new Account { Code = "4204", Name = "رسوم الامتحانات", ParentId = serviceRev.Id, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true }
-                    );
-                }
-
-                // --- المستوى الثاني (المصروفات) ---
-                context.Accounts.AddOrUpdate(a => a.Code,
-                    new Account { Code = "51", Name = "المصاريف الإدارية والعمومية", ParentId = expenses.Id, AccountType = AccountType.Expense, Level = 2, IsTransactional = false },
-                    new Account { Code = "52", Name = "مصاريف الأنشطة واللجان", ParentId = expenses.Id, AccountType = AccountType.Expense, Level = 2, IsTransactional = false }
-                );
-                context.SaveChanges();
-                var adminExp = context.Accounts.FirstOrDefault(a => a.Code == "51");
-                var activityExp = context.Accounts.FirstOrDefault(a => a.Code == "52");
-
-                if (adminExp != null)
-                {
-                    context.Accounts.AddOrUpdate(a => a.Code,
-                        new Account { Code = "5101", Name = "الرواتب والأجور", ParentId = adminExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
-                        new Account { Code = "5102", Name = "إيجار المقرات", ParentId = adminExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
-                        new Account { Code = "5103", Name = "كهرباء ومياه واتصالات", ParentId = adminExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
-                        new Account { Code = "5104", Name = "قرطاسية ومطبوعات", ParentId = adminExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
-                        new Account { Code = "5105", Name = "ضيافة ونظافة", ParentId = adminExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true }
-                    );
-                }
-
-                if (activityExp != null)
-                {
-                    context.Accounts.AddOrUpdate(a => a.Code,
-                        new Account { Code = "5201", Name = "مكافآت لجان المناقشة", ParentId = activityExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
-                        new Account { Code = "5202", Name = "مصاريف حفل حلف اليمين", ParentId = activityExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
-                        new Account { Code = "5203", Name = "تكلفة طباعة الطوابع", ParentId = activityExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
-                        new Account { Code = "5204", Name = "مصاريف الدورات التدريبية", ParentId = activityExp.Id, AccountType = AccountType.Expense, Level = 3, IsTransactional = true }
-                    );
-                }
-
-                context.SaveChanges();
             }
+
+            // --- المستوى الثالث (الأصول الثابتة) ---
+            if (fixedAssetsId > 0)
+            {
+                context.Accounts.AddOrUpdate(a => a.Code,
+                    new Account { Code = "1201", Name = "الأراضي والمباني", ParentId = fixedAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1202", Name = "الأثاث والمفروشات", ParentId = fixedAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true },
+                    new Account { Code = "1203", Name = "أجهزة كمبيوتر وبرمجيات", ParentId = fixedAssetsId, AccountType = AccountType.Asset, Level = 3, IsTransactional = true }
+                );
+            }
+
+            // --- المستوى الثاني (الخصوم) ---
+            context.Accounts.AddOrUpdate(a => a.Code,
+                new Account { Code = "21", Name = "الخصوم المتداولة", ParentId = liabilitiesId, AccountType = AccountType.Liability, Level = 2, IsTransactional = false }
+            );
+            context.SaveChanges();
+            var currentLiabilitiesId = context.Accounts.FirstOrDefault(a => a.Code == "21").Id;
+
+            if (currentLiabilitiesId > 0)
+            {
+                context.Accounts.AddOrUpdate(a => a.Code,
+                    new Account { Code = "2101", Name = "الذمم الدائنة (موردين)", ParentId = currentLiabilitiesId, AccountType = AccountType.Liability, Level = 3, IsTransactional = true },
+                    new Account { Code = "2102", Name = "أمانات الطوابع (حصة النقابة)", ParentId = currentLiabilitiesId, AccountType = AccountType.Liability, Level = 3, IsTransactional = true },
+                    new Account { Code = "2103", Name = "رسوم محصلة مقدماً", ParentId = currentLiabilitiesId, AccountType = AccountType.Liability, Level = 3, IsTransactional = true }
+                );
+            }
+
+            // --- المستوى الثاني (الإيرادات) ---
+            context.Accounts.AddOrUpdate(a => a.Code,
+                new Account { Code = "41", Name = "إيرادات العضوية", ParentId = revenuesId, AccountType = AccountType.Revenue, Level = 2, IsTransactional = false },
+                new Account { Code = "42", Name = "إيرادات الخدمات", ParentId = revenuesId, AccountType = AccountType.Revenue, Level = 2, IsTransactional = false }
+            );
+            context.SaveChanges();
+            var memberRevId = context.Accounts.FirstOrDefault(a => a.Code == "41").Id;
+            var serviceRevId = context.Accounts.FirstOrDefault(a => a.Code == "42").Id;
+
+            if (memberRevId > 0)
+            {
+                context.Accounts.AddOrUpdate(a => a.Code,
+                    new Account { Code = "4101", Name = "رسوم الانتساب", ParentId = memberRevId, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
+                    new Account { Code = "4102", Name = "رسوم الاشتراك السنوي", ParentId = memberRevId, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
+                    new Account { Code = "4103", Name = "رسوم إعادة القيد", ParentId = memberRevId, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true }
+                );
+            }
+
+            if (serviceRevId > 0)
+            {
+                context.Accounts.AddOrUpdate(a => a.Code,
+                    new Account { Code = "4201", Name = "إيرادات بيع الطوابع", ParentId = serviceRevId, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
+                    new Account { Code = "4202", Name = "رسوم تصديق العقود", ParentId = serviceRevId, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
+                    new Account { Code = "4203", Name = "رسوم الدورات التدريبية", ParentId = serviceRevId, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true },
+                    new Account { Code = "4204", Name = "رسوم الامتحانات", ParentId = serviceRevId, AccountType = AccountType.Revenue, Level = 3, IsTransactional = true }
+                );
+            }
+
+            // --- المستوى الثاني (المصروفات) ---
+            context.Accounts.AddOrUpdate(a => a.Code,
+                new Account { Code = "51", Name = "المصاريف الإدارية والعمومية", ParentId = expensesId, AccountType = AccountType.Expense, Level = 2, IsTransactional = false },
+                new Account { Code = "52", Name = "مصاريف الأنشطة واللجان", ParentId = expensesId, AccountType = AccountType.Expense, Level = 2, IsTransactional = false }
+            );
+            context.SaveChanges();
+            var adminExpId = context.Accounts.FirstOrDefault(a => a.Code == "51").Id;
+            var activityExpId = context.Accounts.FirstOrDefault(a => a.Code == "52").Id;
+
+            if (adminExpId > 0)
+            {
+                context.Accounts.AddOrUpdate(a => a.Code,
+                    new Account { Code = "5101", Name = "الرواتب والأجور", ParentId = adminExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
+                    new Account { Code = "5102", Name = "إيجار المقرات", ParentId = adminExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
+                    new Account { Code = "5103", Name = "كهرباء ومياه واتصالات", ParentId = adminExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
+                    new Account { Code = "5104", Name = "قرطاسية ومطبوعات", ParentId = adminExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
+                    new Account { Code = "5105", Name = "ضيافة ونظافة", ParentId = adminExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true }
+                );
+            }
+
+            if (activityExpId > 0)
+            {
+                context.Accounts.AddOrUpdate(a => a.Code,
+                    new Account { Code = "5201", Name = "مكافآت لجان المناقشة", ParentId = activityExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
+                    new Account { Code = "5202", Name = "مصاريف حفل حلف اليمين", ParentId = activityExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
+                    new Account { Code = "5203", Name = "تكلفة طباعة الطوابع", ParentId = activityExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true },
+                    new Account { Code = "5204", Name = "مصاريف الدورات التدريبية", ParentId = activityExpId, AccountType = AccountType.Expense, Level = 3, IsTransactional = true }
+                );
+            }
+
+            context.SaveChanges();
         }
     }
 }

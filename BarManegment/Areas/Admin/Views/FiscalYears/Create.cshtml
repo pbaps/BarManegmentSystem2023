@@ -1,0 +1,51 @@
+﻿@model BarManegment.Models.FiscalYear
+
+@{
+    ViewBag.Title = "إضافة سنة مالية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0" style="max-width: 600px; margin: auto;">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i> سنة مالية جديدة</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">اسم السنة (مثال: 2026)</label>
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", required = "required" } })
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">تاريخ البداية</label>
+                        <input type="date" name="StartDate" class="form-control" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">تاريخ النهاية</label>
+                        <input type="date" name="EndDate" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    @Html.CheckBoxFor(model => model.IsCurrent, new { @class = "form-check-input" })
+                    <label class="form-check-label fw-bold" for="IsCurrent">تعيين كـ السنة المالية الحالية</label>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    @Html.CheckBoxFor(model => model.IsClosed, new { @class = "form-check-input" })
+                    <label class="form-check-label" for="IsClosed">مغلقة؟ (للسنوات القديمة)</label>
+                </div>
+
+                <div class="text-end">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary me-2">إلغاء</a>
+                    <button type="submit" class="btn btn-success px-4">حفظ</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

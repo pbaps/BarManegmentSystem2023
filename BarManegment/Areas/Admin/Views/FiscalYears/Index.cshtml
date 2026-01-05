@@ -1,0 +1,132 @@
+﻿@model IEnumerable<BarManegment.Models.FiscalYear>
+
+@{
+    ViewBag.Title = "السنوات المالية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold"><i class="bi bi-calendar-range me-2"></i> السنوات المالية</h4>
+        <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg"></i> سنة جديدة</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>السنة</th>
+                            <th>تاريخ البداية</th>
+                            <th>تاريخ النهاية</th>
+                            <th>الحالة</th>
+                            <th>مغلقة؟</th>
+                            <th style="width: 120px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr class="@(item.IsCurrent ? "table-primary bg-opacity-10" : "")">
+                                <td class="fw-bold">@item.Name</td>
+                                <td>@item.StartDate.ToString("yyyy/MM/dd")</td>
+                                <td>@item.EndDate.ToString("yyyy/MM/dd")</td>
+                                <td>
+                                    @if (item.IsCurrent)
+                                    {
+                                        <span class="badge bg-success">السنة الحالية</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">سنة أخرى</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsClosed)
+                                    {
+                                        <span class="badge bg-danger">مغلقة</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">مفتوحة</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-warning" title="تعديل"><i class="bi bi-pencil"></i></a>
+
+                                    @if (!item.IsCurrent)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteModal"
+                                                data-id="@item.Id"
+                                                data-name="@item.Name"
+                                                title="حذف">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i> تأكيد الحذف</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="fs-5">هل أنت متأكد من حذف السنة المالية: <span id="yearName" class="fw-bold text-danger"></span>؟</p>
+                <p class="text-muted small">لن تتم عملية الحذف إذا كانت هناك أي قيود مالية مرتبطة بهذه السنة.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">إلغاء</button>
+
+                @using (Html.BeginForm("Delete", "FiscalYears", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="yearId" />
+                    <button type="submit" class="btn btn-danger px-4 fw-bold disabled">نعم، احذف</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // عند الضغط على زر الحذف، نقل البيانات للمودال
+            $('.delete-btn').click(function () {
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+
+                $('#yearId').val(id);
+                $('#yearName').text(name);
+            });
+        });
+    </script>
+}

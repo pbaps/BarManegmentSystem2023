@@ -17,7 +17,7 @@ namespace BarManegment.Areas.Admin.Controllers
     {
         private readonly ApplicationDbContext db = new ApplicationDbContext();
 
-        // 1. القائمة الرئيسية
+        // 1. Index
         public ActionResult Index(string searchString, string typeFilter, string paymentMethod, int? page, int? pageSize)
         {
             var query = db.Receipts.AsNoTracking()
@@ -46,7 +46,6 @@ namespace BarManegment.Areas.Admin.Controllers
             }
 
             query = query.OrderByDescending(r => r.CreationDate);
-
             int pSize = pageSize ?? 10;
             int pageNumber = page ?? 1;
 
@@ -58,28 +57,24 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(query.ToPagedList(pageNumber, pSize));
         }
 
-        // 2. الموجه الذكي للطباعة
+        // 2. Details
         [CustomAuthorize(Permission = "CanView")]
         public ActionResult Details(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
-            // أ. تصديق عقود
             var isContract = db.ContractTransactions.Any(c => c.PaymentVoucherId == id);
             if (isContract) return RedirectToAction("PrintContractReceipt", "ContractTransactions", new { id = id });
 
-            // ب. سداد قرض
             var isLoan = db.LoanInstallments.Any(l => l.ReceiptId == id);
             if (isLoan) return RedirectToAction("PrintLoanInstallmentReceipt", "LoanPayments", new { id = id });
 
-            // ج. متعهد طوابع
             var receipt = db.Receipts.Include(r => r.PaymentVoucher).FirstOrDefault(r => r.Id == id);
             if (receipt != null && receipt.PaymentVoucher.GraduateApplicationId == null)
             {
                 return RedirectToAction("PrintContractorReceipt", "Receipts", new { id = id });
             }
 
-            // د. إيصال عادي
             receipt = db.Receipts.AsNoTracking()
                 .Include(r => r.PaymentVoucher.GraduateApplication.ApplicationStatus)
                 .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType.Currency))
@@ -95,7 +90,7 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(receipt);
         }
 
-        // 3. شاشة السداد (GET)
+        // 3. Create (GET)
         [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult Create(int? voucherId)
         {
@@ -146,7 +141,7 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(viewModel);
         }
 
-        // 4. حفظ السداد وإنشاء القيد الآلي (POST)
+        // 4. Create (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorize(Permission = "CanAdd")]
@@ -162,7 +157,7 @@ namespace BarManegment.Areas.Admin.Controllers
                     {
                         var voucher = db.PaymentVouchers
                             .Include(v => v.GraduateApplication.ApplicationStatus)
-                            .Include(v => v.VoucherDetails.Select(d => d.FeeType)) // ضروري للقيد المحاسبي
+                            .Include(v => v.VoucherDetails.Select(d => d.FeeType))
                             .FirstOrDefault(v => v.Id == viewModel.PaymentVoucherId);
 
                         if (voucher == null || voucher.Status == "مسدد") throw new Exception("القسيمة غير موجودة أو مسددة.");
@@ -225,21 +220,30 @@ namespace BarManegment.Areas.Admin.Controllers
                             }
                         }
 
-                        // معالجة الطوابع
+                        // معالجة الطوابع - (تصحيح اسم الجدول إلى Stamp)
                         var issuances = db.StampBookIssuances.Where(i => i.PaymentVoucherId == voucher.Id).ToList();
                         if (issuances.Any())
                         {
                             foreach (var issuance in issuances)
                             {
-                                db.Database.ExecuteSqlCommand("UPDATE Stamps SET Status = 'مع المتعهد' WHERE StampBookId = {0}", issuance.StampBookId);
+                                // ✅ تم التعديل: Stamp بدلاً من Stamps
+                                db.Database.ExecuteSqlCommand("UPDATE Stamp SET Status = 'مع المتعهد' WHERE StampBookId = {0}", issuance.StampBookId);
                                 var book = db.StampBooks.Find(issuance.StampBookId); if (book != null) { book.Status = "مع المتعهد"; db.Entry(book).State = EntityState.Modified; }
                             }
                         }
 
-                        // ✅ إنشاء القيد المحاسبي الآلي (أهم جزء)
-                        CreateJournalEntryForReceipt(receipt, voucher);
+                        db.SaveChanges(); // حفظ الإيصال أولاً
 
-                        db.SaveChanges();
+                        // إنشاء القيد المحاسبي
+                        using (var accountingService = new AccountingService())
+                        {
+                            bool entryCreated = accountingService.GenerateEntryForReceipt(receipt.Id, (int)Session["UserId"]);
+                            if (!entryCreated)
+                            {
+                                throw new Exception("فشل إنشاء القيد المحاسبي. يرجى التأكد من وجود الحسابات (الصندوق 1101 / البنك 1102) والسنة المالية.");
+                            }
+                        }
+
                         transaction.Commit();
 
                         TempData["SuccessMessage"] = $"تم تسجيل الدفع (إيصال {newSequence}) وإنشاء القيد المحاسبي بنجاح.";
@@ -257,69 +261,7 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(viewModel);
         }
 
-        // ============================================================
-        // 5. دالة مساعدة لإنشاء القيود الآلية (Accounting Helper)
-        // ============================================================
-        private void CreateJournalEntryForReceipt(Receipt receipt, PaymentVoucher voucher)
-        {
-            string debitAccountCode = (voucher.PaymentMethod == "نقدي") ? "1101" : "1102";
-            var debitAccount = db.Accounts.FirstOrDefault(a => a.Code == debitAccountCode);
-
-            if (debitAccount == null) return;
-
-            var journalEntry = new JournalEntry
-            {
-                EntryDate = receipt.BankPaymentDate,
-                ReferenceNumber = $"RCT-{receipt.SequenceNumber}",
-                Description = $"سداد قسيمة رقم {voucher.Id} - {receipt.PaymentVoucher.GraduateApplication?.ArabicName ?? "متعهد"}",
-                IsPosted = true,
-                TotalDebit = voucher.TotalAmount,
-                TotalCredit = voucher.TotalAmount,
-
-                // ✅ التغيير هنا: استخدام الحقل النصي الموجود فعلياً
-                CreatedBy = Session["FullName"]?.ToString() ?? "System",
-                // CreatedByUserId = (int)Session["UserId"], // ❌ تم إيقاف هذا السطر لأنه غير موجود في المودل
-
-                JournalEntryDetails = new List<JournalEntryDetail>()
-            };
-
-            journalEntry.JournalEntryDetails.Add(new JournalEntryDetail
-            {
-                AccountId = debitAccount.Id,
-                Debit = voucher.TotalAmount,
-                Credit = 0,
-                Description = "قبض من سند قبض رقم " + receipt.SequenceNumber
-            });
-
-            foreach (var detail in voucher.VoucherDetails)
-            {
-                string creditAccountCode = "42";
-
-                if (detail.FeeType.Name.Contains("طوابع")) creditAccountCode = "4201";
-                else if (detail.FeeType.Name.Contains("انتساب") || detail.FeeType.Name.Contains("تسجيل")) creditAccountCode = "4101";
-                else if (detail.FeeType.Name.Contains("اشتراك") || detail.FeeType.Name.Contains("تجديد")) creditAccountCode = "4102";
-                else if (detail.FeeType.Name.Contains("تصديق")) creditAccountCode = "4202";
-
-                var creditAccount = db.Accounts.FirstOrDefault(a => a.Code == creditAccountCode)
-                                    ?? db.Accounts.FirstOrDefault(a => a.Code == "4");
-
-                if (creditAccount != null)
-                {
-                    journalEntry.JournalEntryDetails.Add(new JournalEntryDetail
-                    {
-                        AccountId = creditAccount.Id,
-                        Debit = 0,
-                        Credit = detail.Amount,
-                        Description = detail.FeeType.Name
-                    });
-                }
-            }
-
-            db.JournalEntries.Add(journalEntry);
-        }
-        // ... (باقي الدوال كما هي: PrintContractorReceipt, GenerateTraineeSerial, etc) ...
-
-        // 6. الطباعة للمتعهد
+        // 5. PrintContractorReceipt
         [CustomAuthorize(Permission = "CanView")]
         public ActionResult PrintContractorReceipt(int? id)
         {

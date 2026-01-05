@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure; // ضروري للـ DbQuery
+using System.Data.Entity.Infrastructure;
 using System.Data.Entity.ModelConfiguration.Conventions;
 
 namespace BarManegment.Models
@@ -12,21 +12,14 @@ namespace BarManegment.Models
     {
         public ApplicationDbContext() : base("DefaultConnection")
         {
-            // تعطيل الوكلاء لتجنب مشاكل الـ Serialization
             this.Configuration.ProxyCreationEnabled = false;
-            // تعطيل مهيئ قاعدة البيانات والاعتماد على Migrations
             Database.SetInitializer<ApplicationDbContext>(null);
         }
 
-        /// <summary>
-        /// //////مساعدات مالية
-        /// </summary>
         // ==================================================================
         // =========================== الجداول (DbSets) =====================
         // ==================================================================
-        public virtual DbSet<FinancialAidType> FinancialAidTypes { get; set; }
-        public virtual DbSet<BarExpense> BarExpenses { get; set; }
-        public virtual DbSet<LawyerFinancialAid> LawyerFinancialAids { get; set; }
+
         // 1. المستخدمين والصلاحيات
         public DbSet<UserModel> Users { get; set; }
         public DbSet<UserTypeModel> UserTypes { get; set; }
@@ -34,7 +27,7 @@ namespace BarManegment.Models
         public DbSet<PermissionModel> Permissions { get; set; }
         public DbSet<AuditLogModel> AuditLogs { get; set; }
 
-        // 2. الموارد البشرية (HR & Payroll)
+        // 2. الموارد البشرية
         public DbSet<Department> Departments { get; set; }
         public DbSet<JobTitle> JobTitles { get; set; }
         public DbSet<Employee> Employees { get; set; }
@@ -42,7 +35,6 @@ namespace BarManegment.Models
         public DbSet<LeaveType> LeaveTypes { get; set; }
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
 
-        // جداول الرواتب
         public DbSet<MonthlyPayroll> MonthlyPayrolls { get; set; }
         public DbSet<PayrollSlip> PayrollSlips { get; set; }
         public DbSet<EmployeePayrollSlip> EmployeePayrollSlips { get; set; }
@@ -52,12 +44,9 @@ namespace BarManegment.Models
         public DbSet<CostCenter> CostCenters { get; set; }
         public DbSet<Account> Accounts { get; set; }
         public DbSet<JournalEntry> JournalEntries { get; set; }
-
-        // ✅ الجدول المعتمد حالياً (الاسم الجديد)
         public DbSet<JournalEntryDetail> JournalEntryDetails { get; set; }
 
-        // ⚠️ حل سحري للتوافق مع الكود القديم:
-        // هذه الخاصية تجعل الكود القديم الذي يطلب "JournalEntryLines" يقرأ من "JournalEntryDetails"
+        // Wrapper للقراءة فقط للكود القديم
         public DbQuery<JournalEntryDetail> JournalEntryLines
         {
             get { return Set<JournalEntryDetail>(); }
@@ -74,6 +63,10 @@ namespace BarManegment.Models
         public DbSet<FeeDistribution> FeeDistributions { get; set; }
         public DbSet<GeneralExpense> GeneralExpenses { get; set; }
         public DbSet<ExchangeRate> ExchangeRates { get; set; }
+
+        public virtual DbSet<FinancialAidType> FinancialAidTypes { get; set; }
+        public virtual DbSet<BarExpense> BarExpenses { get; set; }
+        public virtual DbSet<LawyerFinancialAid> LawyerFinancialAids { get; set; }
 
         // 4. المخازن والمشتريات
         public DbSet<Supplier> Suppliers { get; set; }
@@ -95,7 +88,6 @@ namespace BarManegment.Models
         public DbSet<Gender> Genders { get; set; }
         public DbSet<NationalIdType> NationalIdTypes { get; set; }
 
-        // البيانات الشخصية الموسعة
         public DbSet<LawyerPersonalData> LawyerPersonalDatas { get; set; }
         public DbSet<LawyerSpouse> LawyerSpouses { get; set; }
         public DbSet<LawyerChild> LawyerChildren { get; set; }
@@ -119,7 +111,7 @@ namespace BarManegment.Models
         public DbSet<OathRequest> OathRequests { get; set; }
         public DbSet<OathCeremony> OathCeremonies { get; set; }
 
-        // 8. الامتحانات (التحريري والشفوي)
+        // 8. الامتحانات
         public DbSet<ExamApplication> ExamApplications { get; set; }
         public DbSet<ExamQualification> ExamQualifications { get; set; }
         public DbSet<ExamType> ExamTypes { get; set; }
@@ -131,7 +123,6 @@ namespace BarManegment.Models
         public DbSet<TraineeAnswer> TraineeAnswers { get; set; }
         public DbSet<ManualGrade> ManualGrades { get; set; }
 
-        // اللجان الشفوية
         public DbSet<OralExamCommittee> OralExamCommittees { get; set; }
         public DbSet<OralExamCommitteeMember> OralExamCommitteeMembers { get; set; }
         public DbSet<OralExamEnrollment> OralExamEnrollments { get; set; }
@@ -195,7 +186,6 @@ namespace BarManegment.Models
             modelBuilder.Entity<JournalEntry>().Property(j => j.TotalDebit).HasPrecision(18, 2);
             modelBuilder.Entity<JournalEntry>().Property(j => j.TotalCredit).HasPrecision(18, 2);
 
-            // استخدام JournalEntryDetail
             modelBuilder.Entity<JournalEntryDetail>().Property(l => l.Debit).HasPrecision(18, 2);
             modelBuilder.Entity<JournalEntryDetail>().Property(l => l.Credit).HasPrecision(18, 2);
 
@@ -203,13 +193,18 @@ namespace BarManegment.Models
             modelBuilder.Entity<ExchangeRate>().Property(x => x.Rate).HasPrecision(18, 4);
             modelBuilder.Entity<CheckPortfolio>().Property(x => x.Amount).HasPrecision(18, 2);
 
+            // ✅ تم إبقاء الخصائص الموجودة فعلاً وحذف غير الموجودة
+            modelBuilder.Entity<PaymentVoucher>().Property(x => x.TotalAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<VoucherDetail>().Property(x => x.Amount).HasPrecision(18, 2);
+            // ❌ تم حذف السطر الخاص بـ Receipt.Amount لأنه غير موجود
+
             // --- علاقات النظام المالي ---
             modelBuilder.Entity<JournalEntry>()
                 .HasMany(j => j.JournalEntryDetails)
                 .WithRequired(d => d.JournalEntry)
                 .WillCascadeOnDelete(true);
 
-            // --- علاقات البيانات الشخصية ---
+            // --- باقي العلاقات كما هي ---
             modelBuilder.Entity<LawyerPersonalData>()
                 .HasRequired(p => p.Lawyer)
                 .WithOptional(g => g.LawyerPersonalData)
@@ -225,14 +220,12 @@ namespace BarManegment.Models
                 .WithOptional(p => p.HealthRecord)
                 .WillCascadeOnDelete(true);
 
-            // --- علاقات القروض ---
             modelBuilder.Entity<LoanApplication>()
                 .HasRequired(l => l.Lawyer)
                 .WithMany(g => g.LoanApplications)
                 .HasForeignKey(l => l.LawyerId)
                 .WillCascadeOnDelete(false);
 
-            // --- علاقات المراسلات ---
             modelBuilder.Entity<InternalMessage>()
                 .HasRequired(m => m.Sender)
                 .WithMany()
@@ -251,14 +244,12 @@ namespace BarManegment.Models
                 .HasForeignKey(a => a.InternalMessageId)
                 .WillCascadeOnDelete(true);
 
-            // --- علاقات المستخدم ---
             modelBuilder.Entity<GraduateApplication>()
                  .HasOptional(g => g.User)
                  .WithMany(u => u.GraduateApplications)
                  .HasForeignKey(g => g.UserId)
                  .WillCascadeOnDelete(false);
 
-            // --- علاقات التدريب والإشراف واليمين ---
             modelBuilder.Entity<TraineeSuspension>()
                 .HasRequired(s => s.Trainee).WithMany().HasForeignKey(s => s.GraduateApplicationId).WillCascadeOnDelete(false);
 
@@ -274,7 +265,6 @@ namespace BarManegment.Models
             modelBuilder.Entity<GraduateApplication>()
                 .HasOptional(g => g.OathCeremony).WithMany(c => c.Attendees).HasForeignKey(g => g.OathCeremonyId).WillCascadeOnDelete(false);
 
-            // --- علاقات اللجان والأبحاث ---
             modelBuilder.Entity<OralExamCommitteeMember>()
                 .HasRequired(m => m.OralExamCommittee).WithMany(c => c.Members).HasForeignKey(m => m.OralExamCommitteeId).WillCascadeOnDelete(true);
 
@@ -299,7 +289,6 @@ namespace BarManegment.Models
             modelBuilder.Entity<CommitteeDecision>()
                 .HasRequired(cd => cd.LegalResearch).WithMany(lr => lr.Decisions).HasForeignKey(cd => cd.LegalResearchId).WillCascadeOnDelete(false);
 
-            // --- علاقات الامتحانات ---
             modelBuilder.Entity<GraduateApplication>().HasOptional(g => g.ExamApplication).WithMany().WillCascadeOnDelete(false);
             modelBuilder.Entity<Question>().HasRequired(q => q.QuestionType).WithMany().WillCascadeOnDelete(false);
             modelBuilder.Entity<TraineeAnswer>().HasRequired(ta => ta.ExamEnrollment).WithMany().WillCascadeOnDelete(false);
@@ -312,7 +301,6 @@ namespace BarManegment.Models
             modelBuilder.Entity<ExamEnrollment>().HasOptional(e => e.ExamApplication).WithMany().WillCascadeOnDelete(false);
             modelBuilder.Entity<ExamEnrollment>().HasOptional(e => e.GraduateApplication).WithMany().WillCascadeOnDelete(false);
 
-            // --- علاقات التدريب ---
             modelBuilder.Entity<TraineeRenewal>().HasRequired(r => r.Trainee).WithMany().WillCascadeOnDelete(false);
             modelBuilder.Entity<TraineeRenewal>().HasRequired(r => r.Receipt).WithMany().WillCascadeOnDelete(false);
             modelBuilder.Entity<TraineeAttendance>().HasRequired(t => t.Trainee).WithMany().WillCascadeOnDelete(false);
@@ -327,7 +315,6 @@ namespace BarManegment.Models
             modelBuilder.Entity<SupervisorChangeRequest>().HasOptional(r => r.OldSupervisor).WithMany().WillCascadeOnDelete(false);
             modelBuilder.Entity<SupervisorChangeRequest>().HasOptional(r => r.NewSupervisor).WithMany().WillCascadeOnDelete(false);
 
-            // --- علاقات المالية والرسوم ---
             modelBuilder.Entity<VoucherDetail>()
                 .HasRequired(vd => vd.FeeType)
                 .WithMany()

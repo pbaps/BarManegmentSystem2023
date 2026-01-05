@@ -1,0 +1,52 @@
+﻿@model BarManegment.Models.FiscalYear
+
+@{
+    ViewBag.Title = "تعديل السنة المالية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow-sm border-0" style="max-width: 600px; margin: auto;">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i> تعديل السنة: @Model.Name</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(model => model.Id)
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">اسم السنة</label>
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", required = "required" } })
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">تاريخ البداية</label>
+                        @Html.TextBoxFor(model => model.StartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">تاريخ النهاية</label>
+                        @Html.TextBoxFor(model => model.EndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    @Html.CheckBoxFor(model => model.IsCurrent, new { @class = "form-check-input" })
+                    <label class="form-check-label fw-bold" for="IsCurrent">هي السنة المالية الحالية</label>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    @Html.CheckBoxFor(model => model.IsClosed, new { @class = "form-check-input" })
+                    <label class="form-check-label" for="IsClosed">إغلاق السنة المالية</label>
+                </div>
+
+                <div class="text-end">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary me-2">إلغاء</a>
+                    <button type="submit" class="btn btn-warning px-4">حفظ التعديلات</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
