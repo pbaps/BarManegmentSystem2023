@@ -1,28 +1,82 @@
 ﻿@model BarManegment.Models.Account
-@{ ViewBag.Title = "إضافة حساب جديد"; }
 
-<div class="card p-4 col-md-8 mx-auto">
-    <h4>إضافة حساب مالي جديد</h4>
-    @using (Html.BeginForm())
-    {
-        @Html.AntiForgeryToken()
-        <div class="mb-3">
-            <label>رقم الحساب (Code)</label>
-            @Html.EditorFor(m => m.Code, new { htmlAttributes = new { @class = "form-control" } })
+@{
+    ViewBag.Title = "إضافة حساب جديد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-folder-plus me-2"></i> إضافة حساب مالي جديد</h5>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                @Html.ValidationSummary(false, "يرجى تصحيح الأخطاء:", new { @class = "mb-0" })
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الحساب الرئيسي (الأب)</label>
+                            @Html.DropDownList("ParentId", null, "--- حساب رئيسي (مستوى 1) ---", new { @class = "form-select select2", id = "ParentId" })
+                            <div class="form-text">اختر الحساب الذي يندرج تحته هذا الحساب الجديد.</div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">رقم الحساب (Code) <span class="text-danger">*</span></label>
+                                @Html.EditorFor(model => model.Code, new { htmlAttributes = new { @class = "form-control font-monospace", placeholder = "مثال: 110101", dir = "ltr" } })
+                                @Html.ValidationMessageFor(model => model.Code, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">اسم الحساب <span class="text-danger">*</span></label>
+                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", required = "required" } })
+                                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">نوع الحساب (طبيعة الحساب)</label>
+                            @* ✅ التصحيح هنا: إزالة htmlAttributes: *@
+                            @Html.EnumDropDownListFor(model => model.AccountType, new { @class = "form-select" })
+                        </div>
+
+                        <div class="form-check form-switch mb-4 p-3 border rounded bg-light">
+                            @Html.CheckBoxFor(model => model.IsTransactional, new { @class = "form-check-input", id = "IsTransactional", @checked = "checked" })
+                            <label class="form-check-label fw-bold ms-2" for="IsTransactional">
+                                حساب حركي (يقبل القيود)
+                                <br />
+                                <small class="text-muted fw-normal">الحساب الحركي هو الذي يظهر في السندات والقيود. الحساب غير الحركي هو "تجميعي" (رئيسي) فقط.</small>
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                            <a href="@Url.Action("AccountsIndex")" class="btn btn-secondary px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-success px-5 fw-bold"><i class="bi bi-save me-2"></i> حفظ الحساب</button>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label>اسم الحساب</label>
-            @Html.EditorFor(m => m.Name, new { htmlAttributes = new { @class = "form-control" } })
-        </div>
-        <div class="mb-3">
-            <label>النوع الرئيسي (التابعية)</label>
-            @Html.DropDownList("ParentId", null, "--- حساب رئيسي ---", new { @class = "form-control select2" })
-        </div>
-        <div class="mb-3">
-            <label>نوع الحساب</label>
-            @Html.EnumDropDownListFor(m => m.AccountType, new { @class = "form-control" })
-        </div>
-        <button type="submit" class="btn btn-success">حفظ</button>
-        <a href="@Url.Action("AccountsIndex")" class="btn btn-secondary">إلغاء</a>
-    }
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                dir: "rtl"
+            });
+        });
+    </script>
+}

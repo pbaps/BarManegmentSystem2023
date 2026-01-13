@@ -277,7 +277,6 @@
     <Compile Include="Areas\Admin\ViewModels\BalanceSheetViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\BankTransferReportViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\BatchAidViewModel.cs" />
-    <Compile Include="Areas\Admin\ViewModels\CreateGeneralVoucherViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\GeneralLedgerViewModel.cs" />
     <Compile Include="Areas\Admin\Controllers\HomeController.cs" />
     <Compile Include="Areas\Admin\Controllers\JournalEntriesController.cs" />
@@ -333,10 +332,8 @@
     <Compile Include="Areas\Admin\ViewModels\CoordinatorDashboardViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\CourseDetailsViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\CreateContractorReceiptViewModel.cs" />
-    <Compile Include="Areas\Admin\ViewModels\CreateContractorVoucherViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\CreateLoanReceiptViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\CreatePracticingRenewalViewModel.cs" />
-    <Compile Include="Areas\Admin\ViewModels\CreateReceiptViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\CreateSuspensionViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\DecisionFollowUpViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\ExamIndexViewModel.cs" />
@@ -361,6 +358,7 @@
     <Compile Include="Areas\Admin\ViewModels\OathRequestCreateViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\OathRequestReviewViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\PassportMinorViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\PaymentVouchersViewModels.cs" />
     <Compile Include="Areas\Admin\ViewModels\PermissionsViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\PrintLoanReceiptViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\PrintReceiptViewModel.cs" />
@@ -371,7 +369,6 @@
     <Compile Include="Areas\Admin\ViewModels\ReportViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\RequestReviewViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StampDashboardViewModel.cs" />
-    <Compile Include="Areas\Admin\ViewModels\StampIssuanceReceiptViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StampIssuanceViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StampShareManagementViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StockIssueViewModel.cs" />
@@ -388,7 +385,6 @@
     <Compile Include="Areas\Admin\ViewModels\TransferRequestViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\TrialBalanceViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\UploadExamResultsViewModel.cs" />
-    <Compile Include="Areas\Admin\ViewModels\VoucherIndexViewModel.cs" />
     <Compile Include="Areas\ExamPortal\Controllers\DashboardController.cs" />
     <Compile Include="Areas\ExamPortal\Controllers\ExamLoginController.cs" />
     <Compile Include="Areas\ExamPortal\Controllers\TakeExamController.cs" />
@@ -446,6 +442,10 @@
     <Compile Include="Migrations\202601031203451_InitialCreate.cs" />
     <Compile Include="Migrations\202601031203451_InitialCreate.designer.cs">
       <DependentUpon>202601031203451_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202601051421401_FixFinancialModels_Final.cs" />
+    <Compile Include="Migrations\202601051421401_FixFinancialModels_Final.designer.cs">
+      <DependentUpon>202601051421401_FixFinancialModels_Final.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Answer.cs" />
@@ -546,14 +546,12 @@
     <Compile Include="Services\TelegramService.cs" />
     <Compile Include="ViewModels\AccountViewModels.cs" />
     <Compile Include="ViewModels\BankAccountViewModel.cs" />
-    <Compile Include="ViewModels\CreateVoucherViewModel.cs" />
     <Compile Include="ViewModels\ExamApplicationViewModel.cs" />
     <Compile Include="ViewModels\ExamEnrollmentViewModel.cs" />
     <Compile Include="ViewModels\FeeTypeViewModel.cs" />
     <Compile Include="ViewModels\GraduateApplicationViewModel.cs" />
     <Compile Include="ViewModels\LawyerFamilyViewModel.cs" />
     <Compile Include="ViewModels\LoginViewModel.cs" />
-    <Compile Include="ViewModels\PrintVoucherViewModel.cs" />
     <Compile Include="ViewModels\ProfileViewModel.cs" />
     <Compile Include="ViewModels\UserViewModel.cs" />
   </ItemGroup>
@@ -1114,6 +1112,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202601031203451_InitialCreate.resx">
       <DependentUpon>202601031203451_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601051421401_FixFinancialModels_Final.resx">
+      <DependentUpon>202601051421401_FixFinancialModels_Final.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

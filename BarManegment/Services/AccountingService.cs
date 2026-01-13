@@ -60,6 +60,8 @@ namespace BarManegment.Services
 
         private void BalanceEntry(JournalEntry entry)
         {
+            if (entry.JournalEntryDetails == null || !entry.JournalEntryDetails.Any()) return;
+
             decimal dTotal = entry.JournalEntryDetails.Sum(x => x.Debit);
             decimal cTotal = entry.JournalEntryDetails.Sum(x => x.Credit);
 
@@ -82,6 +84,7 @@ namespace BarManegment.Services
         {
             try
             {
+                // ✅ تعديل: استخدام Reload لضمان رؤية الإيصال بعد الـ Commit في الكنترولر
                 var receipt = db.Receipts
                     .Include(r => r.PaymentVoucher.GraduateApplication)
                     .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType.Currency))
@@ -90,8 +93,13 @@ namespace BarManegment.Services
 
                 if (receipt == null)
                 {
-                    AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Receipt with ID {receiptId} not found.");
-                    return false;
+                    // محاولة أخيرة بالبحث المباشر
+                    receipt = db.Receipts.Find(receiptId);
+                    if (receipt == null)
+                    {
+                        AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Receipt with ID {receiptId} NOT FOUND.");
+                        return false;
+                    }
                 }
 
                 if (db.JournalEntries.Any(j => j.SourceModule == "Receipts" && j.SourceId == receiptId)) return true;
@@ -109,7 +117,7 @@ namespace BarManegment.Services
 
                 if (debitAccount == null)
                 {
-                    AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Debit account with code {debitAccountCode} not found.");
+                    AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Debit account {debitAccountCode} not found.");
                     return false;
                 }
 
@@ -124,7 +132,7 @@ namespace BarManegment.Services
                     EntryNumber = GetNextEntryNumber(fiscalYear.Id),
                     EntryDate = receipt.BankPaymentDate,
                     ReferenceNumber = receipt.BankReceiptNumber ?? receipt.SequenceNumber.ToString(),
-                    Description = $"سند قبض {receipt.SequenceNumber} - {receipt.PaymentVoucher.GraduateApplication?.ArabicName ?? "متعهد"}",
+                    Description = $"سند قبض {receipt.SequenceNumber} - {receipt.PaymentVoucher.GraduateApplication?.ArabicName ?? "متعهد طوابع"}",
                     SourceModule = "Receipts",
                     SourceId = receiptId,
                     IsPosted = true,
@@ -143,11 +151,12 @@ namespace BarManegment.Services
                 foreach (var detail in receipt.PaymentVoucher.VoucherDetails)
                 {
                     string code = "42";
-                    string name = detail.FeeType?.Name ?? "";
+                    string name = (detail.FeeType?.Name ?? "").ToLower();
+                    string desc = (detail.Description ?? "").ToLower();
 
                     if (name.Contains("قرض") || name.Contains("سداد")) code = "1103";
                     else if (name.Contains("أمانات")) code = "2103";
-                    else if (name.Contains("طوابع")) code = "4201";
+                    else if (name.Contains("طوابع") || desc.Contains("طوابع")) code = "4201";
                     else if (name.Contains("تصديق")) code = "4202";
                     else if (name.Contains("انتساب")) code = "4101";
                     else if (name.Contains("اشتراك")) code = "4102";
@@ -156,12 +165,12 @@ namespace BarManegment.Services
 
                     if (creditAcc == null)
                     {
-                        AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Credit account with code {code} not found for detail {name}.");
+                        AuditService.LogAction("AccountingError", "GenerateEntryForReceipt", $"Credit account with code {code} not found.");
                         return false;
                     }
 
                     decimal lineBase = Math.Round(detail.Amount * exchangeRate, 2);
-                    entry.JournalEntryDetails.Add(new JournalEntryDetail { AccountId = creditAcc.Id, Debit = 0, Credit = lineBase, Description = detail.Description });
+                    entry.JournalEntryDetails.Add(new JournalEntryDetail { AccountId = creditAcc.Id, Debit = 0, Credit = lineBase, Description = detail.Description ?? detail.FeeType?.Name });
                 }
 
                 BalanceEntry(entry);
@@ -261,8 +270,6 @@ namespace BarManegment.Services
                     IsPosted = true,
                     PostedDate = DateTime.Now,
                     CreatedBy = "System Auto",
-                    TotalDebit = 0,
-                    TotalCredit = 0,
                     JournalEntryDetails = new List<JournalEntryDetail>()
                 };
 
@@ -316,14 +323,13 @@ namespace BarManegment.Services
                     PostedDate = DateTime.Now,
                     CreatedBy = "System Auto",
                     ExchangeRate = exchangeRate,
-                    TotalDebit = amountBase,
-                    TotalCredit = amountBase,
                     JournalEntryDetails = new List<JournalEntryDetail>()
                 };
 
                 entry.JournalEntryDetails.Add(new JournalEntryDetail { AccountId = loanReceivableAccount.Id, Debit = amountBase, Credit = 0, Description = "ذمم قروض مستحقة" });
                 entry.JournalEntryDetails.Add(new JournalEntryDetail { AccountId = bankAccount.Id, Debit = 0, Credit = amountBase, Description = "صرف القرض" });
 
+                BalanceEntry(entry);
                 db.JournalEntries.Add(entry);
                 db.SaveChanges();
                 return true;
@@ -438,7 +444,7 @@ namespace BarManegment.Services
         }
 
         // ============================================================
-        // 8. Generate Entry For Financial Aid - ✅ Corrected
+        // 8. Generate Entry For Financial Aid
         // ============================================================
         public bool GenerateEntryForFinancialAid(int aidId, int bankAccountId, int userId)
         {
@@ -454,7 +460,7 @@ namespace BarManegment.Services
 
                 var creditAccount = db.Accounts.Find(bankAccountId);
                 var debitAccount = db.Accounts.FirstOrDefault(a => a.Name.Contains("مساعدات") && a.AccountType == AccountType.Expense)
-                                   ?? db.Accounts.FirstOrDefault(a => a.Code == "5205");
+                                    ?? db.Accounts.FirstOrDefault(a => a.Code == "5205");
 
                 if (debitAccount == null) debitAccount = db.Accounts.FirstOrDefault(a => a.Code.StartsWith("5"));
 

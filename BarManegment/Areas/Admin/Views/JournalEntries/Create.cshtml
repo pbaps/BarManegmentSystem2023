@@ -1,79 +1,128 @@
 ﻿@model BarManegment.Areas.Admin.ViewModels.JournalEntryViewModel
+
 @{
-    ViewBag.Title = "قيد يومية جديد";
+    ViewBag.Title = "إضافة قيد يومية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
 
-<div class="card shadow mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 font-weight-bold text-primary">إنشاء قيد يومية (سنة: @ViewBag.FiscalYearName)</h6>
-        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">عودة للقائمة</a>
-    </div>
-    <div class="card-body">
-        <form id="journalForm">
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <label class="form-label">تاريخ القيد</label>
-                    @Html.TextBoxFor(m => m.EntryDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">رقم المستند (المرجع)</label>
-                    @Html.TextBoxFor(m => m.ReferenceNumber, new { @class = "form-control" })
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">البيان العام</label>
-                    @Html.TextBoxFor(m => m.Description, new { @class = "form-control", placeholder = "شرح مختصر للقيد" })
-                </div>
-            </div>
+<style>
+    /* تحسينات بصرية للجدول */
+    .table th {
+        vertical-align: middle;
+        text-align: center;
+    }
 
-            <hr />
+    .table td {
+        vertical-align: middle;
+    }
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="tblLines">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 30%">الحساب</th>
-                            <th style="width: 15%">مركز التكلفة</th>
-                            <th style="width: 20%">البيان (اختياري)</th>
-                            <th style="width: 12%">مدين</th>
-                            <th style="width: 12%">دائن</th>
-                            <th style="width: 5%"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                    <tfoot class="table-light fw-bold">
-                        <tr>
-                            <td colspan="3" class="text-end">الإجمالي:</td>
-                            <td id="totalDebit" class="text-success">0.00</td>
-                            <td id="totalCredit" class="text-success">0.00</td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" class="text-end">الفرق:</td>
-                            <td colspan="2" id="diffAmount" class="text-center">0.00</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+    }
 
-            <div class="d-flex justify-content-between mt-3">
-                <button type="button" class="btn btn-info" id="btnAddRow"><i class="bi bi-plus-circle"></i> إضافة سطر</button>
-                <button type="button" class="btn btn-success btn-lg" id="btnSave"><i class="bi bi-save"></i> حفظ القيد</button>
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+</style>
+
+<div class="container-fluid pt-4 px-4">
+
+    <div id="alertArea"></div>
+
+    <div class="card shadow mb-4 border-0">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center bg-primary text-white">
+            <div>
+                <h5 class="m-0 fw-bold"><i class="bi bi-pencil-square me-2"></i> قيد يومية جديد</h5>
+                <small class="opacity-75">السنة المالية: @ViewBag.FiscalYearName</small>
             </div>
-        </form>
+            <a href="@Url.Action("Index")" class="btn btn-light text-primary btn-sm fw-bold">
+                <i class="bi bi-arrow-return-right"></i> عودة للسجل
+            </a>
+        </div>
+
+        <div class="card-body p-4">
+            <form id="journalForm">
+                <div class="row g-3 mb-4 bg-light p-3 rounded border">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">تاريخ القيد <span class="text-danger">*</span></label>
+                        @Html.TextBoxFor(m => m.EntryDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">رقم المستند / المرجع</label>
+                        @Html.TextBoxFor(m => m.ReferenceNumber, new { @class = "form-control", placeholder = "مثال: سند صرف 501" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">البيان العام للقيد <span class="text-danger">*</span></label>
+                        @Html.TextBoxFor(m => m.Description, new { @class = "form-control", placeholder = "شرح مختصر لطبيعة القيد" })
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="tblLines">
+                        <thead class="table-light text-dark">
+                            <tr>
+                                <th style="width: 30%">اسم الحساب <span class="text-danger">*</span></th>
+                                <th style="width: 15%">مركز التكلفة</th>
+                                <th style="width: 25%">البيان التفصيلي (اختياري)</th>
+                                <th style="width: 12%">مدين</th>
+                                <th style="width: 12%">دائن</th>
+                                <th style="width: 6%">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                        <tfoot class="table-light fw-bold text-dark">
+                            <tr>
+                                <td colspan="3" class="text-end">الإجمالي:</td>
+                                <td><span id="totalDebit" class="text-primary">0.00</span></td>
+                                <td><span id="totalCredit" class="text-primary">0.00</span></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end">الفرق (التوازن):</td>
+                                <td colspan="2" class="text-center">
+                                    <span id="diffAmount" class="badge bg-success fs-6 w-100">0.00</span>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button type="button" class="btn btn-info text-white" id="btnAddRow">
+                        <i class="bi bi-plus-lg"></i> إضافة سطر جديد
+                    </button>
+
+                    <button type="button" class="btn btn-success btn-lg px-5 fw-bold shadow-sm" id="btnSave" disabled>
+                        <i class="bi bi-save me-2"></i> حفظ وترحيل القيد
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <div style="display:none;">
-    @Html.DropDownList("HiddenAccounts", ViewBag.Accounts as SelectList, "اختر الحساب", new { @class = "form-control account-select" })
-    @Html.DropDownList("HiddenCostCenters", ViewBag.CostCenters as SelectList, "-- بلا --", new { @class = "form-control" })
+    @Html.DropDownList("HiddenAccounts", ViewBag.Accounts as SelectList, "--- اختر الحساب ---", new { @class = "form-select account-input" })
+
+    @Html.DropDownList("HiddenCostCenters", ViewBag.CostCenters as SelectList, "-- بلا --", new { @class = "form-select costcenter-input" })
 </div>
 
 @section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
         $(document).ready(function () {
-            // إضافة سطرين افتراضياً
+            // إضافة 3 أسطر عند التحميل
+            addRow();
             addRow();
             addRow();
 
@@ -82,14 +131,23 @@
                 addRow();
             });
 
-            // زر حذف سطر
+            // حذف سطر
             $(document).on('click', '.btn-remove', function () {
                 $(this).closest('tr').remove();
                 calculateTotals();
             });
 
-            // عند تغيير الأرقام
-            $(document).on('input', '.calc-input', function () {
+            // عند تغيير القيم (مدين/دائن)
+            $(document).on('input change', '.calc-input', function () {
+                // منع الكتابة في المدين والدائن معاً لنفس السطر
+                let row = $(this).closest('tr');
+                let val = parseFloat($(this).val());
+
+                if (val > 0) {
+                    if ($(this).hasClass('debit-input')) row.find('.credit-input').val(0);
+                    else row.find('.debit-input').val(0);
+                }
+
                 calculateTotals();
             });
 
@@ -99,74 +157,96 @@
             });
         });
 
+        // دالة إضافة سطر جديد
         function addRow() {
-            var accountsHtml = $('#HiddenAccounts').html(); // نسخ خيارات الحسابات
-            var costCentersHtml = $('#HiddenCostCenters').html(); // نسخ خيارات المراكز
+            // نسخ محتوى القوائم المخفية
+            var accountsHtml = $('#HiddenAccounts').html();
+            var costCentersHtml = $('#HiddenCostCenters').html();
 
             var row = `
                 <tr>
                     <td>
-                        <select class="form-control select2-account account-input">${accountsHtml}</select>
+                        <select class="form-select select2-account account-select" style="width:100%">${accountsHtml}</select>
                     </td>
                     <td>
-                        <select class="form-control costcenter-input">${costCentersHtml}</select>
+                        <select class="form-select select2-normal costcenter-select" style="width:100%">${costCentersHtml}</select>
                     </td>
                     <td>
-                        <input type="text" class="form-control desc-input" placeholder="شرح السطر" />
+                        <input type="text" class="form-control desc-input" placeholder="شرح" />
                     </td>
                     <td>
-                        <input type="number" class="form-control calc-input debit-input" value="0" step="0.01" min="0" />
+                        <input type="number" class="form-control calc-input debit-input font-monospace text-center" value="0" step="0.01" min="0" />
                     </td>
                     <td>
-                        <input type="number" class="form-control calc-input credit-input" value="0" step="0.01" min="0" />
+                        <input type="number" class="form-control calc-input credit-input font-monospace text-center" value="0" step="0.01" min="0" />
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-danger btn-sm btn-remove"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm btn-remove"><i class="bi bi-trash"></i></button>
                     </td>
                 </tr>
             `;
+
             $('#tblLines tbody').append(row);
 
-            // تفعيل Select2 للصف الجديد فقط
-            $('#tblLines tbody tr:last .select2-account').select2({
+            // تفعيل Select2 للصف الجديد
+            var newRow = $('#tblLines tbody tr:last');
+            newRow.find('.select2-account').select2({
                 theme: "bootstrap-5",
                 width: '100%',
-                placeholder: "ابحث عن الحساب...",
-                allowClear: true
+                placeholder: "ابحث بالكود أو الاسم...",
+                allowClear: true,
+                dir: "rtl"
+            });
+
+            newRow.find('.select2-normal').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                dir: "rtl"
             });
         }
 
+        // دالة الحساب والتحقق من التوازن
         function calculateTotals() {
             var totalDebit = 0;
             var totalCredit = 0;
 
             $('.debit-input').each(function () {
-                var val = parseFloat($(this).val()) || 0;
-                totalDebit += val;
+                totalDebit += parseFloat($(this).val()) || 0;
             });
 
             $('.credit-input').each(function () {
-                var val = parseFloat($(this).val()) || 0;
-                totalCredit += val;
+                totalCredit += parseFloat($(this).val()) || 0;
             });
+
+            // التقريب لمنزلتين
+            totalDebit = Math.round(totalDebit * 100) / 100;
+            totalCredit = Math.round(totalCredit * 100) / 100;
 
             $('#totalDebit').text(totalDebit.toFixed(2));
             $('#totalCredit').text(totalCredit.toFixed(2));
 
-            var diff = totalDebit - totalCredit;
-            $('#diffAmount').text(Math.abs(diff).toFixed(2));
+            var diff = Math.round((totalDebit - totalCredit) * 100) / 100;
+            var absDiff = Math.abs(diff);
 
-            if (Math.abs(diff) < 0.01 && totalDebit > 0) {
-                $('#diffAmount').removeClass('text-danger').addClass('text-success').text("متوازن");
-                $('#btnSave').prop('disabled', false);
+            var badge = $('#diffAmount');
+            var btn = $('#btnSave');
+
+            if (totalDebit > 0 && absDiff === 0) {
+                // متوازن
+                badge.text('0.00 (متوازن)').removeClass('bg-danger').addClass('bg-success');
+                btn.prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
             } else {
-                $('#diffAmount').removeClass('text-success').addClass('text-danger');
-                // لا نعطل الزر، نترك السيرفر يرفض لإعطاء رسالة واضحة
+                // غير متوازن
+                badge.text(diff.toFixed(2) + ' (غير متوازن)').removeClass('bg-success').addClass('bg-danger');
+                btn.prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
             }
         }
 
+        // دالة إرسال البيانات (AJAX)
         function saveEntry() {
-            // تجميع البيانات
+            // إظهار مؤشر التحميل
+            $('#btnSave').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري الحفظ...').prop('disabled', true);
+
             var entry = {
                 EntryDate: $('#EntryDate').val(),
                 ReferenceNumber: $('#ReferenceNumber').val(),
@@ -174,29 +254,39 @@
                 Lines: []
             };
 
+            // التحقق من الحقول الأساسية
+            if (!entry.EntryDate || !entry.Description) {
+                showAlert('يرجى تعبئة التاريخ والبيان العام.', 'danger');
+                resetSaveButton();
+                return;
+            }
+
+            // تجميع الأسطر
             $('#tblLines tbody tr').each(function () {
                 var row = $(this);
-                var accountId = row.find('.account-input').val();
+                var accountId = row.find('.account-select').val();
+                var debit = parseFloat(row.find('.debit-input').val()) || 0;
+                var credit = parseFloat(row.find('.credit-input').val()) || 0;
 
-                // تجاهل الصفوف الفارغة (التي لم يتم اختيار حساب لها)
-                if (accountId) {
+                // تجاهل الأسطر التي ليس بها حساب أو مبالغ
+                if (accountId && (debit > 0 || credit > 0)) {
                     entry.Lines.push({
                         AccountId: accountId,
-                        CostCenterId: row.find('.costcenter-input').val(),
+                        CostCenterId: row.find('.costcenter-select').val(),
                         LineDescription: row.find('.desc-input').val(),
-                        Debit: parseFloat(row.find('.debit-input').val()) || 0,
-                        Credit: parseFloat(row.find('.credit-input').val()) || 0
+                        Debit: debit,
+                        Credit: credit
                     });
                 }
             });
 
-            // تحقق بسيط
             if (entry.Lines.length < 2) {
-                alert("يجب إدخال طرفي القيد على الأقل.");
+                showAlert('يجب إدخال طرفي القيد (مدين ودائن) على الأقل.', 'warning');
+                resetSaveButton();
                 return;
             }
 
-            // إرسال AJAX
+            // الإرسال
             $.ajax({
                 url: '@Url.Action("SaveEntry")',
                 type: 'POST',
@@ -204,16 +294,31 @@
                 data: JSON.stringify(entry),
                 success: function (response) {
                     if (response.success) {
-                        alert(response.message);
                         window.location.href = '@Url.Action("Index")';
                     } else {
-                        alert("خطأ: " + response.message);
+                        showAlert(response.message, 'danger');
+                        resetSaveButton();
                     }
                 },
                 error: function () {
-                    alert("حدث خطأ في الاتصال بالسيرفر.");
+                    showAlert('حدث خطأ في الاتصال بالسيرفر.', 'danger');
+                    resetSaveButton();
                 }
             });
+        }
+
+        // دوال مساعدة
+        function resetSaveButton() {
+            $('#btnSave').html('<i class="bi bi-save me-2"></i> حفظ وترحيل القيد').prop('disabled', false);
+        }
+
+        function showAlert(message, type) {
+            var html = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>`;
+            $('#alertArea').html(html);
+            window.scrollTo(0, 0);
         }
     </script>
 }

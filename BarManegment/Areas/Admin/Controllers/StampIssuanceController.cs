@@ -7,7 +7,7 @@ using System;
 using BarManegment.Areas.Admin.ViewModels;
 using BarManegment.Helpers;
 using System.Net;
-using BarManegment.Services; // ✅ ضروري لاستخدام الخدمة المالية
+using BarManegment.Services;
 
 namespace BarManegment.Areas.Admin.Controllers
 {
@@ -16,7 +16,6 @@ namespace BarManegment.Areas.Admin.Controllers
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
-        // GET: Admin/StampIssuance
         public ActionResult Index()
         {
             var availableBooks = db.StampBooks
@@ -35,7 +34,6 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(viewModel);
         }
 
-        // POST: Admin/StampIssuance
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorize(Permission = "CanAdd")]
@@ -57,7 +55,7 @@ namespace BarManegment.Areas.Admin.Controllers
                 return RedirectToAction("Index");
             }
 
-            var feeType = db.FeeTypes.FirstOrDefault(f => f.Name == "رسوم طوابع");
+            var feeType = db.FeeTypes.FirstOrDefault(f => f.Name.Contains("طوابع"));
             if (feeType == null)
             {
                 TempData["ErrorMessage"] = "خطأ فادح: لم يتم تعريف 'رسوم طوابع' في أنواع الرسوم.";
@@ -65,18 +63,24 @@ namespace BarManegment.Areas.Admin.Controllers
             }
 
             decimal totalAmount = selectedBooks.Sum(b => b.Quantity * b.ValuePerStamp);
-            var employeeId = (int)Session["UserId"];
-            var employeeName = Session["FullName"] as string;
+            var employeeId = (int)(Session["UserId"] ?? 1);
+            var employeeName = Session["FullName"] as string ?? "System";
 
-            // بدء معاملة (Transaction)
+            int createdReceiptId = 0;
+            string contractorName = "";
+
             using (var transaction = db.Database.BeginTransaction())
             {
                 try
                 {
-                    // --- 1. إنشاء قسيمة الدفع (وتعيينها "مسدد" فوراً) ---
+                    // جلب اسم المتعهد للتدقيق
+                    var contractor = db.StampContractors.Find(viewModel.SelectedContractorId);
+                    contractorName = contractor?.Name ?? "متعهد غير معروف";
+
+                    // 1. القسيمة
                     var voucher = new PaymentVoucher
                     {
-                        GraduateApplicationId = null, // لأنها للمتعهد
+                        GraduateApplicationId = null,
                         PaymentMethod = "نقدي",
                         IssueDate = DateTime.Now,
                         ExpiryDate = DateTime.Now,
@@ -98,139 +102,111 @@ namespace BarManegment.Areas.Admin.Controllers
                         });
                     }
                     db.PaymentVouchers.Add(voucher);
-                    db.SaveChanges(); // حفظ القسيمة للحصول على ID
+                    db.SaveChanges();
 
-                    // --- 2. إنشاء إيصال القبض (فوراً) ---
-                    int currentYear = DateTime.Now.Year;
-                    int lastSequenceNumber = db.Receipts.Where(r => r.Year == currentYear).Select(r => (int?)r.SequenceNumber).Max() ?? 0;
-                    int newSequenceNumber = lastSequenceNumber + 1;
+                    // 2. الإيصال
+                    var currentYearRecord = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
+                    int year = currentYearRecord != null ? currentYearRecord.StartDate.Year : DateTime.Now.Year;
+                    int lastSeq = db.Receipts.Where(r => r.Year == year).Max(r => (int?)r.SequenceNumber) ?? 0;
 
                     var receipt = new Receipt
                     {
-                        Id = voucher.Id, // الربط (نفس الـ ID للقسيمة والإيصال)
+                        Id = voucher.Id,
                         BankPaymentDate = DateTime.Now,
                         BankReceiptNumber = "دفع نقدي (طوابع)",
                         CreationDate = DateTime.Now,
                         IssuedByUserId = employeeId,
                         IssuedByUserName = employeeName,
-                        Year = currentYear,
-                        SequenceNumber = newSequenceNumber
+                        Year = year,
+                        SequenceNumber = lastSeq + 1
                     };
                     db.Receipts.Add(receipt);
 
-                    // --- 3. إنشاء سجلات الصرف وتفعيل الطوابع ---
+                    // 3. تحديث الدفاتر والطوابع
                     foreach (var book in selectedBooks)
                     {
-                        var issuance = new StampBookIssuance
+                        db.StampBookIssuances.Add(new StampBookIssuance
                         {
                             ContractorId = viewModel.SelectedContractorId,
                             StampBookId = book.Id,
                             PaymentVoucherId = voucher.Id,
                             IssuanceDate = DateTime.Now
-                        };
-                        db.StampBookIssuances.Add(issuance);
+                        });
 
-                        // أ. تحديث حالة الدفتر (الأب)
-                        book.Status = "مع المتعهد"; // حالة الدفتر بعد الصرف
-
-                        // ب. (الإجراء الآلي) تحديث جميع الطوابع الفردية
-                        // استخدام SQL مباشر لتحسين الأداء بدلاً من تحميل آلاف الطوابع
+                        book.Status = "مع المتعهد";
                         db.Database.ExecuteSqlCommand(
-                            "UPDATE Stamps SET Status = {0}, ContractorId = {1} WHERE StampBookId = {2}",
-                            "مع المتعهد", viewModel.SelectedContractorId, book.Id
+                            "UPDATE Stamps SET Status = 'مع المتعهد', ContractorId = {0} WHERE StampBookId = {1}",
+                            viewModel.SelectedContractorId, book.Id
                         );
                     }
 
-                    db.SaveChanges(); // حفظ الإيصال وتحديثات الطوابع
-                    transaction.Commit(); // تأكيد العملية
+                    db.SaveChanges();
+                    transaction.Commit();
+                    createdReceiptId = receipt.Id;
 
-                    // ============================================================
-                    // === 💡 التكامل المالي: إنشاء قيد اليومية الآلي 💡 ===
-                    // ============================================================
-                    try
-                    {
-                        using (var accService = new AccountingService())
-                        {
-                            bool isEntryCreated = accService.GenerateEntryForReceipt(receipt.Id, employeeId);
-                            if (isEntryCreated)
-                            {
-                                TempData["SuccessMessage"] = $"تم استلام المبلغ وصرف ({selectedBooks.Count}) دفاتر، وتم إنشاء القيد المحاسبي بنجاح.";
-                            }
-                            else
-                            {
-                                TempData["SuccessMessage"] = $"تم استلام المبلغ وصرف ({selectedBooks.Count}) دفاتر، ولكن تعذر إنشاء القيد الآلي.";
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        TempData["SuccessMessage"] = $"تم استلام المبلغ وصرف ({selectedBooks.Count}) دفاتر (خطأ في النظام المحاسبي).";
-                    }
-                    // ============================================================
+                    // ✅ إضافة سجل التدقيق (Audit Log) لعملية الصرف الناجحة
+                    AuditService.LogAction("StampIssuance", "StampIssuance",
+                        $"تم صرف {selectedBooks.Count} دفاتر للمتعهد {contractorName} بمبلغ {totalAmount} شيكل. إيصال رقم #{receipt.SequenceNumber}");
 
-                    // إعادة التوجيه لصفحة طباعة إيصال المتعهد
-                    return RedirectToAction("PrintIssuanceReceipt", new { id = receipt.Id });
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    TempData["ErrorMessage"] = "حدث خطأ فادح أثناء الحفظ: " + ex.Message;
+                    // ❌ إضافة سجل تدقيق للفشل
+                    AuditService.LogAction("StampIssuanceError", "StampIssuance", $"فشل صرف الطوابع: {ex.Message}");
+
+                    TempData["ErrorMessage"] = "خطأ أثناء الحفظ: " + ex.Message;
                     return RedirectToAction("Index");
                 }
             }
+
+            // ✅ 4. إنشاء القيد المحاسبي
+            if (createdReceiptId > 0)
+            {
+                using (var accService = new AccountingService())
+                {
+                    bool isEntryCreated = accService.GenerateEntryForReceipt(createdReceiptId, employeeId);
+                    if (isEntryCreated)
+                        TempData["SuccessMessage"] = "تم الصرف وترحيل القيد بنجاح.";
+                    else
+                        TempData["WarningMessage"] = "تم الصرف بنجاح، ولكن فشل ترحيل القيد المحاسبي.";
+                }
+                return RedirectToAction("PrintIssuanceReceipt", new { id = createdReceiptId });
+            }
+
+            return RedirectToAction("Index");
         }
 
-        // GET: Admin/StampIssuance/PrintIssuanceReceipt/1012
-        [CustomAuthorize(Permission = "CanView")]
         public ActionResult PrintIssuanceReceipt(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
-            // 1. جلب الإيصال ومعه القسيمة والتفاصيل
             var receipt = db.Receipts
                 .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType.Currency))
                 .FirstOrDefault(r => r.Id == id);
 
-            if (receipt == null || receipt.PaymentVoucher.PaymentMethod != "نقدي")
-            {
-                return HttpNotFound("الإيصال غير موجود أو غير صالح لهذه العملية.");
-            }
+            if (receipt == null) return HttpNotFound();
 
             var voucher = receipt.PaymentVoucher;
             var currencySymbol = voucher.VoucherDetails.FirstOrDefault()?.FeeType.Currency?.Symbol ?? "₪";
+            var issuance = db.StampBookIssuances.Include(i => i.Contractor).FirstOrDefault(i => i.PaymentVoucherId == voucher.Id);
 
-            // 2. البحث عن اسم المتعهد
-            var issuance = db.StampBookIssuances
-                             .Include(i => i.Contractor)
-                             .FirstOrDefault(i => i.PaymentVoucherId == voucher.Id);
-
-            string contractorName = (issuance != null) ? issuance.Contractor.Name : "متعهد طوابع";
-
-            // 3. بناء الـ ViewModel
             var viewModel = new StampIssuanceReceiptViewModel
             {
                 ReceiptId = receipt.Id,
                 ReceiptFullNumber = $"{receipt.SequenceNumber}/{receipt.Year}",
                 PaymentDate = receipt.BankPaymentDate,
-                ContractorName = contractorName,
+                ContractorName = issuance?.Contractor?.Name ?? "متعهد طوابع",
                 IssuedByUserName = receipt.IssuedByUserName,
                 TotalAmount = voucher.TotalAmount,
                 CurrencySymbol = currencySymbol,
                 TotalAmountInWords = TafqeetHelper.ConvertToArabic(voucher.TotalAmount, currencySymbol),
-                Details = voucher.VoucherDetails.Select(d => new StampIssuanceReceiptDetail
-                {
-                    Description = d.Description,
-                    Amount = d.Amount
-                }).ToList()
+                Details = voucher.VoucherDetails.Select(d => new StampIssuanceReceiptDetail { Description = d.Description, Amount = d.Amount }).ToList()
             };
 
-            return View("PrintIssuanceReceipt", viewModel);
+            return View(viewModel);
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) db.Dispose();
-            base.Dispose(disposing);
-        }
+        protected override void Dispose(bool disposing) { if (disposing) db.Dispose(); base.Dispose(disposing); }
     }
 }

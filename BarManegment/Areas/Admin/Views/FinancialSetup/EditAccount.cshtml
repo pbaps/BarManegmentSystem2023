@@ -58,6 +58,7 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label text-muted">نوع الحساب (طبيعة الحساب)</label>
+                                @* ✅ التصحيح هنا: التأكد من صيغة new { @class } *@
                                 @Html.EnumDropDownListFor(model => model.AccountType, new { @class = "form-select bg-light", @disabled = "disabled" })
                                 @Html.HiddenFor(model => model.AccountType)
                             </div>
@@ -84,7 +85,6 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // تفعيل مكتبة Select2 للقوائم المنسدلة (للبحث السريع)
             $('.select2').select2({
                 theme: "bootstrap-5",
                 width: '100%',

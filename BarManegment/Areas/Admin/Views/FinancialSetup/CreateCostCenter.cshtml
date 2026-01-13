@@ -29,20 +29,26 @@
                                 <label class="form-label fw-bold">رمز المركز (Code) <span class="text-danger">*</span></label>
                                 @Html.EditorFor(model => model.Code, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: 101" } })
                                 @Html.ValidationMessageFor(model => model.Code, "", new { @class = "text-danger small" })
-                                <div class="form-text">يجب أن يكون الرمز فريداً.</div>
+                                <div class="form-text text-muted">يجب أن يكون الرمز فريداً.</div>
                             </div>
 
                             <div class="col-md-8">
                                 <label class="form-label fw-bold">اسم المركز <span class="text-danger">*</span></label>
-                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: لجنة التدريب - رفح" } })
+                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: فرع التدريب - الشمال" } })
                                 @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2 mt-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">يتبع للمركز الرئيسي (اختياري)</label>
+                            @Html.DropDownList("ParentId", null, "--- مركز رئيسي (مستوى 1) ---", new { @class = "form-select select2" })
+                            <div class="form-text text-muted">اتركه فارغاً إذا كان هذا مركزاً رئيسياً.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4 border-top pt-3">
                             <a href="@Url.Action("CostCentersIndex")" class="btn btn-secondary px-4">إلغاء</a>
-                            <button type="submit" class="btn btn-success px-5 fw-bold">
-                                <i class="bi bi-save me-1"></i> حفظ
+                            <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">
+                                <i class="bi bi-save-fill me-1"></i> حفظ المركز
                             </button>
                         </div>
                     }
@@ -55,12 +61,11 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // تفعيل الـ Select2 إذا قمت بإلغاء تعليق حقل ParentId مستقبلاً
-            /* $('.select2').select2({
+            $('.select2').select2({
                 theme: "bootstrap-5",
                 width: '100%',
                 dir: "rtl"
-            }); */
+            });
         });
     </script>
 }

@@ -1,40 +1,78 @@
 ﻿@model IEnumerable<BarManegment.Models.Account>
-@{ ViewBag.Title = "دليل الحسابات"; }
 
-<div class="card p-3">
-    <div class="d-flex justify-content-between mb-3">
-        <h4>دليل الحسابات (الأطراف المالية)</h4>
-        <a href="@Url.Action("CreateAccount")" class="btn btn-primary"><i class="bi bi-plus"></i> إضافة حساب جديد</a>
+@{
+    ViewBag.Title = "دليل الحسابات";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold"><i class="bi bi-diagram-2 me-2"></i> دليل الحسابات</h4>
+        <a href="@Url.Action("CreateAccount")" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg"></i> حساب جديد</a>
     </div>
-    <table class="table table-striped table-sm">
-        <thead class="table-dark">
-            <tr>
-                <th>الكود</th>
-                <th>اسم الحساب</th>
-                <th>النوع</th>
-                <th>حركي؟</th>
-                <th>إجراءات</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td class="fw-bold">@item.Code</td>
-                    <td style="padding-right: @(item.Level * 15)px">
-                        @if (!item.IsTransactional)
-                        {<i class="bi bi-folder-fill text-warning me-1"></i> }
-                        else
-                        { <i class="bi bi-file-text me-1"></i>}
-                        @item.Name
-                    </td>
-                    <td>@item.AccountType</td>
-                    <td>@(item.IsTransactional ? "نعم" : "رئيسي")</td>
-                    <td>
-                        <a href="@Url.Action("EditAccount", new { id = item.Id })" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 20%">رقم الحساب</th>
+                            <th style="width: 40%">اسم الحساب</th>
+                            <th style="width: 15%">نوع الحساب</th>
+                            <th style="width: 10%">المستوى</th>
+                            <th style="width: 15%">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            // تنسيق بصري لتمييز المستويات
+                            // كل مستوى يزيد المسافة البادئة
+                            string padding = ((item.Level - 1) * 20) + "px";
+                            string rowClass = item.IsTransactional ? "" : "table-active fw-bold"; // تلوين الحساب الرئيسي
+                            string icon = item.IsTransactional ? "bi-circle-fill small text-success" : "bi-folder-fill text-warning";
+
+                            <tr class="@rowClass">
+                                <td class="font-monospace">@item.Code</td>
+                                <td style="padding-right: @padding">
+                                    <i class="bi @icon me-2"></i> @item.Name
+                                </td>
+                                <td><span class="badge bg-secondary">@item.AccountType</span></td>
+                                <td>@item.Level</td>
+                                <td>
+                                    <a href="@Url.Action("EditAccount", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+
+                                    @if (item.IsTransactional)
+                                    {
+                                        using (Html.BeginForm("DeleteAccount", "FinancialSetup", FormMethod.Post, new { @class = "d-inline" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('هل أنت متأكد من حذف هذا الحساب؟');" title="حذف"><i class="bi bi-trash"></i></button>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>

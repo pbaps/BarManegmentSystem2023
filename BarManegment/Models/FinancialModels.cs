@@ -36,15 +36,23 @@ namespace BarManegment.Models
     // 2. رأس القيد المحاسبي (Journal Entry Header)
     public class JournalEntry
     {
+        [Key]
         public int Id { get; set; }
-        // داخل class JournalEntry
-        public int? CreatedByUserId { get; set; }
 
-        [ForeignKey("CreatedByUserId")]
-        public virtual UserModel CreatedByUser { get; set; }
+        // --- 1. علاقة السنة المالية (تم إصلاحها) ---
+        // جعلناها int? لتقبل القيم الفارغة للبيانات القديمة، لكن العلاقة مفعلة
+        [Display(Name = "السنة المالية")]
+        public int? FiscalYearId { get; set; }
 
-        // --- الحقول المشتركة (الأساسية) ---
+        [ForeignKey("FiscalYearId")]
+        public virtual FiscalYear FiscalYear { get; set; } // ✅ هذا هو السطر الذي كان ينقصك
+
+        // --- 2. البيانات الأساسية ---
+        [Display(Name = "رقم القيد")]
+        public string EntryNumber { get; set; }
+
         [Display(Name = "تاريخ القيد")]
+        [DataType(DataType.Date)]
         public DateTime EntryDate { get; set; }
 
         [Display(Name = "البيان / الشرح")]
@@ -53,44 +61,36 @@ namespace BarManegment.Models
         [Display(Name = "رقم مرجعي")]
         public string ReferenceNumber { get; set; }
 
-        public bool IsPosted { get; set; } = false;
-
-        // --- حقول الرواتب (الجديدة) ---
-        [Display(Name = "أنشأ بواسطة")]
-        public string CreatedBy { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        // --- حقول النظام القديم (لحل الأخطاء في باقي المتحكمات) ---
-        [Display(Name = "السنة المالية")]
-        public int? FiscalYearId { get; set; } // جعلناه اختياري لعدم كسر الرواتب
-
-        // (ملاحظة: إذا كان FiscalYear كلاس موجود، أضف العلاقة، وإلا اتركها معطلة مؤقتاً)
-        // [ForeignKey("FiscalYearId")]
-        // public virtual FiscalYear FiscalYear { get; set; }
-
-        [Display(Name = "رقم القيد")]
-        public string EntryNumber { get; set; } // كان int في بعض الأنظمة، String أأمن
-
         [Display(Name = "المصدر")]
-        public string SourceModule { get; set; } // مثال: Payroll, Inventory
+        public string SourceModule { get; set; } // مثال: Manual, Receipts
 
         public int? SourceId { get; set; } // ID المستند المصدر
 
+        // --- 3. بيانات الترحيل والمستخدمين ---
+        public bool IsPosted { get; set; } = false;
         public DateTime? PostedDate { get; set; }
         public int? PostedByUserId { get; set; }
 
-        public decimal? ExchangeRate { get; set; } = 1;
-        public int? CurrencyId { get; set; }
+        [Display(Name = "أنشأ بواسطة")]
+        public string CreatedBy { get; set; }
 
+        public int? CreatedByUserId { get; set; }
+        [ForeignKey("CreatedByUserId")]
+        public virtual UserModel CreatedByUser { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // --- 4. العملات والأرقام ---
         public decimal TotalDebit { get; set; }
         public decimal TotalCredit { get; set; }
 
-        // --- العلاقات ---
-        // سنستخدم اسمين لنفس القائمة لإرضاء جميع المتحكمات!
-        // 1. الاسم الجديد (للرواتب)
+        public int? CurrencyId { get; set; }
+        public decimal? ExchangeRate { get; set; } = 1;
+
+        // --- 5. التفاصيل (العلاقة مع الأسطر) ---
         public virtual ICollection<JournalEntryDetail> JournalEntryDetails { get; set; }
 
-        // 2. الاسم القديم (لباقي النظام) - يعيد نفس البيانات
+        // خاصية مساعدة للتوافق مع الكود القديم (Alias)
         [NotMapped]
         public virtual ICollection<JournalEntryDetail> Lines
         {

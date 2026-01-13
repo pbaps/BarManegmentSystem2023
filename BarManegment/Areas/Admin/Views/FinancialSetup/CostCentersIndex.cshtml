@@ -55,6 +55,16 @@
                                         <a href="@Url.Action("EditCostCenter", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+
+                                        @* ✅ التصحيح هنا: إضافة @ قبل using *@
+                                        @using (Html.BeginForm("DeleteCostCenter", "FinancialSetup", FormMethod.Post, new { @class = "d-inline" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('هل أنت متأكد من حذف هذا المركز؟');" title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
                                     </td>
                                 </tr>
                             }
