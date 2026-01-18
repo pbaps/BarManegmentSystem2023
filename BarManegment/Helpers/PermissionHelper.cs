@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using System.Data.Entity; // ضروري لعمل Include
+using System.Data.Entity;
 
 namespace BarManegment.Helpers
 {
@@ -26,19 +26,30 @@ namespace BarManegment.Helpers
             return CheckPermission(controllerName, "CanView");
         }
 
-        // دالة عامة للتحقق من أي صلاحية محددة
-        public static bool CheckPermission(string controllerName, string permissionType)
+        // ✅ التعديل هنا: تم إضافة المعامل الثالث الاختياري (passedUserTypeId)
+        public static bool CheckPermission(string controllerName, string permissionType, int? passedUserTypeId = null)
         {
-            // 1. التحقق من وجود المستخدم
-            if (HttpContext.Current.Session["UserTypeId"] == null)
+            int userTypeId;
+
+            // 1. تحديد مصدر UserTypeId (الأولوية للقيمة الممررة من Claims)
+            if (passedUserTypeId.HasValue)
             {
-                return false;
+                userTypeId = passedUserTypeId.Value;
+            }
+            else
+            {
+                // إذا لم تمرر قيمة (مثل الاستدعاء من Views قديمة)، نحاول القراءة من السيشن كخيار أخير
+                if (HttpContext.Current?.Session?["UserTypeId"] == null)
+                {
+                    return false;
+                }
+                userTypeId = (int)HttpContext.Current.Session["UserTypeId"];
             }
 
-            int userTypeId = (int)HttpContext.Current.Session["UserTypeId"];
-
-            // 2. محاولة جلب الصلاحيات من الذاكرة (Session) أولاً
-            var cachedPermissions = HttpContext.Current.Session["UserPermissionsList"] as List<CachedPermissionDto>;
+            // 2. محاولة جلب الصلاحيات من الذاكرة (Session Cache) أولاً لتقليل الاستعلامات
+            // نستخدم مفتاح تخزين فريد لكل نوع مستخدم لتجنب التداخل
+            string cacheKey = $"UserPermissionsList_{userTypeId}";
+            var cachedPermissions = HttpContext.Current?.Session?[cacheKey] as List<CachedPermissionDto>;
 
             // 3. إذا لم تكن موجودة في الذاكرة (أول مرة فقط)، نجلبها من قاعدة البيانات
             if (cachedPermissions == null)
@@ -47,9 +58,9 @@ namespace BarManegment.Helpers
                 {
                     // جلب كل الصلاحيات دفعة واحدة لهذا النوع من المستخدمين
                     var dbPermissions = db.Permissions
-                                          .Include(p => p.Module) // تضمين جدول الموديول
-                                          .Where(p => p.UserTypeId == userTypeId)
-                                          .ToList();
+                                            .Include(p => p.Module) // تضمين جدول الموديول
+                                            .Where(p => p.UserTypeId == userTypeId)
+                                            .ToList();
 
                     // تحويلها إلى قائمة خفيفة للتخزين
                     cachedPermissions = dbPermissions.Select(p => new CachedPermissionDto
@@ -64,11 +75,14 @@ namespace BarManegment.Helpers
                     }).ToList();
 
                     // حفظها في السيشن لعدم تكرار الاستعلام
-                    HttpContext.Current.Session["UserPermissionsList"] = cachedPermissions;
+                    if (HttpContext.Current?.Session != null)
+                    {
+                        HttpContext.Current.Session[cacheKey] = cachedPermissions;
+                    }
                 }
             }
 
-            // 4. البحث في الذاكرة (سريع جداً)
+            // 4. البحث في القائمة المحفوظة (سريع جداً)
             var permissionRecord = cachedPermissions
                 .FirstOrDefault(p => p.ControllerName == controllerName);
 

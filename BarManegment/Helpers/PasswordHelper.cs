@@ -7,7 +7,7 @@ namespace BarManegment.Helpers
     {
         private const int SaltSize = 16;
         private const int HashSize = 20;
-        private const int Iterations = 10000;
+        private const int Iterations = 100000;
 
         public static string HashPassword(string password)
         {

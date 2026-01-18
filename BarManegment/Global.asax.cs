@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data.Entity.Migrations;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -28,11 +29,9 @@ namespace BarManegment
             // =========================================================
             try
             {
-                // 👇 التعديل هنا: استخدام المسار الكامل BarManegment.Migrations.Configuration
                 var configuration = new BarManegment.Migrations.Configuration();
-
                 var migrator = new DbMigrator(configuration);
-                migrator.Update(); // هذا السطر ينفذ أي Migrations ناقصة ويشغل دالة Seed
+                migrator.Update();
             }
             catch (Exception ex)
             {
@@ -40,17 +39,20 @@ namespace BarManegment
                 throw new Exception("فشل تحديث قاعدة البيانات تلقائياً: " + ex.Message);
             }
 
-            var domain = "http://pbaps.ps"; // قم بتغيير هذا عند النشر
+            var domain = "http://maj.pbaps.ps";
             var webhookUrl = $"{domain}/TelegramBot/Update";
 
-            try
+            Task.Run(async () =>
             {
-                TelegramService.SetWebhookAsync(webhookUrl).Wait();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
-            } 
+                try
+                {
+                    await TelegramService.SetWebhookAsync(webhookUrl);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Webhook Error: {ex.Message}");
+                }
+            });
         } 
        
     }
