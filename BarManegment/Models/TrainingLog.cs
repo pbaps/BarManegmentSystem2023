@@ -30,17 +30,21 @@ namespace BarManegment.Models
         [Range(1, 12)]
         public int Month { get; set; }
 
+        // ✅ إضافة جديدة ومهمة
+        [Display(Name = "عدد القضايا المتابعة")]
+        public int CasesCount { get; set; }
+
         [Required(ErrorMessage = "يجب ملء ملخص الأعمال")]
         [Display(Name = "ملخص الأعمال (جلسات، لوائح، استشارات)")]
         [DataType(DataType.MultilineText)]
         public string WorkSummary { get; set; }
 
         [Display(Name = "ملف مرفق (اختياري)")]
-        public string FilePath { get; set; }
+        public string FilePath { get; set; } // ✅ سنعتمد هذا الاسم
 
         [Required]
         [StringLength(50)]
-        public string Status { get; set; } // (مثال: "مسودة", "بانتظار موافقة المشرف", "معتمد", "مرفوض")
+        public string Status { get; set; }
 
         [Display(Name = "تاريخ التقديم")]
         public DateTime SubmissionDate { get; set; }

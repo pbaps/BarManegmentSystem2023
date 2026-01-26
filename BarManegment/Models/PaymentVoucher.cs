@@ -61,6 +61,11 @@ namespace BarManegment.Models
 
         public virtual ICollection<VoucherDetail> VoucherDetails { get; set; }
 
+ 
+
+        // ✅ أضف هذا إذا لم يكن موجوداً
+        public bool IsPaid { get; set; }
+
         public PaymentVoucher()
         {
             VoucherDetails = new HashSet<VoucherDetail>();

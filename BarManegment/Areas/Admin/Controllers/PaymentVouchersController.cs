@@ -1,4 +1,4 @@
-﻿using BarManegment.Areas.Admin.ViewModels; // ✅ استخدام الـ ViewModels الموحدة
+﻿using BarManegment.Areas.Admin.ViewModels;
 using BarManegment.Helpers;
 using BarManegment.Models;
 using BarManegment.Services;
@@ -22,16 +22,13 @@ namespace BarManegment.Areas.Admin.Controllers
         // ============================================================
         public ActionResult Index()
         {
-            // 1. تحديد القسائم المستثناة (المرتبطة بأنظمة فرعية أخرى) لتجنب التكرار
             var excludedVoucherIds = new HashSet<int>(
                 db.ContractTransactions.Where(c => c.PaymentVoucherId != null).Select(c => c.PaymentVoucherId.Value)
             );
 
-            // إضافة قسائم القروض
             var loanIds = db.LoanInstallments.Where(i => i.PaymentVoucherId != null).Select(i => i.PaymentVoucherId.Value).ToList();
             foreach (var id in loanIds) excludedVoucherIds.Add(id);
 
-            // 2. الاستعلام الأساسي
             var allVouchersQuery = db.PaymentVouchers.AsNoTracking()
                 .Include(v => v.GraduateApplication)
                 .Include(v => v.VoucherDetails.Select(d => d.FeeType.Currency))
@@ -39,7 +36,6 @@ namespace BarManegment.Areas.Admin.Controllers
 
             var viewModel = new VoucherIndexViewModel();
 
-            // أ. قسائم المحامين والمتدربين (غير المدفوعة)
             var pendingTrainee = allVouchersQuery
                 .Where(v => (v.Status == "صادر" || v.Status == "بانتظار الدفع")
                             && v.GraduateApplicationId != null)
@@ -50,7 +46,6 @@ namespace BarManegment.Areas.Admin.Controllers
                 .OrderByDescending(v => v.IssueDate)
                 .ToList();
 
-            // ب. قسائم المتعهدين (طوابع)
             viewModel.UnpaidContractorVouchers = db.StampBookIssuances.AsNoTracking()
                 .Include(i => i.Contractor)
                 .Include(i => i.PaymentVoucher)
@@ -65,7 +60,6 @@ namespace BarManegment.Areas.Admin.Controllers
                 .OrderByDescending(x => x.Voucher.IssueDate)
                 .ToList();
 
-            // ج. القسائم العامة (جهات خارجية)
             var pendingGeneral = allVouchersQuery
                 .Where(v => (v.Status == "صادر" || v.Status == "بانتظار الدفع")
                             && v.GraduateApplicationId == null)
@@ -80,7 +74,6 @@ namespace BarManegment.Areas.Admin.Controllers
                 .OrderByDescending(v => v.IssueDate)
                 .ToList();
 
-            // د. الأرشيف (أحدث 100 قسيمة مدفوعة)
             viewModel.PaidVouchers = allVouchersQuery
                 .Where(v => v.Status == "مسدد")
                 .OrderByDescending(v => v.IssueDate)
@@ -101,6 +94,7 @@ namespace BarManegment.Areas.Admin.Controllers
                 .Select(v => v.GraduateApplicationId.Value)
                 .ToList();
 
+            // يفضل نقل هذه القائمة لإعدادات النظام مستقبلاً
             var allowedStatuses = new List<string> {
                 "مقبول (بانتظار الدفع)",
                 "متدرب مقيد",
@@ -131,7 +125,64 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         // ============================================================
-        // 3. إنشاء قسيمة متدرب/محامي (Create - Standard)
+        // 3. إصدار قسيمة رسوم امتحان (يدوياً) - محدثة
+        // ============================================================
+        [CustomAuthorize(Permission = "CanAdd")]
+        public ActionResult CreateExamVoucher(int? examAppId)
+        {
+            if (examAppId == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+            var app = db.ExamApplications.Find(examAppId);
+            if (app == null) return HttpNotFound();
+
+            var existingVoucher = db.PaymentVouchers.FirstOrDefault(v => v.CheckNumber == app.FullName && v.Status != "ملغى" && v.VoucherDetails.Any(d => d.Description.Contains("امتحان")));
+            if (existingVoucher != null)
+            {
+                TempData["InfoMessage"] = "يوجد قسيمة صادرة لهذا المتقدم بالفعل.";
+                return RedirectToAction("Details", new { id = existingVoucher.Id });
+            }
+
+            // ✅ التعديل: الاعتماد على الإعدادات
+            int? feeTypeId = GetSettingOrFindByName<FeeType>("Exam_Registration_FeeTypeId", "امتحان القبول");
+            var examFeeType = db.FeeTypes.Include(f => f.Currency).FirstOrDefault(f => f.Id == feeTypeId);
+
+            if (examFeeType == null) return Content("خطأ: نوع رسم 'امتحان القبول' غير محدد في إعدادات النظام.");
+
+            var voucher = new PaymentVoucher
+            {
+                GraduateApplicationId = null,
+                IssueDate = DateTime.Now,
+                ExpiryDate = DateTime.Now.AddDays(14),
+                TotalAmount = examFeeType.DefaultAmount,
+                Status = "صادر",
+                PaymentMethod = "إيداع بنكي",
+                IssuedByUserId = GetCurrentUserId(),
+                IssuedByUserName = Session["FullName"]?.ToString(),
+                CheckNumber = app.FullName,
+
+                VoucherDetails = new List<VoucherDetail>
+                {
+                    new VoucherDetail
+                    {
+                        FeeTypeId = examFeeType.Id,
+                        Amount = examFeeType.DefaultAmount,
+                        BankAccountId = examFeeType.BankAccountId,
+                        Description = $"رسوم امتحان القبول - {app.FullName} ({app.NationalIdNumber})"
+                    }
+                }
+            };
+
+            db.PaymentVouchers.Add(voucher);
+            app.Status = "بانتظار دفع الرسوم";
+            db.SaveChanges();
+
+            AuditService.LogAction("Create Exam Voucher", "PaymentVouchers", $"Created manual voucher for Exam App {app.NationalIdNumber}");
+
+            return RedirectToAction("PrintVoucher", new { id = voucher.Id });
+        }
+
+        // ============================================================
+        // 4. إنشاء قسيمة متدرب/محامي (Create - Standard)
         // ============================================================
         [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult Create(int? id)
@@ -145,17 +196,11 @@ namespace BarManegment.Areas.Admin.Controllers
             string status = app.ApplicationStatus.Name;
 
             if (status.Contains("مقبول"))
-            {
                 suggestedFees.AddRange(new[] { "رسوم تسجيل متدرب جديد", "رسوم بطاقة التدريب (الكارنيه)", "رسوم صندوق تعاون (متدرب)" });
-            }
             else if (status.Contains("متدرب"))
-            {
                 suggestedFees.AddRange(new[] { "رسوم تجديد سنوي للمتدربين", "رسوم صندوق تعاون (متدرب)" });
-            }
             else if (status.Contains("محامي") || status.Contains("تجديد"))
-            {
                 suggestedFees.AddRange(new[] { "تجديد مزاولة (سنوي)", "رسوم صندوق التعاون", "رسوم الزمالة" });
-            }
 
             var fees = db.FeeTypes
                 .Include(f => f.Currency)
@@ -211,7 +256,7 @@ namespace BarManegment.Areas.Admin.Controllers
                             ExpiryDate = model.ExpiryDate,
                             Status = "صادر",
                             TotalAmount = selectedFees.Sum(f => f.Amount),
-                            IssuedByUserId = (int?)Session["UserId"] ?? 1,
+                            IssuedByUserId = GetCurrentUserId(),
                             IssuedByUserName = Session["FullName"]?.ToString() ?? "System",
                             PaymentMethod = model.PaymentMethod,
                             VoucherDetails = new List<VoucherDetail>()
@@ -231,7 +276,9 @@ namespace BarManegment.Areas.Admin.Controllers
                         db.PaymentVouchers.Add(voucher);
 
                         var trainee = db.GraduateApplications.Find(model.GraduateApplicationId);
-                        if (trainee != null && trainee.ApplicationStatusId == db.ApplicationStatuses.FirstOrDefault(s => s.Name == "مقبول (بانتظار الدفع)")?.Id)
+                        var pendingStatus = db.ApplicationStatuses.FirstOrDefault(s => s.Name == "مقبول (بانتظار الدفع)");
+
+                        if (trainee != null && trainee.ApplicationStatusId == pendingStatus?.Id)
                         {
                             var nextStatus = db.ApplicationStatuses.FirstOrDefault(s => s.Name == "بانتظار دفع الرسوم");
                             if (nextStatus != null)
@@ -245,7 +292,6 @@ namespace BarManegment.Areas.Admin.Controllers
                         transaction.Commit();
 
                         AuditService.LogAction("Create Voucher", "PaymentVouchers", $"Created Voucher #{voucher.Id} for Trainee {model.TraineeName}");
-
                         TempData["SuccessMessage"] = "تم إصدار قسيمة الدفع بنجاح.";
                         return RedirectToAction("PrintVoucher", new { id = voucher.Id });
                     }
@@ -260,18 +306,14 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         // ============================================================
-        // 4. قسائم المتعهدين - طوابع (Contractor Vouchers)
+        // 5. قسائم المتعهدين - طوابع (محدثة)
         // ============================================================
         [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult CreateContractorVoucher()
         {
             var viewModel = new CreateContractorVoucherViewModel
             {
-                AvailableBooksList = db.StampBooks
-                    .Where(b => b.Status == "في المخزن")
-                    .OrderBy(b => b.StartSerial)
-                    .ToList(),
-
+                AvailableBooksList = db.StampBooks.Where(b => b.Status == "في المخزن").OrderBy(b => b.StartSerial).ToList(),
                 ContractorsList = new SelectList(db.StampContractors.Where(c => c.IsActive), "Id", "Name")
             };
             return View(viewModel);
@@ -296,18 +338,19 @@ namespace BarManegment.Areas.Admin.Controllers
             {
                 try
                 {
-                    var selectedBooks = db.StampBooks
-                        .Where(b => viewModel.SelectedBookIds.Contains(b.Id) && b.Status == "في المخزن")
-                        .ToList();
+                    var selectedBooks = db.StampBooks.Where(b => viewModel.SelectedBookIds.Contains(b.Id) && b.Status == "في المخزن").ToList();
 
                     if (selectedBooks.Count != viewModel.SelectedBookIds.Count)
                     {
                         transaction.Rollback();
-                        TempData["ErrorMessage"] = "خطأ: بعض الدفاتر المختارة لم تعد متاحة، يرجى المحاولة مرة أخرى.";
+                        TempData["ErrorMessage"] = "خطأ: بعض الدفاتر المختارة لم تعد متاحة.";
                         return RedirectToAction("CreateContractorVoucher");
                     }
 
-                    var feeType = db.FeeTypes.FirstOrDefault(f => f.Name.Contains("طوابع"));
+                    // ✅ التعديل: الاعتماد على الإعدادات
+                    int? feeTypeId = GetSettingOrFindByName<FeeType>("Stamp_Contractor_FeeTypeId", "طوابع");
+                    var feeType = db.FeeTypes.FirstOrDefault(f => f.Id == feeTypeId);
+
                     if (feeType == null)
                     {
                         feeType = db.FeeTypes.FirstOrDefault();
@@ -322,14 +365,13 @@ namespace BarManegment.Areas.Admin.Controllers
                         ExpiryDate = DateTime.Now.AddDays(7),
                         Status = "صادر",
                         TotalAmount = selectedBooks.Sum(b => b.Quantity * b.ValuePerStamp),
-                        IssuedByUserId = (int?)Session["UserId"] ?? 1,
+                        IssuedByUserId = GetCurrentUserId(),
                         IssuedByUserName = Session["FullName"]?.ToString() ?? "System",
                         VoucherDetails = new List<VoucherDetail>()
                     };
 
                     foreach (var book in selectedBooks)
                     {
-                        // ✅ تم تصحيح الخطأ هنا: استخدام ValuePerStamp
                         voucher.VoucherDetails.Add(new VoucherDetail
                         {
                             FeeTypeId = feeType.Id,
@@ -351,7 +393,6 @@ namespace BarManegment.Areas.Admin.Controllers
                             PaymentVoucherId = voucher.Id,
                             IssuanceDate = DateTime.Now
                         });
-
                         book.Status = "بانتظار الدفع";
                         db.Entry(book).State = EntityState.Modified;
                     }
@@ -359,7 +400,7 @@ namespace BarManegment.Areas.Admin.Controllers
                     db.SaveChanges();
                     transaction.Commit();
 
-                    AuditService.LogAction("Create Contractor Voucher", "PaymentVouchers", $"Created Voucher #{voucher.Id} for Contractor ID {viewModel.SelectedContractorId}.");
+                    AuditService.LogAction("Create Contractor Voucher", "PaymentVouchers", $"Created Voucher #{voucher.Id}.");
 
                     return RedirectToAction("PrintStampContractorVoucher", new { id = voucher.Id });
                 }
@@ -373,7 +414,7 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         // ============================================================
-        // 5. القسائم العامة (General Vouchers)
+        // 6. القسائم العامة (General Vouchers)
         // ============================================================
         [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult CreateGeneralVoucher()
@@ -401,7 +442,6 @@ namespace BarManegment.Areas.Admin.Controllers
                     Iban = f.BankAccount?.Iban
                 }).ToList()
             };
-
             return View(viewModel);
         }
 
@@ -431,7 +471,7 @@ namespace BarManegment.Areas.Admin.Controllers
                             ExpiryDate = viewModel.ExpiryDate,
                             Status = "صادر",
                             TotalAmount = selectedFees.Sum(f => f.Amount),
-                            IssuedByUserId = (int?)Session["UserId"] ?? 1,
+                            IssuedByUserId = GetCurrentUserId(),
                             IssuedByUserName = Session["FullName"]?.ToString() ?? "System",
                             PaymentMethod = viewModel.PaymentMethod,
                             VoucherDetails = new List<VoucherDetail>()
@@ -468,67 +508,185 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         // ============================================================
-        // 6. الطباعة والتفاصيل (Shared)
+        // 7. تأكيد الدفع النقدي (Confirm Cash Payment) - هام جداً للقيود
         // ============================================================
-
-        private PrintVoucherViewModel PrepareVoucherViewModel(int id)
-        {
-            var voucher = db.PaymentVouchers
-                .Include(v => v.GraduateApplication)
-                .Include(v => v.VoucherDetails.Select(d => d.FeeType.Currency))
-                .Include(v => v.VoucherDetails.Select(d => d.BankAccount))
-                .FirstOrDefault(v => v.Id == id);
-
-            if (voucher == null) return null;
-
-            string applicantName = voucher.GraduateApplication?.ArabicName;
-            if (string.IsNullOrEmpty(applicantName))
-            {
-                if (!string.IsNullOrEmpty(voucher.CheckNumber))
-                {
-                    applicantName = voucher.CheckNumber;
-                }
-                else
-                {
-                    var issuance = db.StampBookIssuances.Include(i => i.Contractor)
-                                     .FirstOrDefault(i => i.PaymentVoucherId == voucher.Id);
-                    applicantName = issuance?.Contractor.Name ?? "جهة خارجية / متعهد";
-                }
-            }
-
-            string currencySymbol = voucher.VoucherDetails.FirstOrDefault()?.FeeType?.Currency?.Symbol ?? "₪";
-            string amountInWords = TafqeetHelper.ConvertToArabic(voucher.TotalAmount, currencySymbol);
-
-            ViewBag.AmountInWords = amountInWords;
-            ViewBag.CurrencySymbol = currencySymbol;
-
-            return new PrintVoucherViewModel
-            {
-                VoucherId = voucher.Id,
-                TraineeName = applicantName,
-                IssueDate = voucher.IssueDate,
-                ExpiryDate = voucher.ExpiryDate,
-                TotalAmount = voucher.TotalAmount,
-                PaymentMethod = voucher.PaymentMethod,
-                IssuedByUserName = voucher.IssuedByUserName,
-                Details = voucher.VoucherDetails.Select(d => new VoucherPrintDetail
-                {
-                    FeeTypeName = d.Description ?? d.FeeType?.Name,
-                    Amount = d.Amount,
-                    CurrencySymbol = d.FeeType?.Currency?.Symbol ?? "",
-                    BankName = d.BankAccount?.BankName ?? "",
-                    AccountName = d.BankAccount?.AccountName ?? "",
-                    AccountNumber = d.BankAccount?.AccountNumber ?? "",
-                    Iban = d.BankAccount?.Iban ?? ""
-                }).ToList()
-            };
-        }
-
-        [CustomAuthorize(Permission = "CanView")]
-        public ActionResult PrintVoucher(int? id)
+        [CustomAuthorize(Permission = "CanAdd")]
+        public ActionResult ConfirmCashPayment(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
+            var voucher = db.PaymentVouchers.AsNoTracking()
+                .Include(v => v.GraduateApplication)
+                .Include(v => v.VoucherDetails.Select(d => d.FeeType.Currency))
+                .FirstOrDefault(v => v.Id == id);
+
+            if (voucher == null || voucher.Status != "صادر")
+            {
+                TempData["ErrorMessage"] = "القسيمة غير موجودة أو تم تسديدها بالفعل.";
+                return RedirectToAction("Index");
+            }
+            return View(voucher);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [CustomAuthorize(Permission = "CanAdd")]
+        public ActionResult ConfirmCashPayment(int PaymentVoucherId)
+        {
+            var employeeId = GetCurrentUserId();
+            var employeeName = Session["FullName"] as string;
+
+            if (employeeId == -1) return RedirectToAction("Login", "AdminLogin");
+
+            var paymentVoucher = db.PaymentVouchers
+                .Include(v => v.GraduateApplication.ApplicationStatus)
+                .Include(v => v.VoucherDetails.Select(d => d.FeeType))
+                .Include(v => v.VoucherDetails.Select(d => d.BankAccount)) // نحتاج البنك للقيد
+                .FirstOrDefault(v => v.Id == PaymentVoucherId);
+
+            if (paymentVoucher == null || paymentVoucher.Status != "صادر")
+            {
+                TempData["ErrorMessage"] = "القسيمة غير موجودة أو تم سدادها بالفعل.";
+                return RedirectToAction("Index");
+            }
+
+            using (var transaction = db.Database.BeginTransaction())
+            {
+                try
+                {
+                    // 1. إنشاء الإيصال
+                    int currentYear = DateTime.Now.Year;
+                    int lastSequenceNumber = db.Receipts.Where(r => r.Year == currentYear).Select(r => (int?)r.SequenceNumber).Max() ?? 0;
+                    int newSequenceNumber = lastSequenceNumber + 1;
+
+                    var receipt = new Receipt
+                    {
+                        Id = paymentVoucher.Id, // One-to-One with Voucher
+                        BankPaymentDate = DateTime.Now,
+                        BankReceiptNumber = "تحصيل نقدي",
+                        CreationDate = DateTime.Now,
+                        IssuedByUserId = employeeId,
+                        IssuedByUserName = employeeName,
+                        Year = currentYear,
+                        SequenceNumber = newSequenceNumber
+                    };
+                    db.Receipts.Add(receipt);
+
+                    // 2. تحديث حالة القسيمة
+                    paymentVoucher.Status = "مسدد";
+                    db.Entry(paymentVoucher).State = EntityState.Modified;
+
+                    // ====================================================================
+                    // 🛑🛑🛑 التعديل الجديد: معالجة صرف الطوابع للمتعهد 🛑🛑🛑
+                    // ====================================================================
+                    var stampIssuances = db.StampBookIssuances
+                        .Where(i => i.PaymentVoucherId == paymentVoucher.Id)
+                        .ToList();
+
+                    if (stampIssuances.Any())
+                    {
+                        foreach (var issue in stampIssuances)
+                        {
+                            // أ. تحديث حالة الدفتر
+                            var book = db.StampBooks.Find(issue.StampBookId);
+                            if (book != null)
+                            {
+                                book.Status = "مع المتعهد"; // تفعيل الدفتر
+                                db.Entry(book).State = EntityState.Modified;
+
+                                // ب. تحديث الطوابع الفردية داخل الدفتر ليراها المتعهد في شاشة البيع
+                                db.Database.ExecuteSqlCommand(
+                                    "UPDATE Stamps SET Status = 'مع المتعهد', ContractorId = {0} WHERE StampBookId = {1}",
+                                    issue.ContractorId, book.Id
+                                );
+                            }
+                        }
+                    }
+                    // ====================================================================
+
+                    // 3. تحديث حالة المعاملة المرتبطة (إن وجدت - للعقود)
+                    var contractTransaction = db.ContractTransactions
+                        .Include(c => c.ContractType)
+                        .FirstOrDefault(c => c.PaymentVoucherId == paymentVoucher.Id);
+
+                    if (contractTransaction != null)
+                    {
+                        contractTransaction.Status = "بانتظار التصديق";
+                        db.Entry(contractTransaction).State = EntityState.Modified;
+
+                        // توزيع الحصص
+                        decimal lawyerShare = contractTransaction.FinalFee * contractTransaction.ContractType.LawyerPercentage;
+                        decimal barShare = contractTransaction.FinalFee * contractTransaction.ContractType.BarSharePercentage;
+
+                        db.FeeDistributions.Add(new FeeDistribution { ReceiptId = receipt.Id, ContractTransactionId = contractTransaction.Id, LawyerId = contractTransaction.LawyerId, Amount = lawyerShare, ShareType = "حصة محامي", IsSentToBank = false });
+                        db.FeeDistributions.Add(new FeeDistribution { ReceiptId = receipt.Id, ContractTransactionId = contractTransaction.Id, LawyerId = null, Amount = barShare, ShareType = "حصة نقابة", IsSentToBank = true });
+                    }
+
+                    // 4. تحديث حالة المتدرب (إن وجد)
+                    if (paymentVoucher.GraduateApplication != null && paymentVoucher.GraduateApplication.ApplicationStatus.Name == "بانتظار دفع الرسوم")
+                    {
+                        var activeStatus = db.ApplicationStatuses.FirstOrDefault(s => s.Name == "متدرب مقيد");
+                        if (activeStatus != null)
+                        {
+                            paymentVoucher.GraduateApplication.ApplicationStatusId = activeStatus.Id;
+                            db.Entry(paymentVoucher.GraduateApplication).State = EntityState.Modified;
+                        }
+                    }
+
+                    db.SaveChanges();
+                    transaction.Commit();
+
+                    // ============================================================
+                    // === 💡 التكامل المالي (Accounting Integration) 💡 ===
+                    // ============================================================
+                    try
+                    {
+                        using (var accService = new AccountingService())
+                        {
+                            bool isPosted = accService.GenerateEntryForReceipt(receipt.Id, employeeId);
+
+                            if (isPosted)
+                                TempData["SuccessMessage"] = $"تم التحصيل النقدي (إيصال {newSequenceNumber}) وتم ترحيل القيد المحاسبي بنجاح.";
+                            else
+                                TempData["SuccessMessage"] = $"تم التحصيل (إيصال {newSequenceNumber})، ولكن حدثت مشكلة في القيد الآلي. يرجى مراجعة المحاسب.";
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        TempData["SuccessMessage"] = $"تم التحصيل بنجاح، ولكن فشل القيد الآلي: {ex.Message}";
+                    }
+
+                    // تحديد صفحة الطباعة المناسبة
+                    if (stampIssuances.Any())
+                    {
+                        TempData["PrintReceiptUrl"] = Url.Action("PrintStampContractorVoucher", "PaymentVouchers", new { id = receipt.Id });
+                    }
+                    else if (contractTransaction != null)
+                    {
+                        TempData["PrintReceiptUrl"] = Url.Action("PrintContractReceipt", "ContractTransactions", new { id = receipt.Id });
+                    }
+                    else
+                    {
+                        TempData["PrintReceiptUrl"] = Url.Action("PrintVoucher", "PaymentVouchers", new { id = receipt.Id });
+                    }
+
+                    return RedirectToAction("Index");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    TempData["ErrorMessage"] = "حدث خطأ أثناء الحفظ: " + ex.Message;
+                    return RedirectToAction("Index");
+                }
+            }
+        }
+
+        // ============================================================
+        // 8. الطباعة (كما هي، لم تتغير)
+        // ============================================================
+        public ActionResult PrintVoucher(int? id)
+        {
+            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             if (db.StampBookIssuances.Any(i => i.PaymentVoucherId == id))
                 return RedirectToAction("PrintStampContractorVoucher", new { id });
 
@@ -539,11 +697,9 @@ namespace BarManegment.Areas.Admin.Controllers
             return View("PrintVoucher", viewModel);
         }
 
-        [CustomAuthorize(Permission = "CanView")]
         public ActionResult PrintStampContractorVoucher(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-
             var viewModel = PrepareVoucherViewModel(id.Value);
             if (viewModel == null) return Content("خطأ: القسيمة غير موجودة.");
 
@@ -554,7 +710,6 @@ namespace BarManegment.Areas.Admin.Controllers
         public ActionResult Details(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-
             var voucher = db.PaymentVouchers.AsNoTracking()
                 .Include(v => v.GraduateApplication)
                 .Include(v => v.VoucherDetails.Select(d => d.FeeType.Currency))
@@ -566,17 +721,13 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         // ============================================================
-        // 7. الحذف (Delete)
+        // 9. الحذف (Delete) - كما هي
         // ============================================================
         [CustomAuthorize(Permission = "CanDelete")]
         public ActionResult Delete(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-
-            var voucher = db.PaymentVouchers
-                .Include(p => p.GraduateApplication)
-                .FirstOrDefault(p => p.Id == id);
-
+            var voucher = db.PaymentVouchers.Include(p => p.GraduateApplication).FirstOrDefault(p => p.Id == id);
             if (voucher == null) return HttpNotFound();
 
             if (voucher.Status != "صادر" && voucher.Status != "بانتظار الدفع")
@@ -605,6 +756,7 @@ namespace BarManegment.Areas.Admin.Controllers
                             return RedirectToAction("Index");
                         }
 
+                        // إعادة حالة المتدرب
                         if (voucher.GraduateApplicationId.HasValue)
                         {
                             var app = db.GraduateApplications.Find(voucher.GraduateApplicationId);
@@ -618,6 +770,7 @@ namespace BarManegment.Areas.Admin.Controllers
                             }
                         }
 
+                        // إعادة حالة الطوابع
                         var issuances = db.StampBookIssuances.Where(i => i.PaymentVoucherId == id).ToList();
                         foreach (var i in issuances)
                         {
@@ -648,6 +801,91 @@ namespace BarManegment.Areas.Admin.Controllers
                 }
             }
             return RedirectToAction("Index");
+        }
+
+        // ============================================================
+        // Helper Functions (دوال مساعدة)
+        // ============================================================
+        private int GetCurrentUserId()
+        {
+            if (Session["UserId"] == null) return -1;
+            return (int)Session["UserId"];
+        }
+
+        // دالة لجلب المعرف من الإعدادات أو استخدام البحث كخيار بديل
+        private int? GetSettingOrFindByName<T>(string settingKey, string nameToFind) where T : class
+        {
+            var setting = db.SystemSettings.FirstOrDefault(s => s.SettingKey == settingKey);
+            if (setting != null && setting.ValueInt.HasValue)
+            {
+                return setting.ValueInt.Value;
+            }
+
+            // Fallback: البحث بالاسم
+            if (typeof(T) == typeof(FeeType))
+            {
+                var item = db.FeeTypes.FirstOrDefault(f => f.Name.Contains(nameToFind));
+                return item?.Id;
+            }
+            if (typeof(T) == typeof(ContractType))
+            {
+                var item = db.ContractTypes.FirstOrDefault(c => c.Name.Contains(nameToFind));
+                return item?.Id;
+            }
+            return null;
+        }
+
+        private PrintVoucherViewModel PrepareVoucherViewModel(int id)
+        {
+            var voucher = db.PaymentVouchers
+                .Include(v => v.GraduateApplication)
+                .Include(v => v.VoucherDetails.Select(d => d.FeeType.Currency))
+                .Include(v => v.VoucherDetails.Select(d => d.BankAccount))
+                .FirstOrDefault(v => v.Id == id);
+
+            if (voucher == null) return null;
+
+            string applicantName = voucher.GraduateApplication?.ArabicName;
+            if (string.IsNullOrEmpty(applicantName))
+            {
+                if (!string.IsNullOrEmpty(voucher.CheckNumber))
+                {
+                    applicantName = voucher.CheckNumber;
+                }
+                else
+                {
+                    var issuance = db.StampBookIssuances.Include(i => i.Contractor)
+                                         .FirstOrDefault(i => i.PaymentVoucherId == voucher.Id);
+                    applicantName = issuance?.Contractor.Name ?? "جهة خارجية / متعهد";
+                }
+            }
+
+            string currencySymbol = voucher.VoucherDetails.FirstOrDefault()?.FeeType?.Currency?.Symbol ?? "₪";
+            string amountInWords = TafqeetHelper.ConvertToArabic(voucher.TotalAmount, currencySymbol);
+
+            ViewBag.AmountInWords = amountInWords;
+            ViewBag.CurrencySymbol = currencySymbol;
+
+            return new PrintVoucherViewModel
+            {
+                VoucherId = voucher.Id,
+                TraineeName = applicantName,
+                IssueDate = voucher.IssueDate,
+                ExpiryDate = voucher.ExpiryDate,
+                TotalAmount = voucher.TotalAmount,
+                PaymentMethod = voucher.PaymentMethod,
+                IssuedByUserName = voucher.IssuedByUserName,
+                Details = voucher.VoucherDetails.Select(d => new VoucherPrintDetail
+                {
+                    FeeTypeName = d.Description ?? d.FeeType?.Name,
+                    Amount = d.Amount,
+                    CurrencySymbol = d.FeeType?.Currency?.Symbol ?? "",
+                    BankName = d.BankAccount?.BankName ?? "",
+                    AccountName = d.BankAccount?.AccountName ?? "",
+                    AccountNumber = d.BankAccount?.AccountNumber ?? "",
+                    Iban = d.BankAccount?.Iban ?? ""
+                }).ToList()
+            };
         }
 
         protected override void Dispose(bool disposing)

@@ -1,77 +1,95 @@
-﻿@model BarManegment.Areas.Admin.ViewModels.FeeTypeViewModel
+﻿@model BarManegment.Models.FeeType
+
 @{
     ViewBag.Title = "إضافة نوع رسم جديد";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid pt-4 px-4">
-    <div class="card" style="max-width: 800px; margin: auto;">
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i> إضافة نوع رسم جديد</h5>
+    </div>
+    <div class="card-body">
         @using (Html.BeginForm())
         {
             @Html.AntiForgeryToken()
 
-            <div class="card-header">
-                <h4>@ViewBag.Title</h4>
-            </div>
-            <div class="card-body">
-                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+        <div class="form-horizontal">
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-                <div class="form-floating mb-3">
-                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = " " } })
-                    @Html.LabelFor(model => model.Name)
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(model => model.Name, "اسم الرسم", htmlAttributes: new { @class = "form-label fw-bold" })
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
                     @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
                 </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-floating mb-3">
-                            @Html.EditorFor(model => model.DefaultAmount, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number", step = "0.1" } })
-                            @Html.LabelFor(model => model.DefaultAmount)
-                            @Html.ValidationMessageFor(model => model.DefaultAmount, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating mb-3">
-                            @Html.DropDownListFor(model => model.CurrencyId, Model.Currencies, "--- اختر العملة ---", new { @class = "form-select" })
-                            @Html.LabelFor(model => model.CurrencyId)
-                            @Html.ValidationMessageFor(model => model.CurrencyId, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(model => model.DefaultAmount, "المبلغ الافتراضي", htmlAttributes: new { @class = "form-label fw-bold" })
+                    @Html.EditorFor(model => model.DefaultAmount, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.01" } })
+                    @Html.ValidationMessageFor(model => model.DefaultAmount, "", new { @class = "text-danger" })
                 </div>
+            </div>
 
-                <div class="form-floating mb-3">
-                    @Html.DropDownListFor(model => model.BankAccountId, Model.BankAccounts, "--- اختر الحساب البنكي ---", new { @class = "form-select" })
-                    @Html.LabelFor(model => model.BankAccountId)
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    @Html.LabelFor(model => model.CurrencyId, "العملة", htmlAttributes: new { @class = "form-label fw-bold" })
+                    @Html.DropDownList("CurrencyId", null, htmlAttributes: new { @class = "form-select" })
+                    @Html.ValidationMessageFor(model => model.CurrencyId, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(model => model.BankAccountId, "الحساب البنكي (للإيداع)", htmlAttributes: new { @class = "form-label fw-bold" })
+                    @Html.DropDownList("BankAccountId", null, htmlAttributes: new { @class = "form-select" })
                     @Html.ValidationMessageFor(model => model.BankAccountId, "", new { @class = "text-danger" })
                 </div>
+            </div>
 
-                <fieldset class="border p-3 mb-3">
-                    <legend class="float-none w-auto px-2">تقسيم الحصص (للطوابع/التصديقات)</legend>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                @Html.EditorFor(model => model.LawyerPercentage, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number", step = "0.01", min = "0", max = "1.0" } })
-                                @Html.LabelFor(model => model.LawyerPercentage)
-                                @Html.ValidationMessageFor(model => model.LawyerPercentage, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                @Html.EditorFor(model => model.BarSharePercentage, new { htmlAttributes = new { @class = "form-control", placeholder = " ", type = "number", step = "0.01", min = "0", max = "1.0" } })
-                                @Html.LabelFor(model => model.BarSharePercentage)
-                                @Html.ValidationMessageFor(model => model.BarSharePercentage, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-                <div class="form-check form-switch mb-3">
-                    @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input", role = "switch" })
-                    @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label" })
+            <!-- ✅ الإضافة الجديدة: ربط الحساب المحاسبي -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label class="form-label fw-bold text-success">
+                        <i class="bi bi-journal-bookmark-fill me-1"></i> الحساب المحاسبي (للإيرادات)
+                    </label>
+                    @Html.DropDownList("RevenueAccountId", null, "--- الحساب الافتراضي (عام) ---", htmlAttributes: new { @class = "form-select select2" })
+                    <div class="form-text text-muted">حدد الحساب الذي سيتم ترحيل الإيراد إليه في كشف الحساب (مثل: 4101 - رسوم انتساب).</div>
+                    @Html.ValidationMessageFor(model => model.RevenueAccountId, "", new { @class = "text-danger" })
                 </div>
             </div>
-            <div class="card-footer text-end">
-                <input type="submit" value="حفظ" class="btn btn-primary" />
-                @Html.ActionLink("العودة إلى القائمة", "Index", null, new { @class = "btn btn-secondary" })
+            <div class="row mb-3 bg-light p-3 border rounded">
+                <div class="col-12 mb-2">
+                    <h6 class="text-primary fw-bold"><i class="bi bi-pie-chart-fill me-2"></i> توزيع الإيراد (للخدمات المشتركة فقط)</h6>
+                    <small class="text-muted">استخدم هذا القسم فقط للرسوم التي يتم تقاسمها (مثل الطوابع والعقود). للرسوم العادية اترك نسبة النقابة 1.00.</small>
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(model => model.LawyerPercentage, "نسبة المحامي (0.00 - 1.00)", htmlAttributes: new { @class = "form-label fw-bold" })
+                    @Html.EditorFor(model => model.LawyerPercentage, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.01", min = "0", max = "1" } })
+                    <div class="form-text text-muted">مثال: 0.40 تعني 40% للمحامي.</div>
+                    @Html.ValidationMessageFor(model => model.LawyerPercentage, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(model => model.BarSharePercentage, "نسبة النقابة (0.00 - 1.00)", htmlAttributes: new { @class = "form-label fw-bold" })
+                    @Html.EditorFor(model => model.BarSharePercentage, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.01", min = "0", max = "1" } })
+                    <div class="form-text text-muted">مثال: 0.60 تعني 60% للنقابة.</div>
+                    @Html.ValidationMessageFor(model => model.BarSharePercentage, "", new { @class = "text-danger" })
+                </div>
             </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-check form-switch mt-4">
+                        @Html.EditorFor(model => model.IsActive)
+                        <label class="form-check-label fw-bold me-2" for="IsActive">فعال</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+            <div class="row">
+                <div class="col-12 text-end">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary me-2">إلغاء</a>
+                    <button type="submit" class="btn btn-primary px-4">حفظ</button>
+                </div>
+            </div>
+        </div>
         }
     </div>
 </div>

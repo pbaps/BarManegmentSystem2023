@@ -32,7 +32,8 @@ namespace BarManegment.Areas.Admin.Controllers
                 query = query.Where(r => r.SequenceNumber.ToString() == searchString ||
                                          r.BankReceiptNumber.Contains(searchString) ||
                                          r.PaymentVoucher.GraduateApplication.ArabicName.Contains(searchString) ||
-                                         r.IssuedByUserName.Contains(searchString));
+                                         r.IssuedByUserName.Contains(searchString) ||
+                                         r.PaymentVoucher.CheckNumber.Contains(searchString));
             }
 
             if (!string.IsNullOrWhiteSpace(paymentMethod))
@@ -74,8 +75,12 @@ namespace BarManegment.Areas.Admin.Controllers
 
             if (receipt == null) return HttpNotFound();
 
-            if (receipt.PaymentVoucher.GraduateApplicationId == null)
+            bool isContractorReceipt = db.StampBookIssuances.Any(i => i.PaymentVoucherId == receipt.Id);
+
+            if (isContractorReceipt)
+            {
                 return RedirectToAction("PrintContractorReceipt", new { id = id });
+            }
 
             string currency = receipt.PaymentVoucher.VoucherDetails.FirstOrDefault()?.FeeType?.Currency?.Symbol ?? "₪";
             ViewBag.AmountInWords = TafqeetHelper.ConvertToArabic(receipt.PaymentVoucher.TotalAmount, currency);
@@ -135,7 +140,6 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(viewModel);
         }
 
-        // ✅ حل مشكلة 404: توجيه رابط المتعهد القديم إلى الأكشن الجديد
         [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult CreateContractorReceipt(int? voucherId)
         {
@@ -143,7 +147,7 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         // ============================================================
-        // 4. حفظ التحصيل (Create - POST)
+        // 4. حفظ التحصيل وإنشاء القيد (Create - POST)
         // ============================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -158,7 +162,7 @@ namespace BarManegment.Areas.Admin.Controllers
                     {
                         var voucher = db.PaymentVouchers
                             .Include(v => v.GraduateApplication)
-                            .Include(v => v.VoucherDetails.Select(d => d.FeeType))
+                            .Include(v => v.VoucherDetails.Select(d => d.FeeType)) // ✅ ضروري لجلب الحساب المربوط
                             .Include(v => v.VoucherDetails.Select(d => d.BankAccount))
                             .FirstOrDefault(v => v.Id == viewModel.PaymentVoucherId);
 
@@ -187,15 +191,14 @@ namespace BarManegment.Areas.Admin.Controllers
                             ProcessTraineeActivation(voucher.GraduateApplication);
 
                         ProcessStampStatus(voucher.Id);
+                        ProcessExamApplicationPayment(voucher);
 
-                        // --- إنشاء القيد المحاسبي يدوياً ---
+                        // --- إنشاء القيد المحاسبي ---
                         var entry = new JournalEntry
                         {
                             FiscalYearId = currentYear.Id,
                             EntryNumber = "R-" + receipt.SequenceNumber,
                             EntryDate = receipt.BankPaymentDate,
- 
-                         
                             Description = $"سند قبض رقم {receipt.SequenceNumber} - {GetVoucherDisplayName(voucher)}",
                             SourceModule = "Receipts",
                             ReferenceNumber = receipt.BankReceiptNumber,
@@ -207,9 +210,9 @@ namespace BarManegment.Areas.Admin.Controllers
                             JournalEntryDetails = new List<JournalEntryDetail>()
                         };
 
-                        // 1. الطرف المدين (الصندوق/البنك)
+                        // 1. الطرف المدين (البنك/الصندوق)
                         int debitAccountId = voucher.VoucherDetails.FirstOrDefault()?.BankAccount?.RelatedAccountId ?? 0;
-                        if (debitAccountId == 0) debitAccountId = db.Accounts.FirstOrDefault(a => a.Code == "1101")?.Id ?? 0;
+                        if (debitAccountId == 0) debitAccountId = db.Accounts.FirstOrDefault(a => a.Code == "1102")?.Id ?? 0;
 
                         entry.JournalEntryDetails.Add(new JournalEntryDetail
                         {
@@ -219,15 +222,21 @@ namespace BarManegment.Areas.Admin.Controllers
                             Description = "تحصيل رسوم"
                         });
 
-                        // 2. الطرف الدائن (الإيرادات)
+                        // 2. الطرف الدائن (الإيرادات) - ✅ هنا التعديل الجوهري
                         foreach (var det in voucher.VoucherDetails)
                         {
+                            // 💡 فحص الحساب المربوط بنوع الرسم أولاً
                             int revAccId = det.FeeType?.RevenueAccountId ?? 0;
-                            if (revAccId == 0) revAccId = db.Accounts.FirstOrDefault(a => a.Code.StartsWith("4"))?.Id ?? 0;
+
+                            // 💡 إذا لم يكن مربوطاً، استخدام الحساب الافتراضي
+                            if (revAccId == 0)
+                            {
+                                revAccId = db.Accounts.FirstOrDefault(a => a.Code.StartsWith("4"))?.Id ?? 0;
+                            }
 
                             entry.JournalEntryDetails.Add(new JournalEntryDetail
                             {
-                                AccountId = revAccId,
+                                AccountId = revAccId, // سيأخذ الحساب المربوط (مثل 4105)
                                 Debit = 0,
                                 Credit = det.Amount,
                                 Description = det.FeeType?.Name
@@ -237,14 +246,13 @@ namespace BarManegment.Areas.Admin.Controllers
 
                         db.SaveChanges();
                         transaction.Commit();
-                        AuditService.LogAction("ReceiptCreated", "Receipts", $"تم إنشاء إيصال رقم {nextSeq} للقسيمة {voucher.Id} بمبلغ {voucher.TotalAmount}");
-                        
+                        AuditService.LogAction("ReceiptCreated", "Receipts", $"تم إنشاء إيصال رقم {nextSeq} للقسيمة {voucher.Id}");
+
                         return RedirectToAction("Details", new { id = receipt.Id });
                     }
                     catch (Exception ex)
                     {
                         transaction.Rollback();
-                        AuditService.LogAction("ReceiptError", "Receipts", $"فشل إنشاء إيصال للقسيمة {viewModel.PaymentVoucherId}: {ex.Message}");
                         ModelState.AddModelError("", "خطأ في الحفظ: " + ex.Message);
                     }
                 }
@@ -252,9 +260,45 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(viewModel);
         }
 
-        // ============================================================
-        // 5. الطباعة
-        // ============================================================
+        // --- وظائف مساعدة داخلية ---
+        private void ProcessExamApplicationPayment(PaymentVoucher voucher)
+        {
+            var examFeeDetail = voucher.VoucherDetails.FirstOrDefault(d => d.Description.Contains("امتحان القبول"));
+            if (examFeeDetail != null)
+            {
+                string desc = examFeeDetail.Description;
+                int openParen = desc.LastIndexOf('(');
+                int closeParen = desc.LastIndexOf(')');
+
+                if (openParen != -1 && closeParen > openParen)
+                {
+                    string nationalId = desc.Substring(openParen + 1, closeParen - openParen - 1);
+                    var examApp = db.ExamApplications.FirstOrDefault(a => a.NationalIdNumber == nationalId && a.Status == "بانتظار دفع الرسوم");
+
+                    if (examApp != null)
+                    {
+                        examApp.Status = "قيد المراجعة";
+                        db.Entry(examApp).State = EntityState.Modified;
+                    }
+                }
+            }
+        }
+
+        private string GetVoucherDisplayName(PaymentVoucher v)
+        {
+            return v.GraduateApplication?.ArabicName ?? db.StampBookIssuances.Include(i => i.Contractor).FirstOrDefault(i => i.PaymentVoucherId == v.Id)?.Contractor?.Name ?? v.CheckNumber ?? "جهة خارجية";
+        }
+        private void ProcessTraineeActivation(GraduateApplication trainee)
+        {
+            var activeStatus = db.ApplicationStatuses.FirstOrDefault(s => s.Name == "متدرب مقيد");
+            if (activeStatus != null) { trainee.ApplicationStatusId = activeStatus.Id; if (string.IsNullOrEmpty(trainee.TraineeSerialNo)) trainee.TraineeSerialNo = "T-" + DateTime.Now.Year + "-" + trainee.Id; }
+        }
+        private void ProcessStampStatus(int voucherId)
+        {
+            var books = db.StampBookIssuances.Where(i => i.PaymentVoucherId == voucherId).Select(i => i.StampBook).ToList();
+            foreach (var book in books) { if (book != null) book.Status = "مع المتعهد"; }
+        }
+
         public ActionResult PrintReceipt(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -296,9 +340,6 @@ namespace BarManegment.Areas.Admin.Controllers
             return View("~/Areas/Admin/Views/PaymentVouchers/PrintStampContractorVoucher.cshtml", printModel);
         }
 
-        // ============================================================
-        // 6. الحذف
-        // ============================================================
         [CustomAuthorize(Permission = "CanDelete")]
         public ActionResult Delete(int? id)
         {
@@ -318,9 +359,7 @@ namespace BarManegment.Areas.Admin.Controllers
                     var receipt = db.Receipts.Include(r => r.PaymentVoucher).FirstOrDefault(r => r.Id == id);
                     if (receipt != null)
                     {
-                        // ✅ تعريف المتغير خارج سطر التدقيق لتجنب الخطأ
                         int currentSequence = receipt.SequenceNumber;
-
                         receipt.PaymentVoucher.Status = "صادر";
                         var entry = db.JournalEntries.FirstOrDefault(j => j.SourceModule == "Receipts" && j.EntryNumber.Contains(receipt.SequenceNumber.ToString()));
 
@@ -333,8 +372,6 @@ namespace BarManegment.Areas.Admin.Controllers
                         db.Receipts.Remove(receipt);
                         db.SaveChanges();
                         transaction.Commit();
-
-                        // ✅ الآن المتغير متاح هنا بشكل صحيح
                         AuditService.LogAction("ReceiptDeleted", "Receipts", $"تم إلغاء الإيصال رقم {currentSequence} وإعادة القسيمة للحالة 'صادر'");
                     }
                     return RedirectToAction("Index");
@@ -342,28 +379,12 @@ namespace BarManegment.Areas.Admin.Controllers
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    AuditService.LogAction("ReceiptDeleteError", "Receipts", $"فشل حذف الإيصال {id}: {ex.Message}");
                     TempData["ErrorMessage"] = ex.Message;
                     return RedirectToAction("Index");
                 }
             }
         }
 
-        // --- وظائف مساعدة داخلية ---
-        private string GetVoucherDisplayName(PaymentVoucher v)
-        {
-            return v.GraduateApplication?.ArabicName ?? db.StampBookIssuances.Include(i => i.Contractor).FirstOrDefault(i => i.PaymentVoucherId == v.Id)?.Contractor?.Name ?? v.CheckNumber ?? "جهة خارجية";
-        }
-        private void ProcessTraineeActivation(GraduateApplication trainee)
-        {
-            var activeStatus = db.ApplicationStatuses.FirstOrDefault(s => s.Name == "متدرب مقيد");
-            if (activeStatus != null) { trainee.ApplicationStatusId = activeStatus.Id; if (string.IsNullOrEmpty(trainee.TraineeSerialNo)) trainee.TraineeSerialNo = "T-" + DateTime.Now.Year + "-" + trainee.Id; }
-        }
-        private void ProcessStampStatus(int voucherId)
-        {
-            var books = db.StampBookIssuances.Where(i => i.PaymentVoucherId == voucherId).Select(i => i.StampBook).ToList();
-            foreach (var book in books) { if (book != null) book.Status = "مع المتعهد"; }
-        }
         protected override void Dispose(bool disposing) { if (disposing) db.Dispose(); base.Dispose(disposing); }
     }
 }

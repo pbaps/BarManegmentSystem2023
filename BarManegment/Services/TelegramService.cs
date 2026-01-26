@@ -1,48 +1,31 @@
-﻿using System;
-using System.Configuration;
+﻿using System.Net.Http;
 using System.Threading.Tasks;
-using Telegram.Bot;
-using Telegram.Bot.Types;
+using System.Web.Configuration;
 
 namespace BarManegment.Services
 {
-    public static class TelegramService
+    public class TelegramService
     {
-        private static readonly string botToken = ConfigurationManager.AppSettings["TelegramBotToken"];
-        private static readonly TelegramBotClient botClient = new TelegramBotClient(botToken);
+        private static readonly string BotToken = WebConfigurationManager.AppSettings["TelegramBotToken"];
 
-        public static async Task SendMessageAsync(long chatId, string message)
+        public static async Task<bool> SendMessageAsync(long chatId, string message)
         {
+            if (string.IsNullOrEmpty(BotToken) || chatId == 0) return false;
+
             try
             {
-                // === بداية التعديل: استخدام الصيغة الحديثة (بدون Methods) ===
-                await botClient.SendTextMessageAsync(
-                    chatId: new ChatId(chatId),
-                    text: message
-                );
-                // === نهاية التعديل ===
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Telegram Send Error: {ex.Message}");
-            }
-        }
+                string url = $"https://api.telegram.org/bot{BotToken}/sendMessage?chat_id={chatId}&text={message}&parse_mode=Markdown";
 
-        public static async Task SetWebhookAsync(string webhookUrl)
-        {
-            try
-            {
-                // === بداية التعديل: استخدام الصيغة الحديثة (بدون Methods) ===
-                await botClient.SetWebhookAsync(
-                    url: webhookUrl
-                );
-                // === نهاية التعديل ===
+                using (var client = new HttpClient())
+                {
+                    var response = await client.GetAsync(url);
+                    return response.IsSuccessStatusCode;
+                }
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"Telegram Webhook Error: {ex.Message}");
+                return false;
             }
         }
     }
 }
-

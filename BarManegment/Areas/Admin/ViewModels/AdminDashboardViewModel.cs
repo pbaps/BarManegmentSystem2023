@@ -7,38 +7,34 @@ namespace BarManegment.Areas.Admin.ViewModels
     {
         // --- إحصائيات الأعضاء والتدريب ---
         public int NewApplicationsCount { get; set; }
-        public int TotalApplicationsCount { get; set; } // ✅ تمت الإضافة
+        public int TotalApplicationsCount { get; set; }
         public int ActiveTraineesCount { get; set; }
         public int PracticingLawyersCount { get; set; }
         public int NonPracticingLawyersCount { get; set; }
         public int PendingCommitteeApprovalCount { get; set; }
         public int PendingSupervisorRequestsCount { get; set; }
 
-        // --- إحصائيات اليمين ---
+        // --- إحصائيات اليمين والامتحانات ---
         public int PendingOathRequestsCount { get; set; }
-
-        // --- إحصائيات الامتحانات ---
+        public int NewExamApplicationsCount { get; set; }
         public int OpenExamsCount { get; set; }
-        public int RegisteredForExamCount { get; set; }
 
-        // --- إحصائيات المالية ---
+        // --- إحصائيات العقود والطوابع (جديد) ---
+        public int PendingContractsCount { get; set; } // عقود بانتظار التصديق
+        public int AvailableStampsCount { get; set; } // رصيد الطوابع في المخزن
+
+        // --- إحصائيات المالية والشيكات ---
         public int UnpaidVouchersCount { get; set; }
         public decimal TotalRevenueToday { get; set; }
+        public int DueChecksCount { get; set; } // شيكات مستحقة
 
-        // --- النظام ---
+        // --- النظام والرسوم البيانية ---
         public int TotalUsersCount { get; set; }
         public List<AuditLogModel> RecentActivities { get; set; }
-
-        // --- الرسوم البيانية ---
         public Dictionary<string, int> TraineesByGovernorate { get; set; }
         public Dictionary<string, int> LawyersByGovernorate { get; set; }
         public int SelectedYearRange { get; set; }
         public List<HistoricalChartData> HistoricalData { get; set; }
-
-        // === 💡 الإضافة الجديدة: عدد طلبات امتحان القبول ===
-        public int NewExamApplicationsCount { get; set; }
- 
-        // ==================================================
 
         public AdminDashboardViewModel()
         {

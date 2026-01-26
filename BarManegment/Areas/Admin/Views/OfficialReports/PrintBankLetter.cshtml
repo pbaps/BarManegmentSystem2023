@@ -4,7 +4,7 @@
 }
 
 <style>
-    /* تخصيصات الصفحة */
+    /* ... (نفس الستايل القديم) ... */
     .page {
         font-family: 'Traditional Arabic', serif;
         font-size: 18pt;
@@ -36,51 +36,58 @@
         font-weight: bold;
         min-width: 200px;
     }
-    /* لوحة إعدادات التوقيع */
+
     .signature-settings {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
         border-radius: 8px;
         padding: 15px;
         margin: 20px auto;
-        width: 210mm; /* نفس عرض الصفحة */
+        width: 210mm;
         direction: rtl;
     }
 </style>
 
-<!-- لوحة تحكم التوقيع (لا تظهر في الطباعة) -->
 <div class="no-print signature-settings shadow-sm">
     <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pen-fill"></i> إعدادات التوقيع</h6>
     <div class="row g-3">
         <div class="col-md-4">
             <label class="small text-muted">اختر الموقع:</label>
             <select id="signerSelect" class="form-select form-select-sm" onchange="updateSigner()">
+                <option value="none">-- بدون توقيع --</option>
+
+                @if (ViewBag.SignersList != null)
+                {
+                    foreach (var item in (SelectList)ViewBag.SignersList)
+                    {
+                        // تحديد أمين الصندوق افتراضياً لكتاب البنك
+                        bool isSelected = item.Text.Contains("أمين الصندوق");
+                        <option value="@item.Value" @(isSelected ? "selected" : "")>@item.Text</option>
+                    }
+                }
+
                 <option value="custom">--- إدخال يدوي ---</option>
-                <option value="علي الدن|أمين الصندوق" selected>أمين الصندوق (علي الدن)</option>
-                <option value="صافي الدحدوح|نائب نقيب المحامين">نائب النقيب (صافي الدحدوح)</option>
-                <option value="زياد عطا النجار|أمين السر">أمين السر (زياد النجار)</option>
             </select>
         </div>
         <div class="col-md-4">
             <label class="small text-muted">الاسم:</label>
-            <input type="text" id="signerNameInput" class="form-control form-control-sm" value="الأستاذ علي الدن" oninput="syncSignerDisplay()">
+            <input type="text" id="signerNameInput" class="form-control form-control-sm" oninput="syncSignerDisplay()">
         </div>
         <div class="col-md-4">
             <label class="small text-muted">الصفة:</label>
-            <input type="text" id="signerTitleInput" class="form-control form-control-sm" value="أمين الصندوق" oninput="syncSignerDisplay()">
+            <input type="text" id="signerTitleInput" class="form-control form-control-sm" oninput="syncSignerDisplay()">
         </div>
     </div>
 </div>
 
 <div class="page">
     <div class="header">
-        <!-- يمكن وضع صورة الترويسة الكاملة هنا -->
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="text-align:right; font-size:12pt; font-family:'Cairo', sans-serif;">
                 <strong>نقابة المحامين النظاميين الفلسطينيين</strong><br />
                 القدس - العاصمة
             </div>
-            <img src="~/Content/Images/logo.png" width="90" />
+            <img src="~/Content/Images/logo.png" width="90" onerror="this.style.display='none'" />
             <div style="text-align:left; font-size:12pt; font-family:'Cairo', sans-serif;" dir="ltr">
                 <strong>Palestinian Bar Association</strong><br />
                 Jerusalem
@@ -113,15 +120,14 @@
     </div>
 
     <div class="footer-signatures">
-        <!-- التوقيع (على اليسار) -->
         <div style="text-align: right; font-size: 12pt;">
             حرر في : @DateTime.Now.ToString("yyyy/MM/dd")
         </div>
 
-        <div class="signature-block">
+        <div class="signature-block" id="signatureSection">
             نقابة المحامين الفلسطينيين - مركز غزة<br />
-            <span id="displayTitle">أمين الصندوق</span><br /><br />
-            <span id="displayName">الأستاذ علي الدن</span>
+            <span id="displayTitle"></span><br /><br />
+            <span id="displayName"></span>
         </div>
     </div>
 </div>
@@ -129,13 +135,31 @@
 <script>
     function updateSigner() {
         var selected = document.getElementById("signerSelect").value;
-        if (selected === "custom") {
+        var section = document.getElementById("signatureSection");
+
+        if (selected === "none") {
+            section.style.visibility = "hidden";
             document.getElementById("signerNameInput").value = "";
             document.getElementById("signerTitleInput").value = "";
         } else {
-            var parts = selected.split('|');
-            document.getElementById("signerNameInput").value = "الأستاذ " + parts[0];
-            document.getElementById("signerTitleInput").value = parts[1];
+            section.style.visibility = "visible";
+            if (selected === "custom") {
+                document.getElementById("signerNameInput").value = "";
+                document.getElementById("signerTitleInput").value = "";
+            } else {
+                // القيمة تأتي بصيغة: الاسم|الصفة
+                var parts = selected.split('|');
+                var name = parts[0];
+                var title = parts[1];
+
+                // إضافة اللقب "الأستاذ" إذا لم يكن موجوداً
+                if (!name.includes("الأستاذ") && !name.includes("المستشار") && !name.includes("الدكتور")) {
+                    name = "الأستاذ " + name;
+                }
+
+                document.getElementById("signerNameInput").value = name;
+                document.getElementById("signerTitleInput").value = title;
+            }
         }
         syncSignerDisplay();
     }
@@ -144,4 +168,6 @@
         document.getElementById("displayName").innerText = document.getElementById("signerNameInput").value;
         document.getElementById("displayTitle").innerText = document.getElementById("signerTitleInput").value;
     }
+
+    window.onload = function () { updateSigner(); };
 </script>

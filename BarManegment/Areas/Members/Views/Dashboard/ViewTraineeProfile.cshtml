@@ -1,355 +1,330 @@
 ﻿@model BarManegment.Areas.Admin.ViewModels.TraineeReviewViewModel
+
 @{
-    ViewBag.Title = "ملف المتدرب: " + Model.ArabicName;
+    ViewBag.Title = "ملف المتدرب: " + Model.Trainee.ArabicName;
     Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
-
-    string photoUrl = !string.IsNullOrEmpty(Model.PersonalPhotoPath)
-                      ? Url.Content(Model.PersonalPhotoPath)
-                      : Url.Content("~/Content/Images/default-avatar.png");
 }
 
-@* --- (إضافة تنسيقات الجداول الفرعية) --- *@
-@section styles {
-    <style>
-        .section-title {
-            margin-top: 25px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 5px;
-        }
+<div class="container-fluid pt-4 px-4 mb-5">
 
-        .profile-photo {
-            width: 140px;
-            height: 180px;
-            object-fit: cover;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-        }
+    @* --- زر العودة --- *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="@Url.Action("Index", "Dashboard", new { area = "Members" })" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right me-1"></i> العودة للوحة التحكم
+        </a>
+    </div>
 
-        .summary-table th {
-            width: 25%;
-            font-weight: 600;
-            color: #555;
-        }
+    @* --- رسائل التنبيه --- *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-start border-success border-4"><i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-start border-danger border-4"><i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"] <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
 
-        .summary-table td {
-            font-weight: 500;
-        }
-
-        .sub-table {
-            font-size: 0.9rem;
-        }
-
-            .sub-table th {
-                background-color: #f2f2f2;
-            }
-
-            .sub-table th, .sub-table td {
-                border: 1px solid #999;
-                padding: 5px;
-            }
-    </style>
-}
-
-<div class="container-fluid pt-4 px-4">
-
-    @* --- بطاقة معلومات المتدرب --- *@
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-2 text-center">
-                    <img src="@photoUrl" class="profile-photo" alt="الصورة الشخصية">
+    @* --- بطاقة المتدرب الرئيسية --- *@
+    <div class="card border-0 shadow-sm mb-4 bg-white">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 me-3">
+                    <i class="bi bi-person-vcard fs-1"></i>
                 </div>
-                <div class="col-md-10">
-                    <h3>@Model.ArabicName</h3>
-                    <p class="text-muted mb-1">@Model.EnglishName</p>
-                    <p><strong>رقم الهوية :</strong> @Model.NationalIdNumber</p>
-                    <div class="d-flex mb-2 align-items-center">
-                        <div class="bg-light text-dark p-2 rounded-start fw-bold" style="width: 150px;">الحالة الحالية:</div>
-                        <div class="border p-2 rounded-end flex-grow-1">
-                            @if (Model.Status == "متدرب مقيد")
-                            {<span class="badge bg-success fs-6">@Model.Status</span> }
-                        else if (Model.Status == "متدرب موقوف")
-                        { <span class="badge bg-danger fs-6">@Model.Status</span> }
-                    else
-                    { <span class="badge bg-warning fs-6">@Model.Status</span>}
-                        </div>
-                    </div>
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">@Model.Trainee.ArabicName</h4>
+                    <p class="text-muted mb-0">
+                        <span class="me-3"><i class="bi bi-hash"></i> رقم التسلسل: <strong>@Model.Trainee.TraineeSerialNo</strong></span>
+                        <span><i class="bi bi-phone"></i> @(Model.Trainee.ContactInfo?.MobileNumber ?? "---")</span>
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 
-    @* --- تفاصيل الملف الشخصي والسجلات --- *@
-    <div class="row g-4">
-
-        @* --- بطاقة البيانات الأساسية --- *@
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header"><h5>البيانات الأساسية</h5></div>
-                <div class="card-body">
-                    <table class="table table-sm summary-table">
-                        <tr><th>الاسم بالعربية:</th><td colspan="3">@Model.ArabicName</td></tr>
-                        <tr><th>الرقم الوطني:</th><td>@Model.NationalIdNumber</td><th>الجنس:</th><td>@(Model.Gender?.Name)</td></tr>
-                        <tr><th>تاريخ الميلاد:</th><td>@Model.BirthDate.ToString("yyyy-MM-dd")</td><th>مكان الميلاد:</th><td>@Model.BirthPlace</td></tr>
-                        <tr><th>الحالة الحالية:</th><td><strong class="text-danger">@Model.Status</strong></td><th>الجنسية:</th><td>@Model.Nationality</td></tr>
-                        <tr><th>رقم المتدرب:</th><td><strong>@(Model.TraineeSerialNo ?? "N/A")</strong></td><th>تاريخ بدء التدريب:</th><td>@(Model.TrainingStartDate.HasValue ? Model.TrainingStartDate.Value.ToString("yyyy-MM-dd") : "N/A")</td></tr>
-                    </table>
-                </div>
-            </div>
+    @* --- التبويبات (Tabs) --- *@
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom-0 pt-3 px-3">
+            <ul class="nav nav-tabs card-header-tabs" id="traineeTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab"><i class="bi bi-journal-text me-2"></i>سجلات التدريب</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button" role="tab"><i class="bi bi-receipt me-2"></i>السجل المالي</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold" id="research-tab" data-bs-toggle="tab" data-bs-target="#research" type="button" role="tab"><i class="bi bi-book me-2"></i>الأبحاث والامتحانات</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests" type="button" role="tab"><i class="bi bi-inbox me-2"></i>الطلبات الإدارية</button>
+                </li>
+            </ul>
         </div>
 
-        @* --- بطاقة المحامي المشرف (أنت) --- *@
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header"><h5>المحامي المشرف</h5></div>
-                <div class="card-body">
-                    @if (Model.Supervisor != null)
-                    {
-                        <table class="table table-sm summary-table">
-                            <tr><th>اسم المشرف:</th><td>@Model.Supervisor.ArabicName</td></tr>
-                            <tr><th>رقم العضوية:</th><td>@Model.Supervisor.Id</td></tr>
-                        </table>
-                    }
-                    else
-                    { <div class="alert alert-warning">لا يوجد مشرف معين حالياً.</div>}
-                </div>
-            </div>
-        </div>
+        <div class="card-body p-0">
+            <div class="tab-content" id="traineeTabsContent">
 
-        @* --- بيانات الاتصال --- *@
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5>بيانات الاتصال</h5></div>
-                <div class="card-body">
-                    @if (Model.ContactInfo != null)
+                @* 1. تبويب سجلات التدريب *@
+                <div class="tab-pane fade show active" id="logs" role="tabpanel">
+                    @if (Model.Logs.Any())
                     {
-                        <table class="table table-sm summary-table">
-                            <tr><th>الجوال:</th><td>@Model.ContactInfo.MobileNumber</td><th>البريد الإلكتروني:</th><td>@Model.ContactInfo.Email</td></tr>
-                            <tr><th>العنوان:</th><td colspan="3">@Model.ContactInfo.Governorate, @Model.ContactInfo.City, @Model.ContactInfo.Street</td></tr>
-                        </table>
-                    }
-                    else
-                    { <p class="text-muted">لا توجد بيانات اتصال.</p>}
-                </div>
-            </div>
-        </div>
-
-        @* --- سجل طلبات الوقف والنقل --- *@
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5>سجل طلبات الوقف / النقل (المقدمة من المتدرب)</h5></div>
-                <div class="card-body">
-                    @if (Model.SupervisorChangeRequests.Any())
-                    {
-                        <table class="table table-sm table-bordered sub-table">
-                            <thead><tr><th>نوع الطلب</th><th>تاريخ الطلب</th><th>الحالة</th><th>المشرف الجديد</th><th>ملاحظات اللجنة</th></tr></thead>
-                            <tbody>
-                                @foreach (var req in Model.SupervisorChangeRequests)
-                                {
-                                    <tr><td>@req.RequestType</td><td>@req.RequestDate.ToString("yyyy-MM-dd")</td><td><span class="badge bg-info">@req.Status</span></td><td>@(req.NewSupervisor?.ArabicName ?? "N/A")</td><td>@req.CommitteeNotes</td></tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    { <p class="text-muted">لا توجد طلبات سابقة.</p>}
-                </div>
-            </div>
-        </div>
-
-        @* --- سجل الإيقافات الإدارية --- *@
-        <div class="col-12">
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white"><h5><i class="bi bi-gavel me-2"></i> سجل الإيقافات الإدارية (قرارات اللجنة/المجلس)</h5></div>
-                <div class="card-body">
-                    @if (Model.CouncilSuspensions.Any())
-                    {
-                        <table class="table table-sm table-striped">
-                            <thead class="table-light"><tr><th>السبب/القرار</th><th>تاريخ البدء</th><th>تاريخ الانتهاء</th><th>الحالة</th><th>الموظف المُدخل</th></tr></thead>
-                            <tbody>
-                                @foreach (var sus in Model.CouncilSuspensions)
-                                {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
                                     <tr>
-                                        <td>@sus.Reason</td>
-                                        <td>@sus.SuspensionStartDate.ToString("yyyy-MM-dd")</td>
-                                        <td>@(sus.SuspensionEndDate.HasValue ? sus.SuspensionEndDate.Value.ToString("yyyy-MM-dd") : "إيقاف مفتوح")</td>
-                                        <td>
-                                            @if (sus.Status == "معتمد")
-                                            {<span class="badge bg-danger">@sus.Status (ساري)</span> }
-                                        else if (sus.Status.StartsWith("منتهية"))
-                                        { <span class="badge bg-secondary">@sus.Status</span> }
-                                    else
-                                    { <span class="badge bg-warning text-dark">@sus.Status</span>}
-                                        </td>
-                                        <td>@(sus.CreatedByUser?.FullNameArabic ?? "N/A")</td>
+                                        <th class="ps-4 py-3">الشهر / السنة</th>
+                                        <th>تاريخ التقديم</th>
+                                        <th>عدد القضايا</th>
+                                        <th style="width: 25%;">ملخص الأعمال</th> @* ✅ تمت إعادة العمود *@
+                                        <th>المرفق</th>
+                                        <th>الحالة</th>
+                                        <th class="text-end pe-4">الإجراءات</th>
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Logs)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-bold text-dark">@item.Month / @item.Year</td>
+                                            <td>@item.SubmissionDate.ToString("yyyy/MM/dd")</td>
+                                            <td><span class="badge bg-info bg-opacity-10 text-info px-3">@item.CasesCount</span></td>
+
+                                            @* ✅ محتوى ملخص الأعمال (مختصر + كامل) *@
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(item.WorkSummary))
+                                                {
+                                                    if (item.WorkSummary.Length > 40)
+                                                    {
+                                                        <span class="text-muted">
+                                                            @item.WorkSummary.Substring(0, 40)...
+                                                        </span>
+                                                        @* زر لعرض النص الكامل *@
+                                                        <a tabindex="0" class="text-primary small text-decoration-none ms-1" role="button" data-bs-toggle="popover" data-bs-trigger="focus" title="ملخص الأعمال الكامل" data-bs-content="@item.WorkSummary">
+                                                            (عرض المزيد)
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@item.WorkSummary</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">-</span>
+                                                }
+                                            </td>
+
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(item.FilePath))
+                                                {
+                                                    <a href="@Url.Action("GetTrainingLogAttachment", new { logId = item.Id })" target="_blank" class="btn btn-sm btn-outline-primary px-3">
+                                                        <i class="bi bi-file-earmark-pdf me-1"></i> عرض
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">لا يوجد</span>
+                                                }
+                                            </td>
+
+                                            <td>
+                                                @if (item.Status.Contains("معتمد") || item.Status == "Approved")
+                                                {
+                                                    <span class="badge bg-success">معتمد</span>
+                                                }
+                                                else if (item.Status.Contains("مرفوض") || item.Status == "Rejected")
+                                                {
+                                                    <span class="badge bg-danger" title="@item.SupervisorNotes">مرفوض</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">بانتظار الموافقة</span>
+                                                }
+                                            </td>
+
+                                            <td class="text-end pe-4">
+                                                @if (item.Status == "بانتظار موافقة المشرف" || item.Status == "Pending")
+                                                {
+                                                    <div class="btn-group" role="group">
+                                                        @using (Html.BeginForm("ApproveLog", "Dashboard", FormMethod.Post, new { style = "display:inline;" }))
+                                                        {
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="logId" value="@item.Id" />
+                                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('هل أنت متأكد من اعتماد هذا السجل؟')">
+                                                                <i class="bi bi-check-lg"></i> اعتماد
+                                                            </button>
+                                                        }
+                                                        <button type="button" class="btn btn-sm btn-danger ms-1" data-bs-toggle="modal" data-bs-target="#rejectModal-@item.Id">
+                                                            <i class="bi bi-x-lg"></i> رفض
+                                                        </button>
+                                                    </div>
+
+                                                    @* Modal الرفض *@
+                                                    <div class="modal fade" id="rejectModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <form action="@Url.Action("RejectLog", "Dashboard")" method="post">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <input type="hidden" name="logId" value="@item.Id" />
+                                                                    <div class="modal-header bg-danger text-white">
+                                                                        <h5 class="modal-title">سبب الرفض</h5>
+                                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                                    </div>
+                                                                    <div class="modal-body text-start">
+                                                                        <label class="form-label fw-bold">السبب:</label>
+                                                                        <textarea name="rejectionReason" class="form-control" rows="3" required placeholder="يرجى كتابة سبب الرفض..."></textarea>
+                                                                    </div>
+                                                                    <div class="modal-footer bg-light">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                                        <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small"><i class="bi bi-lock-fill"></i> مقفل</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     }
                     else
-                    { <p class="text-muted">لا توجد قرارات إيقاف إدارية مسجلة.</p>}
-                </div>
-            </div>
-        </div>
-
-        @* --- سجل الأبحاث والامتحانات --- *@
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5>سجل الإنجاز الأكاديمي (الأبحاث والامتحانات)</h5></div>
-                <div class="card-body">
-                    @if (Model.LegalResearches.Any() || Model.ExamHistory.Any() || Model.OralExamHistory.Any())
                     {
-                        <table class="table table-sm table-bordered sub-table">
-                            <thead class="table-light"><tr><th>البيان</th><th>النوع/اللجنة</th><th>التاريخ</th><th>الحالة/النتيجة</th><th>ملاحظات/الدرجة</th></tr></thead>
-                            <tbody>
-                                @foreach (var research in Model.LegalResearches)
-                                {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                            لم يقم هذا المتدرب برفع أي سجلات تدريب بعد.
+                        </div>
+                    }
+                </div>
+
+                @* 2. تبويب السجل المالي *@
+                <div class="tab-pane fade" id="finance" role="tabpanel">
+                    @if (Model.Receipts.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light text-muted">
                                     <tr>
-                                        <td>@research.Title</td>
-                                        <td>بحث قانوني (@(research.Committee?.CommitteeName ?? "N/A"))</td>
-                                        <td>@research.SubmissionDate.ToString("yyyy-MM-dd")</td>
-                                        <td>@research.Status / @(research.Decisions.OrderByDescending(d => d.DecisionDate).FirstOrDefault()?.Result ?? "N/A")</td>
-                                        <td>-</td>
+                                        <th class="ps-4 py-3">رقم الإيصال</th>
+                                        <th>تاريخ الدفع</th>
+                                        <th>المبلغ</th>
+                                        <th>البيان</th>
                                     </tr>
-                                }
-                                @foreach (var exam in Model.ExamHistory)
-                                {
-                                    <tr>
-                                        <td>@exam.Exam.Title</td>
-                                        <td>@exam.Exam.ExamType.Name</td>
-                                        <td>@exam.Exam.StartTime.ToString("yyyy-MM-dd")</td>
-                                        <td>@exam.Result</td>
-                                        <td>@exam.Score?.ToString("N2")</td>
-                                    </tr>
-                                }
-                                @foreach (var oralExam in Model.OralExamHistory)
-                                {
-                                    <tr>
-                                        <td>اختبار شفوي</td>
-                                        <td>@(oralExam.OralExamCommittee?.CommitteeName ?? "N/A")</td>
-                                        <td>@oralExam.ExamDate.ToString("yyyy-MM-dd")</td>
-                                        <td>@oralExam.Result</td>
-                                        <td>@(oralExam.Score?.ToString("N2")) (@oralExam.Notes)</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach (var r in Model.Receipts)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 font-monospace">@r.SequenceNumber/@r.Year</td>
+                                            <td>@r.BankPaymentDate.ToString("yyyy/MM/dd")</td>
+                                            <td class="text-success fw-bold">@r.PaymentVoucher.TotalAmount.ToString("N0")</td>
+                                            <td class="text-muted small">@r.Notes</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     }
                     else
-                    { <p class="text-muted">لا يوجد سجل أبحاث أو امتحانات.</p>}
+                    { <div class="text-center py-5 text-muted">لا توجد حركات مالية.</div>}
                 </div>
-            </div>
-        </div>
 
-        @* --- سجل الدفعات المالية --- *@
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5>سجل الدفعات المالية (إيصالات القبض)</h5></div>
-                <div class="card-body">
-                    @if (Model.PaymentHistory.Any())
-                    {
-                        <table class="table table-sm table-striped">
-                            <thead class="table-light"><tr><th>رقم الإيصال</th><th>تاريخ الدفع</th><th>المبلغ</th><th>بيان الرسوم</th></tr></thead>
-                            <tbody>
-                                @foreach (var receipt in Model.PaymentHistory)
-                                {
-                                    <tr>
-                                        <td>@receipt.ReceiptNumber</td>
-                                        <td>@receipt.BankPaymentDate.ToString("yyyy-MM-dd")</td>
-                                        <td>@(receipt.PaymentVoucher?.TotalAmount.ToString("N2"))</td>
-                                        <td>
-                                            @string.Join(", ", receipt.PaymentVoucher?.VoucherDetails.Select(d => d.FeeType.Name) ?? new List<string>())
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    { <p class="text-muted">لا توجد دفعات مسجلة.</p>}
-                </div>
-            </div>
-        </div>
-
-        @* --- سجل التجديدات السنوية --- *@
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5>سجل التجديدات السنوية</h5></div>
-                <div class="card-body">
-                    @if (Model.Renewals.Any())
-                    {
-                        <table class="table table-sm table-striped">
-                            <thead class="table-light"><tr><th>سنة التجديد</th><th>تاريخ التجديد (الدفع)</th><th>رقم الإيصال</th></tr></thead>
-                            <tbody>
-                                @foreach (var ren in Model.Renewals)
-                                {
-                                    <tr>
-                                        <td>@ren.RenewalYear</td>
-                                        <td>@ren.RenewalDate.ToString("yyyy-MM-dd")</td>
-                                        <td>@(ren.Receipt != null ? ren.Receipt.ReceiptNumber : "مؤجل")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    { <p class="text-muted">لا توجد تجديدات مسجلة.</p>}
-                </div>
-            </div>
-        </div>
-
-        @* --- بطاقة المؤهلات --- *@
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5>المؤهلات العلمية</h5></div>
-                <div class="card-body">
-                    @if (Model.Qualifications.Any())
-                    {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var qual in Model.Qualifications)
+                @* 3. تبويب الأبحاث والامتحانات *@
+                <div class="tab-pane fade" id="research" role="tabpanel">
+                    <div class="row g-0">
+                        <div class="col-md-6 border-end">
+                            <div class="p-3 bg-light fw-bold border-bottom">الأبحاث القانونية</div>
+                            @if (Model.Researches.Any())
                             {
-                                <li class="list-group-item">
-                                    <strong>@qual.QualificationType.Name:</strong> @qual.Specialization من @qual.UniversityName (@qual.GraduationYear)
-                                    @if (qual.GradePercentage.HasValue)
-                                    {<span>- @qual.GradePercentage.Value %</span>}
-                                </li>
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var res in Model.Researches)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><i class="bi bi-file-earmark-text me-2"></i> @res.Title</span>
+                                            <span class="badge bg-secondary">@res.Status</span>
+                                        </li>
+                                    }
+                                </ul>
                             }
-                        </ul>
-                    }
-                    else
-                    { <p class="text-muted">لا توجد مؤهلات مسجلة.</p>}
-                </div>
-            </div>
-        </div>
-
-        @* --- بطاقة المرفقات --- *@
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5>المرفقات</h5></div>
-                <div class="card-body">
-                    @if (Model.Attachments.Any())
-                    {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var att in Model.Attachments)
+                            else
+                            { <div class="p-4 text-center text-muted small">لا يوجد أبحاث.</div>}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light fw-bold border-bottom">سجل الامتحانات</div>
+                            @if (Model.Exams.Any())
                             {
-                                <li class="list-group-item">
-                                    <strong>@att.AttachmentType.Name:</strong>
-                                    <a href="@Url.Content(att.FilePath)" target="_blank">@att.OriginalFileName</a>
-                                    (تاريخ الرفع: @att.UploadDate.ToString("yyyy-MM-dd"))
-                                </li>
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var ex in Model.Exams)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>@ex.Exam.Title</span>
+                                            @if (!string.IsNullOrEmpty(ex.Result))
+                                            {
+                                                <span class="badge @(ex.Result=="ناجح"?"bg-success":"bg-danger")">@ex.Result (@ex.Score)</span>
+                                            }
+                                            else
+                                            { <span class="badge bg-warning text-dark">لم تعلن</span>}
+                                        </li>
+                                    }
+                                </ul>
                             }
-                        </ul>
+                            else
+                            { <div class="p-4 text-center text-muted small">لم يتقدم لامتحانات بعد.</div>}
+                        </div>
+                    </div>
+                </div>
+
+                @* 4. تبويب الطلبات الإدارية *@
+                <div class="tab-pane fade" id="requests" role="tabpanel">
+                    @if (Model.Requests.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light text-muted">
+                                    <tr>
+                                        <th class="ps-4 py-3">نوع الطلب</th>
+                                        <th>تاريخ الطلب</th>
+                                        <th>الحالة</th>
+                                        <th>ملاحظات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var req in Model.Requests)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-bold">@req.RequestType</td>
+                                            <td>@req.RequestDate.ToString("yyyy/MM/dd")</td>
+                                            <td><span class="badge bg-info text-dark">@req.Status</span></td>
+                                            <td class="text-muted small">@req.Reason</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     }
                     else
-                    { <p class="text-muted">لا توجد مرفقات.</p>}
+                    { <div class="text-center py-5 text-muted">لا توجد طلبات إدارية.</div>}
                 </div>
+
             </div>
         </div>
+    </div>
+</div>
 
-    </div> @* نهاية .row.g-4 *@
-
-</div> @* --- نهاية .container-fluid --- *@
+@section Scripts {
+    <script>
+        // تفعيل الـ Popovers (ضروري لعرض النص الكامل)
+        document.addEventListener("DOMContentLoaded", function () {
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl)
+            });
+        });
+    </script>
+}

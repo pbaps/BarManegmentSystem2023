@@ -26,21 +26,28 @@ namespace BarManegment.Helpers
                 return false;
             }
 
-            // 3. جلب بيانات المستخدم من الـ Claims (بدلاً من Session)
+            // 3. محاولة جلب UserTypeId (نقبل المصدرين: Claims أو Session)
+            int? userTypeId = null;
+
+            // أ) المحاولة الأولى: من الـ Claims (للمستقبل)
             var identity = httpContext.User.Identity as ClaimsIdentity;
-            if (identity == null) return false;
-
-            // البحث عن Claim الخاص بنوع المستخدم (UserTypeId)
-            var userTypeIdClaim = identity.FindFirst("UserTypeId");
-
-            // إذا لم نجد الـ Claim، فهذا يعني أن الكوكيز قديمة أو البيانات ناقصة
-            if (userTypeIdClaim == null)
+            if (identity != null)
             {
-                return false;
+                var claim = identity.FindFirst("UserTypeId");
+                if (claim != null && int.TryParse(claim.Value, out int id))
+                {
+                    userTypeId = id;
+                }
             }
 
-            // تحويل القيمة إلى رقم
-            if (!int.TryParse(userTypeIdClaim.Value, out int userTypeId))
+            // ب) المحاولة الثانية: من الـ Session (وهو المستخدم حالياً في AdminLoginController)
+            if (userTypeId == null && httpContext.Session["UserTypeId"] != null)
+            {
+                userTypeId = (int)httpContext.Session["UserTypeId"];
+            }
+
+            // إذا لم نجد نوع المستخدم في أي مكان، نرفض الدخول
+            if (userTypeId == null)
             {
                 return false;
             }
@@ -50,10 +57,10 @@ namespace BarManegment.Helpers
             string controllerName = routeData.Values["controller"].ToString();
 
             // 5. التحقق من الصلاحيات باستخدام الدالة المساعدة
-            // ملاحظة: سنحتاج لتعديل دالة PermissionHelper.CheckPermission لتقبل userTypeId كـ parameter
-            // أو يمكنك تركها تقرأ من السيشن إذا كنت مصراً، لكن الأفضل تمرير القيمة هنا
+            // نمرر الـ userTypeId الذي عثرنا عليه لضمان الدقة
             return PermissionHelper.CheckPermission(controllerName, Permission ?? "CanView", userTypeId);
         }
+
         protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
         {
             if (filterContext.HttpContext.User.Identity.IsAuthenticated)
@@ -82,4 +89,3 @@ namespace BarManegment.Helpers
         }
     }
 }
-

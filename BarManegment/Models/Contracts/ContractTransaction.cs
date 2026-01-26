@@ -33,6 +33,10 @@ namespace BarManegment.Models
         [Display(Name = "الرسوم النهائية")]
         public decimal FinalFee { get; set; }
 
+        // للقيمة المصرح بها (للعقود النسبية)
+        [Display(Name = "قيمة العقد المصرح بها")]
+        public decimal DeclaredValue { get; set; }
+
         [Required]
         [Display(Name = "معفى من الرسوم")]
         [DefaultValue(false)]
@@ -64,24 +68,21 @@ namespace BarManegment.Models
         [Required]
         [Display(Name = "حالة المعاملة")]
         [StringLength(100)]
-        public string Status { get; set; } // (مثل: بانتظار الدفع، بانتظار التصديق، مكتمل)
+        public string Status { get; set; }
 
         [Display(Name = "قسيمة الدفع")]
         public int? PaymentVoucherId { get; set; }
         [ForeignKey("PaymentVoucherId")]
         public virtual PaymentVoucher PaymentVoucher { get; set; }
 
-        // 💡💡 === بداية الإضافة === 💡💡
+        // إضافات الوكالة الخاصة
         [Display(Name = "الموكل يوقع عن نفسه أيضاً")]
         [DefaultValue(true)]
         public bool IsActingForSelf { get; set; } = true;
-        // 💡💡 === نهاية الإضافة === 💡💡
-        // 💡💡 === بداية الإضافة === 💡💡
+
         [Display(Name = "صفة الموكل (في حال التوقيع عن الغير)")]
         [StringLength(250)]
-        public string AgentLegalCapacity { get; set; } // (مثل: "بصفتي ولياً شرعياً", "بموجب الوكالة رقم...")
-        // 💡💡 === نهاية الإضافة === 💡💡
-
+        public string AgentLegalCapacity { get; set; }
 
         // Navigation Properties
         public virtual ICollection<TransactionParty> Parties { get; set; }

@@ -20,6 +20,8 @@ namespace BarManegment.Models
         // =========================== الجداول (DbSets) =====================
         // ==================================================================
 
+
+        public virtual DbSet<CheckPortfolio> ChecksPortfolio { get; set; }
         // 1. المستخدمين والصلاحيات
         public DbSet<UserModel> Users { get; set; }
         public DbSet<UserTypeModel> UserTypes { get; set; }
@@ -33,7 +35,15 @@ namespace BarManegment.Models
         public DbSet<Employee> Employees { get; set; }
         public DbSet<EmployeeFinancialHistory> EmployeeFinancialHistories { get; set; }
         public DbSet<LeaveType> LeaveTypes { get; set; }
+
+        public DbSet<WorkShift> WorkShifts { get; set; }
+        // ✅ الإضافات الجديدة
+        public DbSet<AttendanceLog> AttendanceLogs { get; set; }
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<HourlyPermission> HourlyPermissions { get; set; }
+        public DbSet<OfficialHoliday> OfficialHolidays { get; set; }
+
+        public DbSet<Branch> Branches { get; set; }
 
         public DbSet<MonthlyPayroll> MonthlyPayrolls { get; set; }
         public DbSet<PayrollSlip> PayrollSlips { get; set; }
@@ -52,7 +62,7 @@ namespace BarManegment.Models
             get { return Set<JournalEntryDetail>(); }
         }
 
-        public DbSet<CheckPortfolio> ChecksPortfolio { get; set; }
+        
         public DbSet<FeeType> FeeTypes { get; set; }
         public DbSet<BankAccount> BankAccounts { get; set; }
         public DbSet<Currency> Currencies { get; set; }

@@ -28,12 +28,9 @@
                 @Html.ActionLink("طباعة النموذج", "PrintApplicationForm", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
             </td>
             <td>
-                @using (Html.BeginForm("UploadApplicationForm", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="file" name="file" class="form-control form-control-sm" required />
-                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
-                }
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" onclick="setUploadType('ApplicationForm')">
+                    <i class="bi bi-upload"></i> رفع
+                </button>
             </td>
         </tr>
 
@@ -41,9 +38,9 @@
         <tr>
             <td><strong>2. سند إقرار ومديونية</strong></td>
             <td>
-                @if (!string.IsNullOrEmpty(Model.DebtBondScannedPath))
+                @if (!string.IsNullOrEmpty(Model.DebtBondPath)) // تأكد من استخدام الاسم الصحيح DebtBondPath
                 {
-                    <a href="@Url.Content(Model.DebtBondScannedPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                    <a href="@Url.Content(Model.DebtBondPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
                 }
                 else
                 {
@@ -54,12 +51,9 @@
                 @Html.ActionLink("طباعة النموذج", "PrintDebtBond", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
             </td>
             <td>
-                @using (Html.BeginForm("UploadDebtBond", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="file" name="file" class="form-control form-control-sm" required />
-                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
-                }
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" onclick="setUploadType('DebtBond')">
+                    <i class="bi bi-upload"></i> رفع
+                </button>
             </td>
         </tr>
 
@@ -67,9 +61,9 @@
         <tr>
             <td><strong>3. كمبيالة بالمبلغ الكلي</strong></td>
             <td>
-                @if (!string.IsNullOrEmpty(Model.MainPromissoryNoteScannedPath))
+                @if (!string.IsNullOrEmpty(Model.MainPromissoryNotePath)) // تأكد من الاسم الصحيح
                 {
-                    <a href="@Url.Content(Model.MainPromissoryNoteScannedPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                    <a href="@Url.Content(Model.MainPromissoryNotePath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
                 }
                 else
                 {
@@ -80,12 +74,9 @@
                 @Html.ActionLink("طباعة النموذج", "PrintMainPromissoryNote", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
             </td>
             <td>
-                @using (Html.BeginForm("UploadMainPromissoryNote", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="file" name="file" class="form-control form-control-sm" required />
-                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
-                }
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" onclick="setUploadType('MainPromissoryNote')">
+                    <i class="bi bi-upload"></i> رفع
+                </button>
             </td>
         </tr>
 
@@ -108,12 +99,9 @@
                     @Html.ActionLink("طباعة النموذج", "PrintGuarantorForm", new { id = guarantor.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
                 </td>
                 <td>
-                    @using (Html.BeginForm("UploadGuarantorForm", "LoanApplications", new { id = guarantor.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        <input type="file" name="file" class="form-control form-control-sm" required />
-                        <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
-                    }
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" onclick="setUploadType('Guarantor_@guarantor.Id')">
+                        <i class="bi bi-upload"></i> رفع
+                    </button>
                 </td>
             </tr>
         }
@@ -122,9 +110,9 @@
         <tr>
             <td><strong>5. قرار مجلس (اختياري)</strong></td>
             <td>
-                @if (!string.IsNullOrEmpty(Model.CouncilApprovalScannedPath))
+                @if (!string.IsNullOrEmpty(Model.CouncilApprovalPath)) // تأكد من الاسم الصحيح
                 {
-                    <a href="@Url.Content(Model.CouncilApprovalScannedPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
+                    <a href="@Url.Content(Model.CouncilApprovalPath)" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle-fill me-1"></i> تم الرفع</a>
                 }
                 else
                 {
@@ -132,17 +120,49 @@
                 }
             </td>
             <td>
-                @Html.ActionLink("طباعة النموذج", "PrintCouncilApproval", new { id = Model.Id }, new { @class = "btn btn-sm btn-info", target = "_blank" })
+                @* قرار المجلس غالباً لا يطبع كنموذج فارغ بل هو وثيقة موجودة مسبقاً *@
+                <span class="text-muted small">وثيقة داخلية</span>
             </td>
             <td>
-                @using (Html.BeginForm("UploadCouncilApproval", "LoanApplications", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="file" name="file" class="form-control form-control-sm" required />
-                    <button type="submit" class="btn btn-sm btn-secondary mt-1">رفع</button>
-                }
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" onclick="setUploadType('CouncilApproval')">
+                    <i class="bi bi-upload"></i> رفع
+                </button>
             </td>
         </tr>
 
     </tbody>
 </table>
+
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("UploadLoanDocument", "LoanApplications", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("id", Model.Id)
+                <input type="hidden" name="docType" id="docTypeInput" />
+
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title">رفع مستند</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اختر الملف (PDF أو صورة)</label>
+                        <input type="file" name="file" class="form-control" required accept=".pdf,.jpg,.jpeg,.png" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success px-4">رفع وحفظ</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    function setUploadType(type) {
+        document.getElementById('docTypeInput').value = type;
+    }
+</script>

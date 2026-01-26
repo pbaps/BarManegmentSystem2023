@@ -124,13 +124,23 @@
                                 <td><span class="badge bg-secondary">@item.ApplicationStatus.Name</span></td>
                                 <td>@(item.ContactInfo?.Governorate ?? "N/A")</td>
                                 <td class="text-nowrap">
-                                    <a href="@Url.Action("Details", "TraineeProfile", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="فتح الملف الشخصي">
-                                        <i class="bi bi-person-circle"></i>
-                                    </a>
+                                    @if (item.ApplicationStatus.Name.Contains("مزاول") || item.ApplicationStatus.Name.Contains("Advocate") || item.ApplicationStatus.Name.Contains("متقاعد"))
+                                    {
+                                        <a href="@Url.Action("Details", "LawyerProfile", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="فتح ملف المحامي">
+                                            <i class="bi bi-briefcase-fill"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("Details", "TraineeProfile", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="فتح ملف المتدرب">
+                                            <i class="bi bi-person-circle"></i>
+                                        </a>
+                                    }
+
                                     <a href="@Url.Action("ManageAttachments", "LawyerArchive", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="الأرشيف والمستندات">
                                         <i class="bi bi-folder"></i>
                                     </a>
-                                    @* رابط تقرير مالي سريع - يمكن استخدامه لطباعة سجل مالي سريع *@
+
                                     <a href="@Url.Action("ExportFinancialStatement", "OfficialReports", new { id = item.Id })" class="btn btn-sm btn-outline-success" title="تقرير مالي">
                                         <i class="bi bi-currency-dollar"></i>
                                     </a>

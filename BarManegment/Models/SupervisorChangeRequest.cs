@@ -29,6 +29,11 @@ namespace BarManegment.Models
         [ForeignKey("NewSupervisorId")]
         public virtual GraduateApplication NewSupervisor { get; set; }
 
+        // ✅✅✅ الإضافة الجديدة لحل الخطأ ✅✅✅
+        [Display(Name = "سبب الطلب")]
+        [DataType(DataType.MultilineText)]
+        public string Reason { get; set; }
+
         [Required]
         [Display(Name = "تاريخ تقديم الطلب")]
         public DateTime RequestDate { get; set; }

@@ -1,0 +1,47 @@
+﻿@{
+    ViewBag.Title = "إدارة العلاوات السنوية";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-warning text-dark py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i> تطبيق العلاوة السنوية (الأقدمية)</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>كيف يعمل هذا النظام؟</strong>
+                <p class="mb-0">
+                    عند الضغط على الزر أدناه، سيقوم النظام بالبحث عن الموظفين الذين يصادف <strong>شهر تعيينهم</strong> في الشهر المحدد،
+                    والذين لم يتجاوزوا سقف الخدمة (25 سنة). سيتم إضافة نسبة الزيادة المحددة في الإعدادات إلى رصيد علاواتهم بشكل دائم.
+                </p>
+            </div>
+
+            @using (Html.BeginForm("ApplyAnnualIncrements", "Payroll", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">شهر الاستحقاق</label>
+                        <select name="month" class="form-select">
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                <option value="@i" @(i == DateTime.Now.Month ? "selected" : "")>@i</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">السنة</label>
+                        <input type="number" name="year" class="form-control" value="@DateTime.Now.Year" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-warning w-100 fw-bold" onclick="return confirm('هل أنت متأكد؟ سيتم تعديل بيانات الموظفين بشكل دائم.');">
+                            <i class="bi bi-check-circle me-1"></i> تطبيق الزيادات المستحقة
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -12,7 +12,7 @@
 
 @* --- أزرار الإجراءات --- *@
 <div class="d-flex gap-2 mb-3">
-    @if (Model.Status == "تحت المراجعة" && Model.Installments.Count == 0)
+    @if ((Model.Status == "جديد" || Model.Status == "تحت المراجعة") && Model.Installments.Count == 0)
     {
         using (Html.BeginForm("GenerateInstallments", "LoanApplications", new { id = Model.Id }, FormMethod.Post))
         {

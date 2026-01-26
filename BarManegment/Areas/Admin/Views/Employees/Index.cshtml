@@ -43,51 +43,57 @@
                     <tbody>
                         @foreach (var item in Model)
                         {
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2 border" style="width: 35px; height: 35px;">
-                                            <i class="bi bi-person text-secondary"></i>
-                                        </div>
-                                        <div>
-                                            <span class="fw-bold d-block">@item.FullName</span>
-                                            <small class="text-muted">@item.Phone</small>
-                                        </div>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2 border" style="width: 35px; height: 35px;">
+                                        <i class="bi bi-person text-secondary"></i>
                                     </div>
-                                </td>
-                                <td>
-                                    <span class="d-block fw-bold text-dark">@item.Department.Name</span>
-                                    <small class="text-muted">@item.JobTitle.Name</small>
-                                </td>
-                                <td>@item.HireDate.ToString("yyyy/MM/dd")</td>
-                                <td class="fw-bold text-success">@item.BasicSalary.ToString("N0")</td>
-                                <td>
-                                    @if (item.UserId != null)
-                                    {
-                                        <span class="badge bg-info text-dark"><i class="bi bi-check-circle me-1"></i> مرتبط</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary opacity-50">غير مرتبط</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (item.IsActive)
-                                    {
-                                        <span class="badge bg-success">على رأس عمله</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger">موقوف/مستقيل</span>
-                                    }
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                                    <div>
+                                        <span class="fw-bold d-block">@item.FullName</span>
+                                        <small class="text-muted">@item.Phone</small>
                                     </div>
-                                </td>
-                            </tr>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="d-block fw-bold text-dark">@item.Department.Name</span>
+                                <small class="text-muted">@item.JobTitle.Name</small>
+                            </td>
+ 
+                            <td>@(item.HireDate.HasValue ? item.HireDate.Value.ToString("yyyy/MM/dd") : "-")</td>
+
+
+                            <td class="fw-bold text-success">@item.BasicSalary.ToString("N0")</td>
+                            <td>
+                                @if (item.UserId != null)
+                                {
+                                    <span class="badge bg-info text-dark"><i class="bi bi-check-circle me-1"></i> مرتبط</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary opacity-50">غير مرتبط</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">على رأس عمله</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">موقوف/مستقيل</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="@Url.Action("PrintSalarySlip", new { id = item.Id })" target="_blank" class="btn btn-sm btn-outline-dark" title="طباعة قسيمة راتب">
+                                        <i class="bi bi-receipt"></i>
+                                    </a>
+                                    <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                                </div>
+                            </td>
+                        </tr>
                         }
                     </tbody>
                 </table>

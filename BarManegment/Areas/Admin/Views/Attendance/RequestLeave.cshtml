@@ -1,0 +1,52 @@
+﻿@model BarManegment.Models.LeaveRequest
+
+@{
+    ViewBag.Title = "تقديم طلب إجازة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container pt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-briefcase-fill me-2"></i> طلب إجازة جديد</h5>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">نوع الإجازة</label>
+                                @Html.DropDownListFor(m => m.LeaveType, new SelectList(new[] { "سنوية", "مرضية", "طارئة", "بدون راتب" }), new { @class = "form-select" })
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">من تاريخ</label>
+                                @Html.EditorFor(m => m.StartDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">إلى تاريخ</label>
+                                @Html.EditorFor(m => m.EndDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">سبب الإجازة</label>
+                            @Html.TextAreaFor(m => m.Reason, new { @class = "form-control", rows = 3 })
+                        </div>
+
+                        <div class="text-end">
+                            <a href="@Url.Action("MyAttendance")" class="btn btn-secondary px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">إرسال الطلب</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

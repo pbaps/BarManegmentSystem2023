@@ -202,21 +202,31 @@
                 });
             });
 
-            $('#contractorSelect').on('change', function() {
-                var id = $(this).val();
-                if(!id) { $('#contractorStampsContainer').hide(); return; }
-                $('#contractorStampsContainer').show();
-                $('#contractorStampsTable tbody').html('<tr><td colspan="3" class="text-center">جاري التحميل...</td></tr>');
+ $('#contractorSelect').on('change', function() {
+    var id = $(this).val();
+    if(!id) { $('#contractorStampsContainer').hide(); return; }
 
-                $.get('@Url.Action("GetContractorStamps")', { contractorId: id }, function(data) {
-                    var html = '';
-                    if(data.length == 0) html = '<tr><td colspan="3" class="text-center">لا يوجد طوابع.</td></tr>';
-                    $.each(data, function(i, s) {
-                        html += '<tr><td>'+s.SerialNumber+'</td><td>'+s.Value+' ₪</td><td><button type="button" class="btn btn-sm btn-outline-primary select-stamp-btn" data-serial="'+s.SerialNumber+'">اختر</button></td></tr>';
-                    });
-                    $('#contractorStampsTable tbody').html(html);
-                });
+    $('#contractorStampsContainer').show();
+    $('#contractorStampsTable tbody').html('<tr><td colspan="3" class="text-center">جاري التحميل...</td></tr>');
+
+    $.get('@Url.Action("GetContractorStamps")', { contractorId: id }, function(data) {
+        var html = '';
+        if(data.length == 0) {
+            html = '<tr><td colspan="3" class="text-center text-danger">لا يوجد طوابع في عهدة هذا المتعهد حالياً (الحالة: مع المتعهد).</td></tr>';
+        } else {
+            $.each(data, function(i, s) {
+                html += '<tr>' +
+                        '<td>' + s.SerialNumber + '</td>' +
+                        '<td>' + s.Value + ' ₪</td>' +
+                        '<td><button type="button" class="btn btn-sm btn-outline-primary select-stamp-btn" data-serial="' + s.SerialNumber + '">اختر</button></td>' +
+                        '</tr>';
             });
+        }
+        $('#contractorStampsTable tbody').html(html);
+    }).fail(function() {
+        $('#contractorStampsTable tbody').html('<tr><td colspan="3" class="text-center text-danger">حدث خطأ أثناء تحميل البيانات.</td></tr>');
+    });
+});
 
             $('body').on('click', '.select-stamp-btn', function() {
                 $('#StartSerial').val($(this).data('serial'));

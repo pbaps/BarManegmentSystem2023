@@ -203,6 +203,7 @@
 
             <ul class="list-unstyled components">
 
+                @* === الرئيسية === *@
                 <li>
                     <a href="@Url.Action("Index", "Home", new { area = "Admin" })">
                         <i class="bi bi-speedometer2"></i> الرئيسية
@@ -218,6 +219,75 @@
                             <i class="bi bi-door-open-fill"></i> بوابة لجان المناقشة
                         </a>
                     </li>
+                }
+
+                @* ========================================================== *@
+                @* ✅✅✅ قسم الموارد البشرية (مدمج وشامل) ✅✅✅ *@
+                @* ========================================================== *@
+                @{
+                    bool canViewHR = PermissionHelper.HasPermission("Employees") ||
+                                     PermissionHelper.HasPermission("Payroll") ||
+                                     PermissionHelper.HasPermission("Attendance") ||
+                                     PermissionHelper.HasPermission("WorkShifts") ||
+                                     PermissionHelper.HasPermission("Branches") ||
+                                     PermissionHelper.HasPermission("Departments") ||
+                                     PermissionHelper.HasPermission("JobTitles");
+                }
+                @if (canViewHR)
+                {
+                    <li>
+                        <a href="#hrSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                            <i class="bi bi-people-fill"></i> الموارد البشرية (HR)
+                        </a>
+                        <ul class="collapse list-unstyled" id="hrSubmenu">
+
+                            @* 1. الحضور والدوام *@
+                            <li class="text-muted small px-3 mt-2 mb-1" style="font-size: 0.7rem; color: #64748b;">الحضور والدوام</li>
+                            @if (PermissionHelper.HasPermission("Attendance"))
+                            {
+                                <li><a href="@Url.Action("MyAttendance", "Attendance", new { area = "Admin" })"><i class="bi bi-fingerprint"></i> تسجيل حضوري (الذكي)</a></li>
+                                <li><a href="@Url.Action("Index", "Attendance", new { area = "Admin" })"><i class="bi bi-calendar-week"></i> سجل الحضور اليومي</a></li>
+                                <li><a href="@Url.Action("ManageLeaves", "Attendance", new { area = "Admin" })"><i class="bi bi-briefcase"></i> طلبات الإجازات</a></li>
+                                <li><a href="@Url.Action("ManagePermissions", "Attendance", new { area = "Admin" })"><i class="bi bi-clock-history"></i> الأذونات والمغادرات</a></li>
+                            }
+
+                            @* 2. الموظفين *@
+                            <li class="text-muted small px-3 mt-2 mb-1" style="font-size: 0.7rem; color: #64748b;">شؤون الموظفين</li>
+                            @if (PermissionHelper.HasPermission("Employees"))
+                            {
+                                <li><a href="@Url.Action("Index", "Employees", new { area = "Admin" })"><i class="bi bi-person-badge"></i> سجل الموظفين</a></li>
+                                <li><a href="@Url.Action("Create", "Employees", new { area = "Admin" })"><i class="bi bi-person-plus"></i> إضافة موظف</a></li>
+                            }
+
+                            @* 3. الرواتب *@
+                            <li class="text-muted small px-3 mt-2 mb-1" style="font-size: 0.7rem; color: #64748b;">الرواتب والاستحقاق</li>
+                            @if (PermissionHelper.HasPermission("Payroll"))
+                            {
+                                <li><a href="@Url.Action("Index", "Payroll", new { area = "Admin" })"><i class="bi bi-cash-stack"></i> مسير الرواتب</a></li>
+                                <li><a href="@Url.Action("ManageAnnualIncrements", "Payroll", new { area = "Admin" })"><i class="bi bi-graph-up-arrow"></i> العلاوات السنوية</a></li>
+                            }
+
+                            @* 4. الإعدادات والهيكلية *@
+                            <li class="text-muted small px-3 mt-2 mb-1" style="font-size: 0.7rem; color: #64748b;">الإعدادات والهيكلية</li>
+                            @if (PermissionHelper.HasPermission("Branches"))
+                            {
+                                <li><a href="@Url.Action("Index", "Branches", new { area = "Admin" })"><i class="bi bi-geo-alt-fill"></i> الفروع والمواقع</a></li>
+                            }
+                            @if (PermissionHelper.HasPermission("WorkShifts"))
+                            {
+                                <li><a href="@Url.Action("Index", "WorkShifts", new { area = "Admin" })"><i class="bi bi-clock"></i> مواعيد الدوام</a></li>
+                            }
+                            @if (PermissionHelper.HasPermission("Departments"))
+                            {
+                                <li><a href="@Url.Action("Index", "Departments", new { area = "Admin" })"><i class="bi bi-building"></i> إدارة الأقسام</a></li>
+                            }
+                            @if (PermissionHelper.HasPermission("JobTitles"))
+                            {
+                                <li><a href="@Url.Action("Index", "JobTitles", new { area = "Admin" })"><i class="bi bi-briefcase"></i> المسميات الوظيفية</a></li>
+                            }
+                        </ul>
+                    </li>
+                    <li class="sidebar-divider"><hr /></li>
                 }
 
                 @* === الشؤون المالية === *@
@@ -254,7 +324,7 @@
                             }
 
                             <li class="text-muted small px-3 mt-3 mb-1" style="font-size: 0.75rem; color: #64748b;">الإدارة المالية</li>
-                            @if (PermissionHelper.HasPermission("CheckPortfolio") || PermissionHelper.HasPermission("FinancialReports"))
+                            @if (PermissionHelper.HasPermission("CheckPortfolio"))
                             {
                                 <li><a href="@Url.Action("Index", "CheckPortfolio", new { area = "Admin" })"><i class="bi bi-wallet2"></i> حافظة الشيكات</a></li>
                             }
@@ -399,7 +469,11 @@
                             @if (PermissionHelper.HasPermission("PracticingLawyerRenewals"))
                             {
                                 <li><a href="@Url.Action("SelectLawyer", "PracticingLawyerRenewals", new { area = "Admin" })"><i class="bi bi-person-lines-fill"></i> الملفات والتجديد</a></li>
-                                <li><a href="@Url.Action("AnnualStatusReset", "PracticingLawyerRenewals", new { area = "Admin" })"><i class="bi bi-arrow-repeat"></i> الترسيت السنوي</a></li>
+                                <li>
+                                    <a href="@Url.Action("AnnualStatusReset", "PracticingLawyerRenewals", new { area = "Admin" })">
+                                        <i class="bi bi-arrow-repeat"></i> الترسيت السنوي
+                                    </a>
+                                </li>
                             }
                             @if (PermissionHelper.HasPermission("OfficialReports"))
                             {
@@ -472,39 +546,6 @@
                             @if (PermissionHelper.HasPermission("TraineeQuery"))
                             {
                                 <li><a href="@Url.Action("Index", "TraineeQuery", new { area = "Admin" })"><i class="bi bi-search"></i> استعلامات وتقارير</a></li>
-                            }
-                        </ul>
-                    </li>
-                    <li class="sidebar-divider"><hr /></li>
-                }
-
-                @* === الموظفين والرواتب === *@
-                @{
-                    bool canViewHR = PermissionHelper.HasPermission("Employees") || PermissionHelper.HasPermission("Departments") || PermissionHelper.HasPermission("JobTitles") || PermissionHelper.HasPermission("Payroll");
-                }
-                @if (canViewHR)
-                {
-                    <li>
-                        <a href="#hrSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                            <i class="bi bi-people-fill"></i> الموظفين والرواتب
-                        </a>
-                        <ul class="collapse list-unstyled" id="hrSubmenu">
-                            @if (PermissionHelper.HasPermission("Employees"))
-                            {
-                                <li><a href="@Url.Action("Index", "Employees", new { area = "Admin" })"><i class="bi bi-person-badge"></i> سجل الموظفين</a></li>
-                                <li><a href="@Url.Action("Create", "Employees", new { area = "Admin" })"><i class="bi bi-person-plus"></i> إضافة موظف</a></li>
-                            }
-                            @if (PermissionHelper.HasPermission("Payroll"))
-                            {
-                                <li><a href="@Url.Action("Index", "Payroll", new { area = "Admin" })"><i class="bi bi-cash-stack"></i> مسير الرواتب</a></li>
-                            }
-                            @if (PermissionHelper.HasPermission("Departments"))
-                            {
-                                <li><a href="@Url.Action("Index", "Departments", new { area = "Admin" })"><i class="bi bi-building"></i> إدارة الأقسام</a></li>
-                            }
-                            @if (PermissionHelper.HasPermission("JobTitles"))
-                            {
-                                <li><a href="@Url.Action("Index", "JobTitles", new { area = "Admin" })"><i class="bi bi-briefcase"></i> المسميات الوظيفية</a></li>
                             }
                         </ul>
                     </li>
@@ -606,9 +647,9 @@
                             {
                                 <li><a href="@Url.Action("RecordSale", "StampSales", new { area = "Admin" })"><i class="bi bi-person-check-fill"></i> بيع طابع</a></li>
                             }
-                            @if (PermissionHelper.HasPermission("PaymentVouchers"))
+                            @if (PermissionHelper.HasPermission("StampSales"))
                             {
-                                <li><a href="@Url.Action("ContractorVouchersList", "PaymentVouchers", new { area = "Admin" })"><i class="bi bi-person-video3"></i> قسائم المتعهدين</a></li>
+                                <li><a href="@Url.Action("SalesReport", "StampSales", new { area = "Admin" })"><i class="bi bi-person-video3"></i> تقرير الطوابع</a></li>
                             }
                         </ul>
                     </li>
@@ -712,7 +753,8 @@
 
                 @* === إدارة النظام === *@
                 @{
-                    bool canViewSystem = PermissionHelper.HasPermission("Users") || PermissionHelper.HasPermission("Permissions") || PermissionHelper.HasPermission("SystemSettings") || PermissionHelper.HasPermission("LookupManagement");
+                    bool canViewSystem = PermissionHelper.HasPermission("Users") || PermissionHelper.HasPermission("Permissions") || PermissionHelper.HasPermission("SystemSettings") || PermissionHelper.HasPermission("LookupManagement") ||
+                                         PermissionHelper.HasPermission("SystemMaintenance");
                 }
                 @if (canViewSystem)
                 {
@@ -749,6 +791,10 @@
                             {
                                 <li><a href="@Url.Action("Index", "DataExchange", new { area = "Admin" })"><i class="bi bi-database-fill-gear"></i> استيراد/تصدير</a></li>
                             }
+                            @if (PermissionHelper.HasPermission("SystemMaintenance"))
+                            {
+                                <li><a href="@Url.Action("Index", "SystemMaintenance", new { area = "Admin" })"><i class="bi bi-hdd-rack-fill"></i> النسخ الاحتياطي والصيانة</a></li>
+                            }
                         </ul>
                     </li>
                     <li class="sidebar-divider"><hr /></li>
@@ -772,27 +818,31 @@
 
                     <div class="collapse navbar-collapse">
                         <ul class="navbar-nav ms-auto align-items-center">
-
                             @if (PermissionHelper.HasPermission("CoordinatorInbox"))
                             {
                                 @Html.Action("PendingRequestsNotification", "CouncilSessions", new { area = "Admin" })
                             }
 
+                            @if (PermissionHelper.HasPermission("Attendance"))
+                            {
+                                <li class="nav-item d-none d-md-block ms-3">
+                                    <a href="@Url.Action("MyAttendance", "Attendance", new { area = "Admin" })" class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3 shadow-sm">
+                                        <i class="bi bi-fingerprint me-1"></i> تسجيل حضور
+                                    </a>
+                                </li>
+                            }
+
                             <li class="nav-item dropdown ms-3">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="navbar-user-avatar rounded-circle me-2" style="width: 35px; height: 35px; overflow: hidden; background: #eee;">
-                                        @{
-                                            var profilePicPath = Session["ProfilePicturePath"] as string;
-                                        }
+                                        @{ var profilePicPath = Session["ProfilePicturePath"] as string; }
                                         @if (!string.IsNullOrEmpty(profilePicPath))
                                         {
                                             <img src="@Url.Content(profilePicPath)" alt="User" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://placehold.co/35x35/6c757d/ffffff?text=U'" />
                                         }
                                         else
                                         {
-                                            <div class="d-flex align-items-center justify-content-center h-100 bg-light">
-                                                <i class="bi bi-person-fill text-secondary"></i>
-                                            </div>
+                                            <div class="d-flex align-items-center justify-content-center h-100 bg-light"><i class="bi bi-person-fill text-secondary"></i></div>
                                         }
                                     </div>
                                     <div class="d-none d-md-block">
@@ -855,21 +905,13 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
-            // Toggle Sidebar
             $('#sidebarCollapse').on('click', function () {
                 $('#sidebar').toggleClass('active');
                 $('#content').toggleClass('active');
             });
-
-            // Initialize Select2
-            $('.select2').select2({
-                theme: "bootstrap-5",
-                width: '100%',
-                dir: "rtl"
-            });
+            $('.select2').select2({ theme: "bootstrap-5", width: '100%', dir: "rtl" });
         });
     </script>
-
     @RenderSection("scripts", required: false)
 </body>
 </html>

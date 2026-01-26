@@ -5,6 +5,7 @@ using System;
 
 namespace BarManegment.Areas.ExamPortal.ViewModels
 {
+    // 1. فيو موديل تسجيل الدخول
     public class ExamLoginViewModel
     {
         [Required(ErrorMessage = "الرقم الوطني مطلوب")]
@@ -12,35 +13,37 @@ namespace BarManegment.Areas.ExamPortal.ViewModels
         public string NationalIdNumber { get; set; }
 
         [Required(ErrorMessage = "كلمة المرور مطلوبة")]
-        [Display(Name = "كلمة المرور")] // <-- تم التعديل
+        [Display(Name = "كلمة المرور")]
         [DataType(DataType.Password)]
         public string Password { get; set; }
     }
 
+    // 2. فيو موديل لوحة التحكم (Dashboard)
     public class ExamDashboardViewModel
     {
         public string TraineeName { get; set; }
-        public string ExamTitle { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
-        public bool IsSubmitted { get; set; }
-        public string Result { get; set; }
-        public int DurationInMinutes { get; internal set; }
 
-        // قائمة بالامتحانات المتاحة الآن أو القادمة
-        public List<ExamEnrollment> ActiveExams { get; set; }
-
-        // قائمة بالامتحانات التي تم تقديمها أو انتهى وقتها
-        public List<ExamEnrollment> FinishedExams { get; set; }
+        // ✅ تم إزالة التكرار واستخدام النوع الصحيح (EnrolledExamViewModel)
+        public List<EnrolledExamViewModel> ActiveExams { get; set; }
+        public List<EnrolledExamViewModel> FinishedExams { get; set; }
 
         public ExamDashboardViewModel()
         {
-            ActiveExams = new List<ExamEnrollment>();
-            FinishedExams = new List<ExamEnrollment>();
+            ActiveExams = new List<EnrolledExamViewModel>();
+            FinishedExams = new List<EnrolledExamViewModel>();
         }
-
     }
 
+    // 3. ✅ الكلاس الجديد المطلوب للقوائم (كان مفقوداً)
+    public class EnrolledExamViewModel
+    {
+        public int Id { get; set; } // EnrollmentId
+        public Exam Exam { get; set; } // بيانات الامتحان
+        public string Result { get; set; } // النتيجة
+        public double? Score { get; set; } // العلامة
+    }
+
+    // 4. فيو موديل تقديم الامتحان
     public class TakeExamViewModel
     {
         public int EnrollmentId { get; set; }
@@ -52,6 +55,7 @@ namespace BarManegment.Areas.ExamPortal.ViewModels
         public DateTime EndTime { get; set; }
     }
 
+    // 5. فيو موديل النتيجة
     public class ExamResultViewModel
     {
         public string ExamTitle { get; set; }

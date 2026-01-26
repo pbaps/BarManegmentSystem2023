@@ -1,0 +1,210 @@
+﻿@model BarManegment.Models.AttendanceLog
+@{
+    ViewBag.Title = "البصمة الذكية - تسجيل الحضور";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+                <div class="card-header bg-gradient bg-primary text-white text-center py-4">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-fingerprint me-2"></i> البصمة الذكية</h4>
+                    <p class="mb-0 opacity-75 small">نظام الحضور الجغرافي</p>
+                </div>
+
+                <div class="card-body text-center p-4">
+
+                    <div class="mb-4">
+                        <h1 id="digital-clock" class="display-3 fw-bold text-dark" style="font-family: monospace; letter-spacing: -2px;">00:00:00</h1>
+                        <p class="text-muted fw-bold">@DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
+                    </div>
+
+                    <div id="location-status-box" class="alert alert-secondary d-flex align-items-center justify-content-center gap-2 mb-4 p-2 small">
+                        <div class="spinner-grow spinner-grow-sm" role="status"></div>
+                        <span>جاري البحث عن إحداثياتك...</span>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        @if (Model == null)
+                        {
+                            <button id="btnCheckIn" class="btn btn-success btn-lg py-3 fw-bold disabled shadow-sm" onclick="performAttendance('ClockIn')">
+                                <i class="bi bi-box-arrow-in-right fs-4 d-block mb-1"></i>
+                                تسجيل حضور
+                            </button>
+                        }
+                        else if (Model.CheckOutTime == null)
+                        {
+                            <div class="alert alert-success border-success bg-success bg-opacity-10 mb-0">
+                                <i class="bi bi-check-circle-fill me-2"></i> تم الحضور الساعة:
+                                <strong dir="ltr" class="fs-5">@DateTime.Today.Add(Model.CheckInTime.Value).ToString("hh:mm tt")</strong>
+                            </div>
+                            <button id="btnCheckOut" class="btn btn-danger btn-lg py-3 fw-bold disabled shadow-sm" onclick="performAttendance('ClockOut')">
+                                <i class="bi bi-box-arrow-left fs-4 d-block mb-1"></i>
+                                تسجيل انصراف
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="card bg-light border">
+                                <div class="card-body py-2">
+                                    <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">ملخص دوام اليوم</h6>
+                                    <div class="d-flex justify-content-between px-3">
+                                        <div class="text-success">
+                                            <small class="fw-bold">حضور</small>
+                                            <div class="fw-bold" dir="ltr">@DateTime.Today.Add(Model.CheckInTime.Value).ToString("hh:mm tt")</div>
+                                        </div>
+                                        <div class="vr"></div>
+                                        <div class="text-danger">
+                                            <small class="fw-bold">انصراف</small>
+                                            <div class="fw-bold" dir="ltr">@DateTime.Today.Add(Model.CheckOutTime.Value).ToString("hh:mm tt")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0 small">
+                                <i class="bi bi-info-circle-fill me-1"></i> لقد أتممت تسجيلاتك لهذا اليوم.
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row mt-4 g-2">
+                        <div class="col-12 text-start mb-1">
+                            <small class="text-muted fw-bold">خدمات الموظف:</small>
+                        </div>
+                        <div class="col-6">
+                            <a href="@Url.Action("RequestLeave")" class="btn btn-outline-warning w-100 fw-bold border-2 py-2">
+                                <i class="bi bi-briefcase-fill d-block fs-5 mb-1"></i> طلب إجازة
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="@Url.Action("RequestPermission")" class="btn btn-outline-info w-100 fw-bold border-2 py-2 text-dark">
+                                <i class="bi bi-clock-history d-block fs-5 mb-1"></i> إذن مغادرة
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-light text-center small text-muted py-2">
+                    <i class="bi bi-geo-alt me-1"></i> تأكد من تفعيل GPS وأنك داخل مقر النقابة
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ==========================================
+        // 1. منطق الساعة الرقمية
+        // ==========================================
+        function updateClock() {
+            const now = new Date();
+            // تنسيق الوقت (hh:mm:ss AM/PM)
+            const timeString = now.toLocaleTimeString('en-US', { hour12: true });
+            document.getElementById('digital-clock').innerText = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // استدعاء فوري عند التحميل
+
+        // ==========================================
+        // 2. منطق تحديد الموقع (Geolocation)
+        // ==========================================
+        let currentLat = 0;
+        let currentLng = 0;
+        let isLocationReady = false;
+
+        $(document).ready(function() {
+            if (navigator.geolocation) {
+                // watchPosition أفضل من getCurrentPosition لأنه يتابع حركة الموظف
+                navigator.geolocation.watchPosition(successPosition, errorPosition, {
+                    enableHighAccuracy: true, // طلب دقة عالية (GPS)
+                    timeout: 10000,           // مهلة 10 ثواني
+                    maximumAge: 0             // عدم استخدام الكاش
+                });
+            } else {
+                updateStatus("error", "المتصفح لا يدعم تحديد الموقع.");
+            }
+        });
+
+        function successPosition(position) {
+            currentLat = position.coords.latitude;
+            currentLng = position.coords.longitude;
+            const accuracy = position.coords.accuracy; // الدقة بالمتر
+
+            if (!isLocationReady) {
+                isLocationReady = true;
+                // تفعيل الأزرار فقط عند الحصول على الموقع
+                $('#btnCheckIn, #btnCheckOut').removeClass('disabled');
+
+                // رسالة نجاح مع الدقة
+                let accMsg = accuracy < 20 ? " (دقة عالية)" : " (دقة منخفضة)";
+                updateStatus("success", "تم تحديد موقعك" + accMsg);
+            }
+        }
+
+        function errorPosition(error) {
+            let msg = "حدث خطأ في تحديد الموقع.";
+            switch(error.code) {
+                case error.PERMISSION_DENIED: msg = "يرجى السماح للموقع بالوصول (GPS Access Denied)."; break;
+                case error.POSITION_UNAVAILABLE: msg = "معلومات الموقع غير متاحة حالياً."; break;
+                case error.TIMEOUT: msg = "تعذر تحديد الموقع (ضعف في الإشارة)."; break;
+            }
+            updateStatus("error", msg);
+            // تعطيل الأزرار لمنع المحاولة الفاشلة
+            $('#btnCheckIn, #btnCheckOut').addClass('disabled');
+            isLocationReady = false;
+        }
+
+        function updateStatus(type, text) {
+            const box = $('#location-status-box');
+            box.removeClass('alert-secondary alert-success alert-danger');
+
+            if (type === 'success') {
+                box.addClass('alert-success');
+                box.html('<i class="bi bi-geo-alt-fill text-success"></i> ' + text);
+            } else if (type === 'error') {
+                box.addClass('alert-danger');
+                box.html('<i class="bi bi-exclamation-triangle-fill text-danger"></i> ' + text);
+            } else {
+                box.addClass('alert-secondary');
+            }
+        }
+
+        // ==========================================
+        // 3. إرسال البيانات للسيرفر (AJAX)
+        // ==========================================
+        function performAttendance(actionType) {
+            if (!isLocationReady) {
+                alert("يرجى الانتظار حتى يتم تحديد الموقع بدقة.");
+                return;
+            }
+
+            const btn = (actionType === 'ClockIn') ? $('#btnCheckIn') : $('#btnCheckOut');
+            const originalHtml = btn.html();
+
+            // تغيير حالة الزر للتحميل
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> جاري الاتصال...');
+
+            // بناء الرابط الصحيح (ClockIn أو ClockOut)
+            const url = '@Url.Action("ACTION_PLACEHOLDER", "Attendance")'.replace("ACTION_PLACEHOLDER", actionType);
+
+            $.post(url, { lat: currentLat, lng: currentLng }, function(response) {
+                if (response.success) {
+                    // نجاح -> إعادة تحميل الصفحة لعرض الحالة الجديدة
+                    location.reload();
+                } else {
+                    // فشل (خارج النطاق أو خطأ آخر)
+                    // نستخدم SweetAlert لو متاح، أو alert عادي
+                    alert("⚠️ تنبيه: " + response.message);
+                    btn.prop('disabled', false).html(originalHtml);
+                }
+            }).fail(function() {
+                alert("حدث خطأ في الاتصال بالسيرفر. تأكد من اتصال الإنترنت.");
+                btn.prop('disabled', false).html(originalHtml);
+            });
+        }
+    </script>
+}

@@ -411,7 +411,10 @@ namespace BarManegment.Areas.Admin.Controllers
                 appInDb.BirthPlace = viewModel.BirthPlace;
                 appInDb.Nationality = viewModel.Nationality;
                 appInDb.GenderId = viewModel.GenderId;
-                appInDb.ApplicationStatusId = viewModel.ApplicationStatusId;
+                if (viewModel.ApplicationStatusId > 0)
+                {
+                    appInDb.ApplicationStatusId = viewModel.ApplicationStatusId;
+                }
 
                 // تحديث الصورة الشخصية إذا تم رفع واحدة جديدة
                 if (viewModel.PersonalPhotoFile != null && viewModel.PersonalPhotoFile.ContentLength > 0)
@@ -605,7 +608,7 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         [CustomAuthorize(Permission = "CanView")]
-        public ActionResult GetAttachment(int id)
+        public ActionResult GetAttachmentFile(int id)
         {
             var attachment = db.Attachments.Find(id);
             if (attachment == null || string.IsNullOrEmpty(attachment.FilePath)) return HttpNotFound();

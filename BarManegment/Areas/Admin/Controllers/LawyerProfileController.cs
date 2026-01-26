@@ -44,6 +44,7 @@ namespace BarManegment.Areas.Admin.Controllers
         // ============================================================
         // تفاصيل ملف المحامي
         // ============================================================
+        // داخل LawyerProfileController
         public ActionResult Details(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -58,7 +59,7 @@ namespace BarManegment.Areas.Admin.Controllers
 
             if (lawyer == null) return HttpNotFound();
 
-            // التحقق من أنه محامٍ
+            // التحقق من أنه محامٍ (نفس الكود السابق)
             if (!lawyer.ApplicationStatus.Name.Contains("مزاول") &&
                 !lawyer.ApplicationStatus.Name.Contains("متقاعد") &&
                 !lawyer.ApplicationStatus.Name.Contains("Advocate"))
@@ -66,36 +67,44 @@ namespace BarManegment.Areas.Admin.Controllers
                 return RedirectToAction("Details", "RegisteredTrainees", new { id = id });
             }
 
-            // 1. السجل المالي
+            // جلب البيانات
             var paymentHistory = db.Receipts.AsNoTracking()
                 .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType))
                 .Where(r => r.PaymentVoucher.GraduateApplicationId == id)
                 .OrderByDescending(r => r.BankPaymentDate).ToList();
 
-            // 2. سجل تجديد المزاولة
             var practicingRenewals = db.PracticingLawyerRenewals.AsNoTracking()
                 .Include(r => r.Receipt.PaymentVoucher)
                 .Where(r => r.GraduateApplicationId == id)
                 .OrderByDescending(r => r.RenewalYear).ToList();
 
-            // 3. المتدربون تحت إشرافه (List<GraduateApplication>)
             var myTrainees = db.GraduateApplications.AsNoTracking()
-                .Where(g => g.SupervisorId == id && g.ApplicationStatus.Name == "متدرب مقيد")
+                .Include(g => g.ApplicationStatus) // نحتاج الحالة لعرضها
+                .Where(g => g.SupervisorId == id) // جلب الكل (وليس المقيدين فقط) للأرشيف
+                .OrderByDescending(g => g.TrainingStartDate)
                 .ToList();
 
-            // 4. سجلات التدريب المعلقة
             var pendingLogs = db.TrainingLogs.AsNoTracking()
                 .Include(l => l.Trainee)
                 .Where(l => l.SupervisorId == id && l.Status == "بانتظار موافقة المشرف")
-                .OrderBy(l => l.SubmissionDate)
-                .ToList();
+                .OrderBy(l => l.SubmissionDate).ToList();
 
-            // 5. سجل القروض (يمرر عبر ViewBag لأنه غير موجود في ViewModel الأساسي)
             var loans = db.LoanApplications.AsNoTracking()
                 .Include(l => l.LoanType)
                 .Where(l => l.LawyerId == id).OrderByDescending(l => l.ApplicationDate).ToList();
 
-            // 💡 التصحيح الجوهري: إنشاء LawyerProfileViewModel بدلاً من TraineeReviewViewModel
+            // ✅ 6. جلب قرارات المجلس الخاصة بالمحامي
+            var councilDecisions = db.AgendaItems.AsNoTracking()
+                .Include(a => a.CouncilSession) // لجلب رقم وتاريخ الجلسة
+                .Where(a => a.RequesterLawyerId == id) // ⚠️ هذا هو الحقل الصحيح بناءً على ملفك
+                .Where(a => !string.IsNullOrEmpty(a.DecisionText) || a.CouncilDecisionType != "Pending") // نجلب القرارات المبتوت فيها
+                .OrderByDescending(a => a.CouncilSession.SessionDate)
+                .ToList();
+            // حساب الإحصائيات
+            int yearsExp = lawyer.PracticeStartDate.HasValue
+                ? (DateTime.Now.Year - lawyer.PracticeStartDate.Value.Year)
+                : 0;
+
             var viewModel = new LawyerProfileViewModel
             {
                 Id = lawyer.Id,
@@ -110,19 +119,22 @@ namespace BarManegment.Areas.Admin.Controllers
                 ContactInfo = lawyer.ContactInfo ?? new ContactInfo(),
                 Gender = lawyer.Gender,
 
-                // تعبئة القوائم للتوافق مع الصفحة
                 Qualifications = lawyer.Qualifications.ToList(),
                 Attachments = lawyer.Attachments.ToList(),
-
                 PaymentHistory = paymentHistory,
                 PracticingRenewals = practicingRenewals,
                 MyTrainees = myTrainees,
-                PendingTrainingLogs = pendingLogs
+                PendingTrainingLogs = pendingLogs,
+                Loans = loans, // ✅ الآن جزء من الموديل
+                CouncilDecisions = councilDecisions, // ✅ تمرير القائمة
+                // الإحصائيات
+                YearsOfExperience = yearsExp,
+                ActiveTraineesCount = myTrainees.Count(t => t.ApplicationStatus.Name == "متدرب مقيد"),
+                TotalLoansAmount = loans.Sum(l => l.Amount),
+                LastRenewalYear = practicingRenewals.FirstOrDefault()?.RenewalYear.ToString() ?? "لا يوجد"
             };
 
-            ViewBag.Loans = loans;
-
-            // القوائم المنسدلة (للمودالات في الصفحة)
+            // القوائم المنسدلة للمودالات
             ViewBag.QualificationTypes = new SelectList(db.QualificationTypes.OrderBy(t => t.Name).ToList(), "Id", "Name");
             ViewBag.AttachmentTypes = new SelectList(db.AttachmentTypes.OrderBy(t => t.Name).ToList(), "Id", "Name");
 
@@ -244,7 +256,87 @@ namespace BarManegment.Areas.Admin.Controllers
 
             return View(viewModel);
         }
+        // POST: Admin/LawyerProfile/AddQualification
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [CustomAuthorize(Permission = "CanEdit")]
+        public ActionResult AddQualification(FormCollection form)
+        {
+            int applicationId = int.Parse(form["applicationId"]);
+            try
+            {
+                var qualification = new Qualification
+                {
+                    GraduateApplicationId = applicationId,
+                    QualificationTypeId = int.Parse(form["QualificationTypeId"]),
+                    UniversityName = form["UniversityName"],
+                    Faculty = form["Faculty"],
+                    Specialization = form["Specialization"],
+                    GraduationYear = int.Parse(form["GraduationYear"])
+                };
 
+                if (!string.IsNullOrWhiteSpace(form["GradePercentage"]))
+                {
+                    if (double.TryParse(form["GradePercentage"], out double grade))
+                        qualification.GradePercentage = grade;
+                }
+
+                db.Qualifications.Add(qualification);
+                db.SaveChanges();
+
+                AuditService.LogAction("Add Qualification", "LawyerProfile", $"Lawyer ID {applicationId}, Added: {qualification.UniversityName}");
+                TempData["SuccessMessage"] = "تمت إضافة المؤهل بنجاح.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "حدث خطأ: " + ex.Message;
+            }
+            return RedirectToAction("Details", new { id = applicationId });
+        }
+
+        // POST: Admin/LawyerProfile/AddAttachment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [CustomAuthorize(Permission = "CanEdit")]
+        public ActionResult AddAttachment(int applicationId, int AttachmentTypeId, HttpPostedFileBase UploadedFile)
+        {
+            if (UploadedFile == null || UploadedFile.ContentLength == 0)
+            {
+                TempData["ErrorMessage"] = "الرجاء اختيار ملف.";
+                return RedirectToAction("Details", new { id = applicationId });
+            }
+
+            try
+            {
+                string path = Server.MapPath($"~/Uploads/Attachments/{applicationId}");
+                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+
+                string extension = Path.GetExtension(UploadedFile.FileName);
+                string fileName = Guid.NewGuid().ToString() + extension;
+                string fullPath = Path.Combine(path, fileName);
+                UploadedFile.SaveAs(fullPath);
+
+                var attachment = new Attachment
+                {
+                    GraduateApplicationId = applicationId,
+                    AttachmentTypeId = AttachmentTypeId,
+                    FilePath = $"/Uploads/Attachments/{applicationId}/" + fileName,
+                    OriginalFileName = Path.GetFileName(UploadedFile.FileName),
+                    UploadDate = DateTime.Now
+                };
+
+                db.Attachments.Add(attachment);
+                db.SaveChanges();
+
+                AuditService.LogAction("Add Attachment", "LawyerProfile", $"Lawyer ID {applicationId}, File: {attachment.OriginalFileName}");
+                TempData["SuccessMessage"] = "تم رفع المرفق بنجاح.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "حدث خطأ أثناء الرفع: " + ex.Message;
+            }
+            return RedirectToAction("Details", new { id = applicationId });
+        }
         protected override void Dispose(bool disposing)
         {
             if (disposing) db.Dispose();

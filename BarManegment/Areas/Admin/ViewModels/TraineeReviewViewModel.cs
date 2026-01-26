@@ -64,6 +64,28 @@ namespace BarManegment.Areas.Admin.ViewModels
         public List<string> OathEligibilityIssues { get; set; }
         public bool IsPracticingLawyer { get; set; } = false;
         public List<TrainingLog> TrainingLogs { get; set; }
+        public GraduateApplication Trainee { get; set; }
+        public List<TrainingLog> Logs { get; set; }
+
+
+
+
+        // =========================================================
+        // 1. الكائن الأساسي (يحتوي الاسم، الهوية، المشرف، الاتصال)
+        // =========================================================
+ 
+
+        // السجل المالي (الإيصالات)
+        public List<Receipt> Receipts { get; set; }
+
+        // الأبحاث القانونية
+        public List<LegalResearch> Researches { get; set; }
+
+        // سجل الامتحانات
+        public List<ExamEnrollment> Exams { get; set; }
+
+        // الطلبات الإدارية (نقل، استئناف...)
+        public List<SupervisorChangeRequest> Requests { get; set; }
         // Constructor
         public TraineeReviewViewModel()
         {
@@ -80,6 +102,12 @@ namespace BarManegment.Areas.Admin.ViewModels
             OathRequestHistory = new List<OathRequest>();
             OathEligibilityIssues = new List<string>();
             TrainingLogs = new List<TrainingLog>();
+
+            Logs = new List<TrainingLog>();
+            Receipts = new List<Receipt>();
+            Researches = new List<LegalResearch>();
+            Exams = new List<ExamEnrollment>();
+            Requests = new List<SupervisorChangeRequest>();
         }
     }
 }

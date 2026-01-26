@@ -1,6 +1,11 @@
-﻿@{
+﻿@using BarManegment.Models
+@{
     ViewBag.Title = "تم استلام طلبك بنجاح";
     Layout = "~/Views/Shared/_PublicLayout.cshtml";
+
+    // جلب رقم القسيمة من ViewBag (القادم من الرابط)
+    int? voucherId = ViewBag.VoucherId as int?;
+    bool isVoucherGenerated = voucherId.HasValue;
 }
 
 <div class="container py-5">
@@ -26,12 +31,31 @@
                     <h2 class="fw-bold text-success mb-3">@ViewBag.Title</h2>
 
                     <div class="alert alert-success border-0 bg-success bg-opacity-10 rounded-3 py-4 px-3 mb-4">
-                        <h5 class="alert-heading fw-bold mb-2"><i class="bi bi-stars me-2"></i> نتمنى لك التوفيق</h5>
-                        <p class="mb-0 text-success-emphasis">
-                            لقد تم استلام طلبك للتقديم لامتحان القبول بنجاح.
-                            <br />
-                            سيتم مراجعة طلبك من قبل اللجنة المختصة وسيتم التواصل معك عبر البريد الإلكتروني أو الواتساب أو الجوال.
-                        </p>
+                        <h5 class="alert-heading fw-bold mb-2"><i class="bi bi-stars me-2"></i> شكراً لك</h5>
+
+                        @if (isVoucherGenerated)
+                        {
+                            <p class="mb-3 text-success-emphasis lead">
+                                لقد تم قبول طلبك <strong>مبدئياً</strong>.
+                                <br />
+                                لإتمام عملية التسجيل، يرجى <strong>طباعة قسيمة الرسوم</strong> أدناه والتوجه إلى القسم المالي أو البنك المعتمد للسداد.
+                                <br />
+                                <span class="fw-bold text-danger mt-2 d-block small">ملاحظة: لن يتم اعتماد الطلب نهائياً إلا بعد سداد الرسوم.</span>
+                            </p>
+
+                            <!-- ✅ زر طباعة القسيمة ✅ -->
+                            <a href="@Url.Action("PrintVoucher", "ExamRegistration", new { id = voucherId.Value })" target="_blank" class="btn btn-warning fw-bold btn-lg px-5 shadow-sm mt-3 pulse-button">
+                                <i class="bi bi-printer-fill me-2"></i> طباعة قسيمة الرسوم
+                            </a>
+                        }
+                        else
+                        {
+                            <p class="mb-0 text-success-emphasis">
+                                لقد تم استلام طلبك بنجاح.
+                                <br />
+                                سيتم مراجعة طلبك من قبل اللجنة المختصة وسيتم التواصل معك عبر البريد الإلكتروني أو الواتساب أو الجوال.
+                            </p>
+                        }
                     </div>
 
                     <p class="text-muted small mb-4">يمكنك الآن إغلاق هذه الصفحة بأمان.</p>
@@ -51,3 +75,27 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* تأثير نبض للزر لكي ينتبه له المستخدم */
+    .pulse-button {
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+        }
+
+        70% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        }
+    }
+</style>

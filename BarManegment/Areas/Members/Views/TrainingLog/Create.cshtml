@@ -4,49 +4,74 @@
     Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
 }
 
-<div class="card shadow-sm">
-    <div class="card-header">
-        <h4>@ViewBag.Title</h4>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i> @ViewBag.Title</h5>
+            </div>
+
+            @using (Html.BeginForm("Create", "TrainingLog", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="card-body p-4">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger shadow-sm">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+                        </div>
+                    }
+
+                    @* --- الصف الأول: السنة، الشهر، عدد القضايا --- *@
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                @Html.EditorFor(model => model.Year, new { htmlAttributes = new { @class = "form-control", type = "number" } })
+                                @Html.LabelFor(model => model.Year)
+                                @Html.ValidationMessageFor(model => model.Year, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                @Html.EditorFor(model => model.Month, new { htmlAttributes = new { @class = "form-control", type = "number", min = "1", max = "12" } })
+                                @Html.LabelFor(model => model.Month)
+                                @Html.ValidationMessageFor(model => model.Month, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        @* ✅ الإضافة الجديدة: حقل عدد القضايا *@
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                @Html.EditorFor(model => model.CasesCount, new { htmlAttributes = new { @class = "form-control", type = "number", min = "0" } })
+                                @Html.LabelFor(model => model.CasesCount)
+                                @Html.ValidationMessageFor(model => model.CasesCount, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+                    </div>
+
+                    @* --- الصف الثاني: ملخص الأعمال --- *@
+                    <div class="form-floating mb-3">
+                        @Html.TextAreaFor(model => model.WorkSummary, new { @class = "form-control", placeholder = " ", style = "height: 150px" })
+                        @Html.LabelFor(model => model.WorkSummary)
+                        @Html.ValidationMessageFor(model => model.WorkSummary, "", new { @class = "text-danger small" })
+                    </div>
+
+                    @* --- الصف الثالث: المرفقات --- *@
+                    <div class="mb-3">
+                        <label for="uploadedFile" class="form-label fw-bold"><i class="bi bi-paperclip me-1"></i> إرفاق كشف القضايا (PDF أو صورة)</label>
+                        <input type="file" name="uploadedFile" id="uploadedFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                        <div class="form-text text-muted">يفضل رفع ملف PDF يحتوي على تفاصيل الجلسات.</div>
+                    </div>
+
+                </div>
+                <div class="card-footer bg-light text-end py-3">
+                    <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary me-2">إلغاء</a>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        <i class="bi bi-send-check me-1"></i> إرسال للمشرف
+                    </button>
+                </div>
+            }
+        </div>
     </div>
-    @using (Html.BeginForm("Create", "TrainingLog", FormMethod.Post, new { enctype = "multipart/form-data" }))
-    {
-        @Html.AntiForgeryToken()
-
-        <div class="card-body">
-            @Html.ValidationSummary(false, "", new { @class = "text-danger" })
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-floating mb-3">
-                        @Html.EditorFor(model => model.Year, new { htmlAttributes = new { @class = "form-control", type = "number" } })
-                        @Html.LabelFor(model => model.Year)
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-floating mb-3">
-                        @Html.EditorFor(model => model.Month, new { htmlAttributes = new { @class = "form-control", type = "number", min = "1", max = "12" } })
-                        @Html.LabelFor(model => model.Month)
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-floating mb-3">
-                @Html.TextAreaFor(model => model.WorkSummary, new { @class = "form-control", placeholder = " ", style = "height: 150px" })
-                @Html.LabelFor(model => model.WorkSummary)
-                @Html.ValidationMessageFor(model => model.WorkSummary, "", new { @class = "text-danger" })
-            </div>
-
-            <div class="mb-3">
-                @Html.Label("uploadedFile", "ملف مرفق (اختياري)", new { @class = "form-label" })
-                <input type="file" name="uploadedFile" id="uploadedFile" class="form-control" />
-            </div>
-
-        </div>
-        <div class="card-footer text-end">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-send me-1"></i> إرسال للمشرف
-            </button>
-            @Html.ActionLink("إلغاء", "Index", "Dashboard", null, new { @class = "btn btn-secondary" })
-        </div>
-    }
 </div>

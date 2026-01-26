@@ -15,7 +15,8 @@
             {
                 <div class="col-md-4">
                     <label class="form-label fw-bold">اختر الحساب <span class="text-danger">*</span></label>
-                    @Html.DropDownList("accountId", null, "--- ابحث عن الحساب ---", new { @class = "form-select select2", required = "required" })
+                    @* ✅ استخدام DropDownListFor لربط القيمة بالموديل *@
+                    @Html.DropDownListFor(m => m.AccountId, ViewBag.AccountId as SelectList, "--- ابحث عن الحساب ---", new { @class = "form-select select2", required = "required" })
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-bold">من تاريخ</label>
@@ -40,7 +41,7 @@
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="mb-0">كشف حساب: <span class="text-warning">@Model.AccountName</span></h5>
-                    <small class="opacity-75">الكود: @Model.AccountCode | الفترة: @Model.FromDate?.ToString("yyyy/MM/dd") - @Model.ToDate?.ToString("yyyy/MM/dd")</small>
+                    <small class="opacity-75">الكود: @Model.AccountCode | الفترة: @(Model.FromDate?.ToString("yyyy/MM/dd") ?? "-") - @(Model.ToDate?.ToString("yyyy/MM/dd") ?? "-")</small>
                 </div>
                 <div>
                     <a href="@Url.Action("Print", new { accountId = Model.AccountId, from = Model.FromDate, to = Model.ToDate })" target="_blank" class="btn btn-light btn-sm fw-bold">
@@ -64,17 +65,18 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="bg-warning bg-opacity-10 fw-bold">
+                            @* تعديل: تمييز سطر الرصيد الافتتاحي بشكل أوضح *@
+                            <tr class="bg-secondary bg-opacity-10 fw-bold text-muted">
                                 <td>-</td>
                                 <td>-</td>
                                 <td>-</td>
-                                <td class="text-end">رصيد سابق (ما قبل الفترة)</td>
-                                <td>@(Model.OpeningBalance > 0 ? Model.OpeningBalance.ToString("N2") : "-")</td>
-                                <td>@(Model.OpeningBalance < 0 ? Math.Abs(Model.OpeningBalance).ToString("N2") : "-")</td>
-                                <td class="bg-warning bg-opacity-25">@Model.OpeningBalance.ToString("N2")</td>
+                                <td class="text-end">رصيد ما قبل الفترة (الافتتاحي)</td>
+                                <td dir="ltr">@(Model.OpeningBalance > 0 ? Model.OpeningBalance.ToString("N2") : "-")</td>
+                                <td dir="ltr">@(Model.OpeningBalance < 0 ? Math.Abs(Model.OpeningBalance).ToString("N2") : "-")</td>
+                                <td class="bg-warning bg-opacity-25 text-dark" dir="ltr">@Model.OpeningBalance.ToString("N2")</td>
                             </tr>
 
-                            @if (Model.Transactions.Any())
+                            @if (Model.Transactions != null && Model.Transactions.Any())
                             {
                                 foreach (var item in Model.Transactions)
                                 {
@@ -83,8 +85,8 @@
                                         <td><span class="badge bg-secondary">@item.DocumentType</span></td>
                                         <td class="font-monospace">@item.ReferenceNumber</td>
                                         <td class="text-end text-muted small">@item.Description</td>
-                                        <td class="text-success">@(item.Debit > 0 ? item.Debit.ToString("N2") : "-")</td>
-                                        <td class="text-danger">@(item.Credit > 0 ? item.Credit.ToString("N2") : "-")</td>
+                                        <td class="text-success" dir="ltr">@(item.Debit > 0 ? item.Debit.ToString("N2") : "-")</td>
+                                        <td class="text-danger" dir="ltr">@(item.Credit > 0 ? item.Credit.ToString("N2") : "-")</td>
                                         <td class="fw-bold bg-light" dir="ltr">@item.Balance.ToString("N2")</td>
                                     </tr>
                                 }
@@ -92,15 +94,18 @@
                             else
                             {
                                 <tr>
-                                    <td colspan="7" class="py-4 text-muted">لا توجد حركات خلال هذه الفترة.</td>
+                                    <td colspan="7" class="py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
+                                        لا توجد حركات مالية مسجلة لهذا الحساب خلال الفترة المحددة.
+                                    </td>
                                 </tr>
                             }
                         </tbody>
                         <tfoot class="table-dark">
                             <tr>
                                 <td colspan="4" class="text-end fw-bold">المجاميع والرصيد الختامي</td>
-                                <td class="text-success">@Model.TotalDebit.ToString("N2")</td>
-                                <td class="text-danger">@Model.TotalCredit.ToString("N2")</td>
+                                <td class="text-success" dir="ltr">@Model.TotalDebit.ToString("N2")</td>
+                                <td class="text-danger" dir="ltr">@Model.TotalCredit.ToString("N2")</td>
                                 <td class="bg-warning text-dark fw-bold" dir="ltr">@Model.ClosingBalance.ToString("N2")</td>
                             </tr>
                         </tfoot>
@@ -117,7 +122,9 @@
             $('.select2').select2({
                 theme: "bootstrap-5",
                 width: '100%',
-                dir: "rtl"
+                dir: "rtl",
+                placeholder: "--- ابحث عن الحساب ---",
+                allowClear: true
             });
         });
     </script>

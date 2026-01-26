@@ -12,7 +12,16 @@
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            // 🔴 هام جداً للإنتاج (Production): إيقاف الترحيل التلقائي
+            // هذا يمنع الكود من محاولة تغيير قاعدة البيانات تلقائياً عند التشغيل
+         AutomaticMigrationsEnabled = false;
+
+            // 🔴 هام جداً: منع فقدان البيانات
+            // هذا يضمن عدم حذف أي أعمدة أو جداول تحتوي على بيانات بالخطأ
+           AutomaticMigrationDataLossAllowed = false;
+
+
+ 
         }
 
         protected override void Seed(BarManegment.Models.ApplicationDbContext context)
@@ -45,7 +54,7 @@
             var jodiId = jodiCurrency != null ? jodiCurrency.Id : 1;
 
             // ============================================================
-            // 3. Add Contract Types
+            // 3. Add Contract Types & System Lookups
             // ============================================================
             context.ContractTypes.AddOrUpdate(c => c.Name,
                 new ContractType { Name = "وكالة عامة", DefaultFee = 20, CurrencyId = jodiId },
@@ -55,7 +64,6 @@
                 new ContractType { Name = "كفالة عدلية", DefaultFee = 15, CurrencyId = jodiId },
                 new ContractType { Name = "وكالة جواز سفر", DefaultFee = 10, CurrencyId = jodiId }
             );
-            context.SaveChanges();
 
             context.SystemLookups.AddOrUpdate(l => l.Name,
                 new SystemLookup { Category = "PaymentMethod", Name = "نقدي", IsActive = true },
@@ -66,14 +74,19 @@
             context.SaveChanges();
 
             // ============================================================
-            // 4. Register Modules
+            // 4. Register Modules (تم إضافة موديولات HR الجديدة)
             // ============================================================
             context.Modules.AddOrUpdate(m => m.ControllerName,
-              // --- HR & Payroll ---
+
+              // --- HR & Attendance (الموارد البشرية - تم التحديث) ---
               new ModuleModel { NameArabic = "سجل الموظفين", ControllerName = "Employees" },
+              new ModuleModel { NameArabic = "إدارة الرواتب", ControllerName = "Payroll" },
+              new ModuleModel { NameArabic = "نظام الحضور والانصراف", ControllerName = "Attendance" }, // ✅ جديد
+              new ModuleModel { NameArabic = "إدارة الفروع والمواقع", ControllerName = "Branches" },   // ✅ جديد
+              new ModuleModel { NameArabic = "إدارة أوقات الدوام", ControllerName = "WorkShifts" },    // ✅ جديد
               new ModuleModel { NameArabic = "إدارة الأقسام", ControllerName = "Departments" },
               new ModuleModel { NameArabic = "المسميات الوظيفية", ControllerName = "JobTitles" },
-              new ModuleModel { NameArabic = "إدارة الرواتب", ControllerName = "Payroll" },
+              new ModuleModel { NameArabic = "تقارير الموارد البشرية", ControllerName = "HRReports" }, // ✅ جديد للتقارير
 
               // --- Admissions ---
               new ModuleModel { NameArabic = "طلبات امتحان القبول", ControllerName = "ExamApplications" },
@@ -126,8 +139,6 @@
               new ModuleModel { NameArabic = "إدارة العملات", ControllerName = "Currencies" },
               new ModuleModel { NameArabic = "الصندوق المالي للمحامي", ControllerName = "LawyerFinancialBox" },
               new ModuleModel { NameArabic = "السنوات المالية", ControllerName = "FiscalYears" },
-
-              // ✅✅✅ الإضافة الجديدة هنا ✅✅✅
               new ModuleModel { NameArabic = "إدارة البيانات المالية للمحامين", ControllerName = "LawyerFinancialData" },
 
               // --- Inventory & Procurement ---
@@ -179,8 +190,11 @@
               new ModuleModel { NameArabic = "الاستعلام المركزي", ControllerName = "CentralQuery" },
               new ModuleModel { NameArabic = "أرشيف المحامي", ControllerName = "LawyerArchive" },
               new ModuleModel { NameArabic = "استيراد وتصدير البيانات", ControllerName = "DataExchange" },
-              new ModuleModel { NameArabic = "التقارير الشاملة", ControllerName = "Reports" }
-          );
+              new ModuleModel { NameArabic = "التقارير الشاملة", ControllerName = "Reports" },
+               // ✅✅✅ الإضافة الجديدة: إدارة النسخ الاحتياطي والصيانة ✅✅✅
+              new ModuleModel { NameArabic = "إدارة النسخ الاحتياطي والصيانة", ControllerName = "SystemMaintenance" }
+
+              );
             context.SaveChanges();
 
 
@@ -274,7 +288,7 @@
             context.SaveChanges();
 
             // ============================================================
-            // 7. FINANCIAL SYSTEM SEEDING - (تم التصحيح)
+            // 7. FINANCIAL SYSTEM SEEDING
             // ============================================================
             SeedFinancialSystem(context);
 
@@ -284,8 +298,6 @@
             var shekelCurrencyId = context.Currencies.FirstOrDefault(c => c.Symbol == "₪")?.Id;
             var jodiCurrencyId = context.Currencies.FirstOrDefault(c => c.Symbol == "JD")?.Id;
 
-            // التأكد من وجود حساب بنكي افتراضي (نستخدم حساب "النقدية بالبنوك" 1102 مؤقتاً إذا لم ننشئ حسابات تفصيلية)
-            // أو نضيف حسابات بنكية تفصيلية
             if (shekelCurrencyId.HasValue)
             {
                 context.BankAccounts.AddOrUpdate(b => b.AccountNumber,
@@ -405,35 +417,58 @@
             }
 
             // ============================================================
-            // 10. Create Admin User
+            // 10. Create or Update Admin User (Improved)
             // ============================================================
             var adminRole = context.UserTypes.FirstOrDefault(ut => ut.NameEnglish == "Administrator");
-            if (adminRole != null && !context.Users.Any(u => u.Username == "admin"))
+            if (adminRole != null)
             {
-                context.Users.Add(new UserModel
+                var adminUser = context.Users.FirstOrDefault(u => u.Username == "admin");
+                if (adminUser == null)
                 {
-                    FullNameArabic = "المدير العام",
-                    Username = "admin",
-                    Email = "admin@example.com",
-                    IdentificationNumber = "000000000",
-                    IsActive = true,
-                    UserTypeId = adminRole.Id,
-                    HashedPassword = PasswordHelper.HashPassword("Admin@123")
-                });
+                    adminUser = new UserModel
+                    {
+                        FullNameArabic = "المدير العام",
+                        Username = "admin",
+                        Email = "admin@example.com",
+                        IdentificationNumber = "000000000",
+                        IsActive = true,
+                        UserTypeId = adminRole.Id,
+                        HashedPassword = PasswordHelper.HashPassword("Admin@123")
+                    };
+                    context.Users.Add(adminUser);
+                }
+                else
+                {
+                    // 🔴 هام جداً: تحديث إجباري للمستخدم الحالي لضمان أخذ الصلاحيات
+                    adminUser.UserTypeId = adminRole.Id;
+                    adminUser.IsActive = true;
+                }
                 context.SaveChanges();
             }
 
             // ============================================================
-            // 11. Grant Permissions to Admin
+            // 11. Grant Permissions to Admin (تحديث شامل)
             // ============================================================
             var adminTypeId = context.UserTypes.FirstOrDefault(ut => ut.NameEnglish == "Administrator")?.Id;
             if (adminTypeId.HasValue)
             {
-                var allModuleIds = context.Modules.Select(m => m.Id).ToList();
-                foreach (var moduleId in allModuleIds)
+                // جلب جميع الموديولات الموجودة حالياً لضمان تحديث الصلاحيات للكل بما في ذلك الموديولات الجديدة
+                var allModules = context.Modules.ToList();
+                foreach (var module in allModules)
                 {
                     context.Permissions.AddOrUpdate(p => new { p.UserTypeId, p.ModuleId },
-                        new PermissionModel { UserTypeId = adminTypeId.Value, ModuleId = moduleId, CanView = true, CanAdd = true, CanEdit = true, CanDelete = true, CanExport = true, CanImport = true }
+                        new PermissionModel
+                        {
+                            UserTypeId = adminTypeId.Value,
+                            ModuleId = module.Id,
+                            // ✅✅ ضمان الصلاحيات الكاملة ✅✅
+                            CanView = true,
+                            CanAdd = true,
+                            CanEdit = true,
+                            CanDelete = true,
+                            CanExport = true,
+                            CanImport = true
+                        }
                     );
                 }
                 context.SaveChanges();
@@ -485,6 +520,50 @@
                 new JobTitle { Name = "مبرمج" },
                 new JobTitle { Name = "سكرتير" }
             );
+            context.SaveChanges();
+
+            // ============================================================
+            // 15. Seed Council Members (أعضاء مجلس النقابة)
+            // ============================================================
+            context.CouncilMembers.AddOrUpdate(c => c.Name,
+                new CouncilMember
+                {
+                    Name = "صافي محمود الدحدوح",
+                    Title = "نائب نقيب المحامين",
+                    IsActive = true
+                },
+                new CouncilMember
+                {
+                    Name = "زياد عطا النجار",
+                    Title = "أمين السر",
+                    IsActive = true
+                },
+                new CouncilMember
+                {
+                    Name = "علي دياب الدن",
+                    Title = "أمين الصندوق",
+                    IsActive = true
+                },
+                new CouncilMember
+                {
+                    Name = "عبد العزيز محمد الغلاييني",
+                    Title = "عضو المجلس",
+                    IsActive = true
+                },
+                new CouncilMember
+                {
+                    Name = "مظهر عبد الكريم سالم",
+                    Title = "عضو المجلس",
+                    IsActive = true
+                },
+                new CouncilMember
+                {
+                    Name = "هالة محمد الشريف",
+                    Title = "عضو المجلس",
+                    IsActive = true
+                }
+            );
+
             context.SaveChanges();
         }
 

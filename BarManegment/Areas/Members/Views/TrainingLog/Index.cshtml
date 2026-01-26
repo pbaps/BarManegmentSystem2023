@@ -47,6 +47,117 @@
                         </tr>
                     }
                 </tbody>
+                @model IEnumerable<BarManegment.Models.TrainingLog>
+                @{
+                    ViewBag.Title = "سجلاتي التدريبية";
+                    Layout = "~/Areas/Members/Views/Shared/_Layout.cshtml";
+                }
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-primary fw-bold"><i class="bi bi-journal-bookmark-fill me-2"></i> @ViewBag.Title</h5>
+                        <a href="@Url.Action("Create")" class="btn btn-primary shadow-sm">
+                            <i class="bi bi-plus-lg me-1"></i> تقديم سجل جديد
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success m-3 shadow-sm border-start border-success border-4">
+                                <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                            </div>
+                        }
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger m-3 shadow-sm border-start border-danger border-4">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                            </div>
+                        }
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light text-muted">
+                                    <tr>
+                                        <th class="ps-4">الشهر / السنة</th>
+                                        <th>عدد القضايا</th>
+                                        <th>ملخص الأعمال</th>
+                                        <th>المشرف</th>
+                                        <th>تاريخ التقديم</th>
+                                        <th>المرفق</th>
+                                        <th>الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!Model.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-5">
+                                                <i class="bi bi-folder2-open fs-1 d-block mb-2"></i>
+                                                لم تقم بتقديم أي سجلات تدريبية بعد.
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var item in Model)
+                                        {
+                                            <tr>
+                                                <td class="ps-4 fw-bold text-dark">@item.Month / @item.Year</td>
+
+                                                @* ✅ عرض عدد القضايا *@
+                                                <td><span class="badge bg-info bg-opacity-10 text-info px-3">@item.CasesCount</span></td>
+
+                                                <td title="@item.WorkSummary">
+                                                    @if (item.WorkSummary.Length > 40)
+                                                    {
+                                                        <span>@item.WorkSummary.Substring(0, 40)...</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@item.WorkSummary</span>
+                                                    }
+                                                </td>
+
+                                                <td><small class="text-muted">@(item.Supervisor?.ArabicName ?? "---")</small></td>
+
+                                                <td><small>@item.SubmissionDate.ToString("yyyy/MM/dd")</small></td>
+
+                                                @* ✅ زر عرض المرفق *@
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(item.FilePath))
+                                                    {
+                                                        <a href="@Url.Content(item.FilePath)" target="_blank" class="btn btn-sm btn-outline-secondary border-0 bg-light">
+                                                            <i class="bi bi-paperclip"></i> عرض
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted small">-</span>
+                                                    }
+                                                </td>
+
+                                                <td>
+                                                    @if (item.Status.Contains("معتمد") || item.Status.Contains("Approved"))
+                                                    {
+                                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> معتمد</span>
+                                                    }
+                                                    else if (item.Status.Contains("مرفوض") || item.Status.Contains("Rejected"))
+                                                    {
+                                                        <span class="badge bg-danger" title="@item.SupervisorNotes"><i class="bi bi-x-circle me-1"></i> مرفوض</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> بانتظار الموافقة</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </table>
         </div>
     </div>

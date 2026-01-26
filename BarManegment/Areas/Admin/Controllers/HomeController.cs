@@ -15,96 +15,96 @@ namespace BarManegment.Areas.Admin.Controllers
         private readonly ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: Admin/Dashboard
-        public ActionResult Index(int yearRange = 10)
+        public ActionResult Index(int yearRange = 5)
         {
             var viewModel = new AdminDashboardViewModel();
             viewModel.SelectedYearRange = yearRange;
 
-            // 1. تحديد هوية المستخدم (Super Admin)
             int currentUserId = (int)Session["UserId"];
             var currentUser = db.Users.Include(u => u.UserType).FirstOrDefault(u => u.Id == currentUserId);
             bool isSuperAdmin = (currentUser != null && currentUser.UserType.NameEnglish == "Administrator");
             ViewBag.IsSuperAdmin = isSuperAdmin;
 
             // =========================================================
-            //  تعبئة البيانات (Data Population)
+            // 1. شؤون الأعضاء والتدريب
             // =========================================================
-
-            // A. قسم القبول والتدريب
             if (PermissionHelper.HasPermission("GraduateApplications") || PermissionHelper.HasPermission("RegisteredTrainees"))
             {
-                var statusDict = db.ApplicationStatuses.ToDictionary(s => s.Name, s => s.Id);
-
-                int newStatusId = statusDict.ContainsKey("طلب جديد") ? statusDict["طلب جديد"] : 0;
-                int activeTraineeId = statusDict.ContainsKey("متدرب مقيد") ? statusDict["متدرب مقيد"] : 0;
-                int practicingId = statusDict.ContainsKey("محامي مزاول") ? statusDict["محامي مزاول"] : 0;
-                int nonPracticingId = statusDict.ContainsKey("محامي غير مزاول") ? statusDict["محامي غير مزاول"] : 0;
-                int pendingCommitteeId = statusDict.ContainsKey("بانتظار الموافقة النهائية") ? statusDict["بانتظار الموافقة النهائية"] : 0;
-
-                viewModel.NewApplicationsCount = db.GraduateApplications.Count(a => a.ApplicationStatusId == newStatusId);
+                viewModel.NewApplicationsCount = db.GraduateApplications.Count(a => a.ApplicationStatus.Name == "طلب جديد");
                 viewModel.TotalApplicationsCount = db.GraduateApplications.Count();
-                viewModel.ActiveTraineesCount = db.GraduateApplications.Count(a => a.ApplicationStatusId == activeTraineeId);
-                viewModel.PracticingLawyersCount = db.GraduateApplications.Count(a => a.ApplicationStatusId == practicingId);
-                viewModel.NonPracticingLawyersCount = db.GraduateApplications.Count(a => a.ApplicationStatusId == nonPracticingId);
-                viewModel.PendingCommitteeApprovalCount = db.GraduateApplications.Count(a => a.ApplicationStatusId == pendingCommitteeId);
-            }
+                viewModel.ActiveTraineesCount = db.GraduateApplications.Count(a => a.ApplicationStatus.Name == "متدرب مقيد");
+                viewModel.PracticingLawyersCount = db.GraduateApplications.Count(a => a.ApplicationStatus.Name == "محامي مزاول");
+                viewModel.NonPracticingLawyersCount = db.GraduateApplications.Count(a => a.ApplicationStatus.Name == "محامي غير مزاول");
+                viewModel.PendingCommitteeApprovalCount = db.GraduateApplications.Count(a => a.ApplicationStatus.Name == "بانتظار الموافقة النهائية");
 
-            // B. قسم الامتحانات (جديد 💡)
-            if (PermissionHelper.HasPermission("ExamApplications") || PermissionHelper.HasPermission("Exams"))
-            {
-                // طلبات القبول للامتحان
-                viewModel.NewExamApplicationsCount = db.ExamApplications.Count(e => e.Status == "قيد المراجعة");
-
-                // الامتحانات النشطة حالياً
-                viewModel.OpenExamsCount = db.Exams.Count(e => e.IsActive && e.StartTime > DateTime.Now);
-
-                // عدد المسجلين في الامتحانات القادمة (اختياري حسب الحاجة)
-                // viewModel.RegisteredForExamCount = db.ExamResults.Count(r => r.Exam.IsActive);
-            }
-
-            // C. طلبات النقل واليمين
-            if (PermissionHelper.HasPermission("SupervisorChangeRequests"))
-            {
                 viewModel.PendingSupervisorRequestsCount = db.SupervisorChangeRequests.Count(r => r.Status == "بانتظار موافقة اللجنة");
-            }
-
-            if (PermissionHelper.HasPermission("OathRequests"))
-            {
                 viewModel.PendingOathRequestsCount = db.OathRequests.Count(o => o.Status == "بانتظار موافقة لجنة اليمين");
             }
 
-            // D. المالية
-            if (PermissionHelper.HasPermission("PaymentVouchers"))
+            // =========================================================
+            // 2. الامتحانات
+            // =========================================================
+            if (PermissionHelper.HasPermission("Exams"))
             {
-                viewModel.UnpaidVouchersCount = db.PaymentVouchers.Count(v => v.Status == "صادر");
+                viewModel.NewExamApplicationsCount = db.ExamApplications.Count(e => e.Status == "قيد المراجعة");
+                viewModel.OpenExamsCount = db.Exams.Count(e => e.IsActive && e.StartTime > DateTime.Now);
             }
 
-            if (PermissionHelper.HasPermission("Receipts"))
+            // =========================================================
+            // 3. المالية (تمت معالجة الخطأ المحتمل هنا)
+            // =========================================================
+            if (PermissionHelper.HasPermission("Finance") || PermissionHelper.HasPermission("PaymentVouchers"))
             {
+                viewModel.UnpaidVouchersCount = db.PaymentVouchers.Count(v => v.Status == "صادر");
+
                 var today = DateTime.Today;
                 var tomorrow = today.AddDays(1);
 
-                // حساب إجمالي السندات لليوم
-                // ملاحظة: تأكد من اسم الحقل الذي يمثل القيمة المالية في جدول Receipts (هنا افترضت Amount)
                 viewModel.TotalRevenueToday = db.Receipts
                     .Where(r => r.CreationDate >= today && r.CreationDate < tomorrow)
-                   .Select(r => r.PaymentVoucher.TotalAmount)
+                    .Select(r => r.PaymentVoucher.TotalAmount)
                     .DefaultIfEmpty(0)
                     .Sum();
+
+                // ✅ التحقق من وجود جدول الشيكات قبل الاستعلام لتجنب الأخطاء إذا لم يتم إضافته
+                try
+                {
+                    // تأكد أنك أضفت DbSet<CheckPortfolio> في ApplicationDbContext
+
+                    viewModel.DueChecksCount = db.ChecksPortfolio // <--- تأكد من حرف s هنا
+  .Count(c => c.DueDate <= DateTime.Now && c.Status == CheckStatus.UnderCollection);
+                }
+                catch
+                {
+                    // في حال لم يتم ترحيل جدول الشيكات بعد، نجعل القيمة 0
+                    viewModel.DueChecksCount = 0;
+                }
             }
 
-            // E. سجل النظام (Mapping to AuditLogModel)
-            // E. سجل النظام
-            if (PermissionHelper.HasPermission("AuditLogs") || isSuperAdmin)
+            // =========================================================
+            // 4. العقود والطوابع
+            // =========================================================
+            if (PermissionHelper.HasPermission("ContractTransactions"))
             {
-                // 1. جلب البيانات من قاعدة البيانات (SQL) كـ Entities
+                viewModel.PendingContractsCount = db.ContractTransactions.Count(c => c.Status == "بانتظار التصديق");
+            }
+
+            if (PermissionHelper.HasPermission("StampInventory"))
+            {
+                viewModel.AvailableStampsCount = db.Stamps.Count(s => s.Status == "في المخزن");
+            }
+
+            // =========================================================
+            // 5. سجل النظام والرسوم البيانية (Admin Only)
+            // =========================================================
+            if (isSuperAdmin)
+            {
                 var logsFromDb = db.AuditLogs
                     .Include(a => a.User)
                     .OrderByDescending(a => a.Timestamp)
-                    .Take(8)
-                    .ToList(); // 👈 هذا الأمر يجلب البيانات للذاكرة
+                    .Take(6)
+                    .ToList();
 
-                // 2. التحويل إلى ViewModel داخل الذاكرة (C#)
                 viewModel.RecentActivities = logsFromDb.Select(log => new AuditLogModel
                 {
                     Id = log.Id,
@@ -114,41 +114,21 @@ namespace BarManegment.Areas.Admin.Controllers
                     User = log.User
                 }).ToList();
 
-                viewModel.TotalUsersCount = db.Users.Count();
-            }
-            // F. الرسوم البيانية (Super Admin Only)
-            if (isSuperAdmin)
-            {
                 viewModel.HistoricalData = GetHistoricalRegistrationCounts(yearRange);
 
-                // توزيع المحامين حسب المحافظة
-                var statusDict = db.ApplicationStatuses.ToDictionary(s => s.Name, s => s.Id);
-                int practicingId = statusDict.ContainsKey("محامي مزاول") ? statusDict["محامي مزاول"] : 0;
-                int activeTraineeId = statusDict.ContainsKey("متدرب مقيد") ? statusDict["متدرب مقيد"] : 0;
-
-                viewModel.LawyersByGovernorate = db.ContactInfos
-                    .Where(c => c.Id != 0 && !string.IsNullOrEmpty(c.Governorate) &&
-                                db.GraduateApplications.Any(g => g.Id == c.Id && g.ApplicationStatusId == practicingId))
-                    .GroupBy(c => c.Governorate)
+                // ✅✅✅ تصحيح الخطأ الثاني هنا: عكس الاستعلام ✅✅✅
+                // بدلاً من البحث في ContactInfos، نبحث في GraduateApplications ونجمع حسب المحافظة
+                viewModel.LawyersByGovernorate = db.GraduateApplications
+                    .Include(g => g.ContactInfo) // التأكد من تحميل بيانات الاتصال
+                    .Where(g => g.ApplicationStatus.Name == "محامي مزاول" && g.ContactInfo != null && !string.IsNullOrEmpty(g.ContactInfo.Governorate))
+                    .GroupBy(g => g.ContactInfo.Governorate)
                     .Select(g => new { Governorate = g.Key, Count = g.Count() })
-                    .ToList()
-                    .ToDictionary(x => x.Governorate, x => x.Count);
-
-                viewModel.TraineesByGovernorate = db.ContactInfos
-                    .Where(c => c.Id != 0 && !string.IsNullOrEmpty(c.Governorate) &&
-                                db.GraduateApplications.Any(g => g.Id == c.Id && g.ApplicationStatusId == activeTraineeId))
-                    .GroupBy(c => c.Governorate)
-                    .Select(g => new { Governorate = g.Key, Count = g.Count() })
-                    .ToList()
                     .ToDictionary(x => x.Governorate, x => x.Count);
             }
-
-
 
             return View(viewModel);
         }
 
-        // دالة مساعدة لجلب البيانات التاريخية
         private List<HistoricalChartData> GetHistoricalRegistrationCounts(int years)
         {
             var results = new List<HistoricalChartData>();

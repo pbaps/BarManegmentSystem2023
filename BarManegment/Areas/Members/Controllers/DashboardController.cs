@@ -399,6 +399,82 @@ namespace BarManegment.Areas.Members.Controllers
         // (دوال مراجعة سجل التدريب للمشرف - تبقى كما هي)
         // ... (ReviewLog, ApproveLog, RejectLog) ...
 
+
+        // ============================================================
+        // 4. إجراءات المشرف على السجلات (قبول / رفض)
+        // ============================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ApproveLog(int logId)
+        {
+            var currentLawyer = GetCurrentLawyer();
+            var log = db.TrainingLogs.Find(logId);
+
+            if (log != null && log.SupervisorId == currentLawyer.Id)
+            {
+                log.Status = "معتمد"; // أو "Approved" حسب المسميات في قاعدة بياناتك
+                // log.ApprovalDate = DateTime.Now; // إذا كان الحقل موجوداً
+                db.SaveChanges();
+                TempData["SuccessMessage"] = "تم اعتماد السجل الشهري بنجاح.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "حدث خطأ أو ليس لديك صلاحية.";
+            }
+
+            return RedirectToAction("ViewTraineeProfile", new { id = log?.GraduateApplicationId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult RejectLog(int logId, string rejectionReason)
+        {
+            var currentLawyer = GetCurrentLawyer();
+            var log = db.TrainingLogs.Find(logId);
+
+            if (log != null && log.SupervisorId == currentLawyer.Id)
+            {
+                log.Status = "مرفوض"; // أو "Rejected"
+                log.SupervisorNotes = rejectionReason; // تخزين سبب الرفض
+                db.SaveChanges();
+                TempData["InfoMessage"] = "تم رفض السجل وإعادته للمتدرب للتصحيح.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "حدث خطأ أو ليس لديك صلاحية.";
+            }
+
+            return RedirectToAction("ViewTraineeProfile", new { id = log?.GraduateApplicationId });
+        }
+
+        // دالة لتحميل المرفق الخاص بالسجل
+        // دالة لتحميل المرفق الخاص بالسجل
+        public ActionResult GetTrainingLogAttachment(int logId)
+        {
+            var currentLawyer = GetCurrentLawyer();
+            var log = db.TrainingLogs.Find(logId);
+
+            // التحقق من الصلاحية
+            if (log == null || (log.SupervisorId != currentLawyer.Id && log.GraduateApplicationId != currentLawyer.Id))
+            {
+                return HttpNotFound();
+            }
+
+            // ✅ التصحيح: استخدام FilePath بدلاً من AttachmentPath
+            if (string.IsNullOrEmpty(log.FilePath))
+            {
+                return Content("لا يوجد مرفق.");
+            }
+
+            // ✅ التصحيح: استخدام FilePath
+            string filePath = Server.MapPath(log.FilePath);
+            if (!System.IO.File.Exists(filePath)) return HttpNotFound("الملف غير موجود على السيرفر.");
+
+            string fileName = Path.GetFileName(filePath);
+            return File(filePath, "application/pdf", fileName);
+        }
+
         // (دالة بدء الامتحان - تبقى كما هي)
         public ActionResult StartTraineeExam(int? examId)
         {
@@ -469,22 +545,78 @@ namespace BarManegment.Areas.Members.Controllers
         }
         // 💡💡 === نهاية الإضافة === 💡💡
 
- 
+
 
 
         // (دالة عرض ملف المتدرب للمشرف - تبقى كما هي)
+        // ============================================================
+        // 3. عرض ملف المتدرب وسجلاته للمشرف
+        // ============================================================
         public ActionResult ViewTraineeProfile(int? id)
         {
-            // ... (الكود سليم)
-            return View(new TraineeReviewViewModel()); // (يجب ملء هذا المودل)
+            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+            var currentLawyer = GetCurrentLawyer();
+            if (currentLawyer == null) return RedirectToAction("Login", "Account");
+
+            // جلب بيانات المتدرب الأساسية
+            var trainee = db.GraduateApplications
+                .Include(t => t.ContactInfo)
+                .Include(t => t.ApplicationStatus)
+                .Include(t => t.NationalIdType)
+                .FirstOrDefault(t => t.Id == id);
+
+            if (trainee == null) return HttpNotFound();
+
+            // التحقق الأمن: هل هذا المتدرب يتبع للمشرف الحالي؟
+            if (trainee.SupervisorId != currentLawyer.Id)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "عذراً، هذا المتدرب ليس تحت إشرافك الحالي.");
+            }
+
+            // إعداد الموديل الشامل
+            var viewModel = new TraineeReviewViewModel
+            {
+                Trainee = trainee,
+
+                // 1. سجلات التدريب
+                Logs = db.TrainingLogs
+                    .Where(l => l.GraduateApplicationId == trainee.Id)
+                    .OrderByDescending(l => l.Year).ThenByDescending(l => l.Month)
+                    .ToList(),
+
+                // 2. السجل المالي
+                Receipts = db.Receipts
+                    .Include(r => r.PaymentVoucher)
+                    .Where(r => r.PaymentVoucher.GraduateApplicationId == trainee.Id)
+                    .OrderByDescending(r => r.BankPaymentDate)
+                    .ToList(),
+
+                // 3. الأبحاث
+                Researches = db.LegalResearches
+                    .Where(r => r.GraduateApplicationId == trainee.Id)
+                    .OrderByDescending(r => r.SubmissionDate)
+                    .ToList(),
+
+                // 4. الامتحانات
+                Exams = db.ExamEnrollments
+                    .Include(e => e.Exam)
+                    .Where(e => e.GraduateApplicationId == trainee.Id)
+                    .OrderByDescending(e => e.Exam.StartTime)
+                    .ToList(),
+
+                // 5. الطلبات الإدارية
+                Requests = db.SupervisorChangeRequests
+                    .Where(r => r.TraineeId == trainee.Id)
+                    .OrderByDescending(r => r.RequestDate)
+                    .ToList()
+            };
+
+            return View(viewModel);
         }
 
         // (دالة جلب مرفق سجل التدريب - تبقى كما هي)
-        public ActionResult GetTrainingLogAttachment(int logId)
-        {
-            // ... (الكود سليم)
-            return File("", ""); // (يجب ملء هذا الكود)
-        }
+
 
         // أضف هذا الأكشن في DashboardController (كمسؤول) أو قم بتنفيذه عبر SQL
         // هذا الكود للتأكد من وجود الصلاحيات
@@ -591,6 +723,8 @@ namespace BarManegment.Areas.Members.Controllers
             // 💡 التصحيح: إرجاع الفيو الافتراضي (PrintReceipt) الموجود في نفس مجلد الكونترولر
             return View(viewModel);
         }
+
+
 
         protected override void Dispose(bool disposing)
         {

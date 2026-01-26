@@ -1,0 +1,64 @@
+﻿@model BarManegment.Models.LeaveRequest
+@{
+    ViewBag.ReportTitle = "نموذج طلب إجازة";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLayout.cshtml";
+}
+
+<div class="border border-dark p-4 rounded mt-3">
+    <div class="row mb-4">
+        <div class="col-6">
+            <strong>اسم الموظف:</strong> @Model.Employee.FullName
+        </div>
+        <div class="col-6">
+            <strong>القسم:</strong> @Model.Employee.Department.Name
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-4">
+            <strong>نوع الإجازة:</strong> <span class="border px-3 py-1">@Model.LeaveType</span>
+        </div>
+        <div class="col-4">
+            <strong>عدد الأيام:</strong> @Model.TotalDays
+        </div>
+        <div class="col-4">
+            <strong>تاريخ الطلب:</strong> @DateTime.Now.ToString("yyyy/MM/dd")
+        </div>
+    </div>
+
+    <table class="table table-bordered mb-4">
+        <tr class="bg-light">
+            <th>من تاريخ</th>
+            <th>إلى تاريخ</th>
+        </tr>
+        <tr>
+            <td>@Model.StartDate.ToString("dddd yyyy/MM/dd")</td>
+            <td>@Model.EndDate.ToString("dddd yyyy/MM/dd")</td>
+        </tr>
+    </table>
+
+    <div class="mb-4">
+        <strong>سبب الإجازة:</strong>
+        <p class="border p-3 mt-2" style="min-height: 80px;">@Model.Reason</p>
+    </div>
+
+    <hr class="my-4 border-dark" />
+
+    <div class="row text-center mt-5">
+        <div class="col-4">
+            <p>توقيع الموظف</p>
+            <div class="mt-4">.....................</div>
+        </div>
+        <div class="col-4">
+            <p>رأي المدير المباشر</p>
+            <div class="mt-4">
+                ( @(Model.Status == "مقبول" ? "✔ موافق" : " ") )
+                ( @(Model.Status == "مرفوض" ? "✔ غير موافق" : " ") )
+            </div>
+        </div>
+        <div class="col-4">
+            <p>اعتماد الإدارة</p>
+            <div class="mt-4">.....................</div>
+        </div>
+    </div>
+</div>

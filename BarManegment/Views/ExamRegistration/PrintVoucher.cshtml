@@ -1,0 +1,358 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.PrintVoucherViewModel
+
+@{
+    Layout = null;
+    string amountText = ViewBag.AmountInWords as string;
+    bool isCash = Model.PaymentMethod == "نقدي";
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>طباعة قسيمة - @Model.VoucherId</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* استخدام @@ لتهريب الرمز في Razor */
+        @@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #525659; /* خلفية رمادية للعرض فقط */
+            margin: 0;
+            padding: 20px;
+        }
+
+        .page-container {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 10mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* تنسيق القسيمة الواحدة (نصف صفحة) */
+        .voucher-half {
+            height: 135mm; /* نصف ورقة A4 تقريباً مع الهوامش */
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            margin-bottom: 8mm; /* مسافة بين النسختين */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .voucher-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .header-right img {
+            max-height: 70px;
+        }
+
+        .header-center {
+            text-align: center;
+        }
+
+            .header-center h2 {
+                font-size: 22px;
+                font-weight: 800;
+                margin: 0;
+                color: #2c3e50;
+            }
+
+            .header-center h4 {
+                font-size: 16px;
+                margin: 5px 0 0;
+                font-weight: 600;
+            }
+
+        .header-left {
+            text-align: left;
+        }
+
+        .voucher-number {
+            font-size: 14px;
+            font-weight: bold;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .copy-title {
+            font-size: 12px;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        /* شبكة المعلومات */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 20px; /* تجاهل تحذير gap */
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .info-label {
+            font-weight: 700;
+            width: 90px;
+            color: #555;
+        }
+
+        .info-value {
+            border-bottom: 1px dotted #999;
+            flex-grow: 1;
+            padding-bottom: 2px;
+            font-weight: 600;
+        }
+
+        /* جدول التفاصيل */
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 10px;
+            flex-grow: 1; /* يأخذ المساحة المتبقية */
+        }
+
+            .details-table th {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                padding: 6px;
+                text-align: center;
+                font-weight: 700;
+            }
+
+            .details-table td {
+                border: 1px solid #dee2e6;
+                padding: 6px;
+                vertical-align: middle;
+            }
+
+        .total-row td {
+            background-color: #f1f1f1;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        /* المبلغ بالحروف */
+        .amount-words {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* التواقيع */
+        .footer-signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto; /* دفع للأسفل */
+            padding-top: 10px;
+        }
+
+        .sig-box {
+            text-align: center;
+            width: 30%;
+        }
+
+        .sig-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-decoration: underline;
+        }
+
+        .sig-line {
+            border-top: 1px dashed #000;
+            width: 100%;
+        }
+
+        /* خط القص */
+        .cut-line {
+            border-top: 2px dashed #999;
+            width: 100%;
+            margin: 0;
+            position: relative;
+            height: 1px;
+        }
+
+        .cut-icon {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 10px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        /* تنسيقات الطباعة - تم استخدام @@ للتهريب الصحيح */
+        @@media print {
+            body {
+                background: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .page-container {
+                box-shadow: none;
+                width: 100%;
+                margin: 0;
+                padding: 5mm; /* هوامش الطباعة */
+                min-height: auto; /* تجاهل تحذير auto */
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .voucher-half {
+                page-break-inside: avoid;
+                margin-bottom: 5mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="text-center mb-4 no-print">
+        <button onclick="window.print()" class="btn btn-primary btn-lg shadow">طباعة القسيمة</button>
+        <button onclick="window.close()" class="btn btn-secondary btn-lg ms-2">إغلاق</button>
+    </div>
+
+    <div class="page-container">
+
+        @RenderVoucherContent("نسخة المستفيد", Model, amountText, isCash)
+
+        <div class="cut-line no-print">
+            <span class="cut-icon">قص من هنا</span>
+        </div>
+        <div style="height: 10mm;"></div> @RenderVoucherContent("نسخة الملف / المحاسبة", Model, amountText, isCash)
+
+    </div>
+
+    @* دالة المساعد Helper لطباعة جسم القسيمة *@
+    @helper RenderVoucherContent(string copyTitle, BarManegment.Areas.Admin.ViewModels.PrintVoucherViewModel vm, string amountText, bool isCash)
+    {
+        <div class="voucher-half">
+            <div class="voucher-header">
+                <div class="header-right">
+                    <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" onerror="this.style.display='none'">
+                </div>
+                <div class="header-center">
+                    <h2>نقابة المحامين الفلسطينيين</h2>
+                    <h4>سند قبض / Payment Voucher</h4>
+                </div>
+                <div class="header-left">
+                    <div class="voucher-number">رقم: @vm.VoucherId</div>
+                    <div class="d-block mt-1 text-muted small">@vm.IssueDate.ToString("yyyy/MM/dd")</div>
+                    <div class="copy-title mt-1">@copyTitle</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-row" style="grid-column: span 2;">
+                    <span class="info-label">استلمنا من:</span>
+                    <span class="info-value">@vm.TraineeName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">طريقة الدفع:</span>
+                    <span class="info-value">@vm.PaymentMethod @(isCash ? "" : "(بنكي)")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">بواسطة:</span>
+                    <span class="info-value">@vm.IssuedByUserName</span>
+                </div>
+            </div>
+
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th style="width: 45%">البيان / نوع الرسم</th>
+                        <th style="width: 30%">التفاصيل البنكية (إن وجد)</th>
+                        <th style="width: 20%">المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int counter = 1; }
+                    @foreach (var item in vm.Details)
+                    {
+                        <tr>
+                            <td class="text-center">@(counter++)</td>
+                            <td>@item.FeeTypeName</td>
+                            <td class="text-start" style="font-size: 10px;">
+                                @if (!string.IsNullOrEmpty(item.BankName))
+                                {
+                                    <div class="fw-bold text-dark">@item.BankName</div>
+                                    if (!string.IsNullOrEmpty(item.AccountNumber))
+                                    { <div>رقم الحساب: <span class="font-monospace">@item.AccountNumber</span></div> }
+                                if (!string.IsNullOrEmpty(item.Iban))
+                                { <div>IBAN: <span class="font-monospace">@item.Iban</span></div> }
+                        }
+                        else
+                        { <div class="text-center">-</div>}
+                            </td>
+                            <td class="text-center fw-bold">@item.Amount.ToString("N2") @item.CurrencySymbol</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3" class="text-end pe-3">الإجمالي الكلي:</td>
+                        <td class="text-center">@vm.TotalAmount.ToString("N2") @(vm.Details.FirstOrDefault()?.CurrencySymbol)</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="amount-words">
+                مبلغ وقدره: @amountText فقط لا غير.
+            </div>
+
+            <div class="footer-signatures">
+                <div class="sig-box">
+                    <div class="sig-title">أمين الصندوق</div>
+                    <div class="sig-line"></div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-title">الختم الرسمي</div>
+                    <br>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-title">المستلم</div>
+                    <div class="sig-line"></div>
+                </div>
+            </div>
+        </div>
+    }
+
+</body>
+</html>

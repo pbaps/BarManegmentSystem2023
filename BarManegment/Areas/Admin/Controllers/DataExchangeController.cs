@@ -6,120 +6,48 @@ using OfficeOpenXml.Style;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Web.Mvc;
 
 namespace BarManegment.Areas.Admin.Controllers
 {
-    [CustomAuthorize(Permission = "CanEdit")] // صلاحية للمدراء فقط
+    [CustomAuthorize(Permission = "CanEdit")]
     public class DataExchangeController : BaseController
     {
         private readonly ApplicationDbContext db = new ApplicationDbContext();
 
-        // عرض صفحة الاستيراد والتصدير
+        public DataExchangeController()
+        {
+          //  ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        }
+
+        // GET: Admin/DataExchange
         public ActionResult Index()
         {
             return View();
         }
 
-        // ==========================================
-        // 1. تحميل القوالب (Templates)
-        // ==========================================
+        #region 1. تحميل القوالب (Templates)
         public ActionResult DownloadTemplate(string type)
         {
-         //   ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add(type);
-                List<string> headers = new List<string>();
+                var headers = GetHeaders(type);
 
-                switch (type)
+                for (int i = 0; i < headers.Length; i++)
                 {
-                    // --- المرحلة 1: الثوابت ---
-                    case "UserTypes": headers.AddRange(new[] { "الاسم العربي", "الاسم الإنجليزي" }); break;
-                    case "Currencies": headers.AddRange(new[] { "اسم العملة", "الرمز" }); break;
-                    case "QualificationTypes": headers.AddRange(new[] { "نوع المؤهل", "نسبة القبول" }); break;
-                    case "ApplicationStatuses":
-                    case "Genders":
-                    case "NationalIdTypes":
-                    case "ExamTypes":
-                    case "AttachmentTypes":
-                    case "Provinces":
-                    case "PartyRoles":
-                    case "ContractExemptionReasons":
-                    case "ContractTypes":
-                        headers.Add("الاسم");
-                        break;
-
-                    // --- المرحلة 2: المالية (تعريفات) ---
-                    case "BankAccounts": headers.AddRange(new[] { "اسم البنك", "اسم الحساب", "رقم الحساب", "الآيبان", "العملة" }); break;
-                    case "FeeTypes": headers.AddRange(new[] { "اسم الرسم", "القيمة", "العملة", "رقم حساب البنك", "نسبة المحامي", "نسبة النقابة" }); break;
-
-                    // --- المرحلة 3: الخريجين ---
-                    case "Graduates":
-                        headers.AddRange(new[] {
-                            "الاسم العربي", "الاسم الإنجليزي", "الرقم الوطني", "نوع الهوية", "الجنس", "الجنسية",
-                            "تاريخ الميلاد", "مكان الميلاد", "حالة الطلب", "الرقم المتسلسل", "رقم العضوية",
-                            "تاريخ بدء التدريب", "تاريخ بدء المزاولة", "ملاحظات", "رقم الجوال", "البريد الإلكتروني",
-                            "المحافظة", "المدينة", "الشارع", "البناية", "رقم الوطنية", "الهاتف الأرضي",
-                            "واتساب", "شخص الطوارئ", "رقم الطوارئ", "اسم البنك", "الفرع", "رقم الحساب",
-                            "الآيبان", "معرف تليجرام", "الرقم الوطني للمشرف"
-                        });
-                        break;
-
-                    // --- المرحلة 4: الامتحانات ---
-                    case "Exams": headers.AddRange(new[] { "عنوان الامتحان", "نوع الامتحان", "وقت البدء", "وقت الانتهاء", "المدة (دقائق)", "نسبة النجاح", "الحالة المطلوبة" }); break;
-                    case "ExamResults": headers.AddRange(new[] { "عنوان الامتحان", "الرقم الوطني للمتقدم", "العلامة", "النتيجة (ناجح/راسب)" }); break;
-
-                    // --- المرحلة 5: الدفعات ---
-                    case "Payments": headers.AddRange(new[] { "الرقم الوطني", "نوع الرسم", "المبلغ", "تاريخ الدفع", "رقم وصل البنك", "ملاحظات" }); break;
-
-                    // --- المرحلة 6: العقود ---
-                    case "Contracts":
-                        headers.AddRange(new[] {
-                            "رقم هوية المحامي", "نوع العقد", "تاريخ المعاملة", "قيمة الرسوم", "الحالة", "ملاحظات",
-                            "هل معفى؟", "سبب الإعفاء",
-                            "اسم الطرف الأول", "هوية الطرف الأول", "صفة الطرف الأول", "محافظة الطرف الأول",
-                            "اسم الطرف الثاني", "هوية الطرف الثاني", "صفة الطرف الثاني", "محافظة الطرف الثاني"
-                        });
-                        break;
-
-                    // ...
-                    case "StampContractors":
-                        headers.AddRange(new[] { "اسم المتعهد", "رقم الجوال", "رقم الهوية", "المحافظة", "الموقع" });
-                        break;
-                    case "StampBooks":
-                        headers.AddRange(new[] { "الرقم التسلسلي البداية", "الرقم التسلسلي النهاية", "القيمة للطابع", "الحالة (متاح/مصروف)", "اسم المتعهد (إن وجد)" });
-                        break;
-                    case "StampSales":
-                        headers.AddRange(new[] { "رقم الطابع", "اسم المتعهد", "رقم هوية المحامي المشتري", "تاريخ البيع", "هل تم الصرف؟ (نعم/لا)" });
-                        break;
-                    // ...
-                    // ...
-                    case "OralExamResults":
-                        headers.AddRange(new[] { "الرقم الوطني", "تاريخ الامتحان", "النتيجة (ناجح/راسب)", "الدرجة", "ملاحظات" });
-                        break;
-                    case "LegalResearch":
-                        headers.AddRange(new[] { "الرقم الوطني", "عنوان البحث", "تاريخ التقديم", "حالة البحث (مقبول/مرفوض)" });
-                        break;
-                    case "Loans":
-                        headers.AddRange(new[] { "الرقم الوطني", "مبلغ القرض", "عدد الأقساط", "تاريخ البدء", "الحالة (مسدد/قائم)", "ملاحظات" });
-                        break;
-                    // ...
-                    default: return HttpNotFound();
+                    var cell = worksheet.Cells[1, i + 1];
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightGray);
+                    cell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                    cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                 }
 
-                // كتابة وتنسيق العناوين
-                for (int i = 0; i < headers.Count; i++) worksheet.Cells[1, i + 1].Value = headers[i];
-
-                using (var range = worksheet.Cells[1, 1, 1, headers.Count])
-                {
-                    range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightYellow);
-                }
                 worksheet.Cells.AutoFitColumns();
 
                 var stream = new MemoryStream();
@@ -128,131 +56,73 @@ namespace BarManegment.Areas.Admin.Controllers
                 return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Template_{type}.xlsx");
             }
         }
+        #endregion
 
-        // ==========================================
-        // 2. التصدير (Export)
-        // ==========================================
-        // ==========================================
-        // 2. التصدير (Export) - المحدث الشامل
-        // ==========================================
-        [HttpPost] // جعلناها Post لأننا نستخدم Form الآن
+        #region 2. تصدير البيانات (Export)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult ExportData(string type)
         {
-          //  ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            using (var package = new ExcelPackage())
+            try
             {
-                switch (type)
+                using (var package = new ExcelPackage())
                 {
-                    // --- جداول بسيطة (Lookups) ---
-                    case "UserTypes": ExportLookupSheet(package, type, new[] { "الاسم العربي", "الاسم الإنجليزي" }); break;
-                    case "Currencies": ExportLookupSheet(package, type, new[] { "اسم العملة", "الرمز" }); break;
-                    case "QualificationTypes": ExportLookupSheet(package, type, new[] { "نوع المؤهل", "نسبة القبول" }); break;
+                    var headers = GetHeaders(type);
 
-                    case "ApplicationStatuses":
-                    case "Genders":
-                    case "NationalIdTypes":
-                    case "ExamTypes":
-                    case "AttachmentTypes":
-                    case "Provinces":
-                    case "PartyRoles":
-                    case "ContractExemptionReasons":
-                    case "ContractTypes":
-                        ExportLookupSheet(package, type, new[] { "الاسم" });
-                        break;
+                    switch (type)
+                    {
+                        case "UserTypes":
+                        case "Currencies":
+                        case "QualificationTypes":
+                        case "ApplicationStatuses":
+                        case "Genders":
+                        case "NationalIdTypes":
+                        case "ExamTypes":
+                        case "AttachmentTypes":
+                        case "Provinces":
+                        case "PartyRoles":
+                        case "ContractExemptionReasons":
+                        case "ContractTypes":
+                            ExportLookupSheet(package, type, headers);
+                            break;
 
-                    // --- جداول متقدمة ---
-                    case "BankAccounts": ExportBankAccounts(package); break;
-                    case "FeeTypes": ExportFeeTypes(package); break;
-                    case "Graduates": ExportGraduatesSheet(package); break; // (موجودة سابقاً)
-                    case "Exams": ExportExams(package); break;
-                    case "ExamResults": ExportExamResults(package); break;
-                    case "Payments": ExportPayments(package); break;
-                    case "Contracts": ExportContracts(package); break;
+                        case "BankAccounts": ExportBankAccounts(package, headers); break;
+                        case "FeeTypes": ExportFeeTypes(package, headers); break;
+                        case "Graduates": ExportGraduates(package, headers); break;
+                        case "Exams": ExportExams(package, headers); break;
+                        case "ExamResults": ExportExamResults(package, headers); break;
+                        case "Payments": ExportPayments(package, headers); break;
+                        case "Contracts": ExportContracts(package, headers); break;
+                        case "StampContractors": ExportStampContractors(package, headers); break;
+                        case "StampBooks": ExportStampBooks(package, headers); break;
+                        case "StampSales": ExportStampSales(package, headers); break;
+                        case "OralExamResults": ExportOralResults(package, headers); break;
+                        case "LegalResearch": ExportResearch(package, headers); break;
+                        case "Loans": ExportLoans(package, headers); break;
+                        case "OpeningJournal":
+                            // نقوم فقط بإنشاء الورقة والعناوين (قالب فارغ)
+                            PrepareSheet(package, "OpeningJournal", headers, out var wsOp);
+                            wsOp.Cells.AutoFitColumns();
+                            break;
 
-                    // --- الطوابع ---
-                    case "StampContractors": ExportStampContractors(package); break;
-                    case "StampBooks": ExportStampBooks(package); break;
-                    case "StampSales": ExportStampSales(package); break;
+                        default: return new HttpStatusCodeResult(400, "Invalid Type");
+                    }
 
-                    // --- أخرى ---
-                    case "OralExamResults": ExportOralResults(package); break;
-                    case "LegalResearch": ExportResearch(package); break;
-                    case "Loans": ExportLoans(package); break;
-
-                    default: return new HttpStatusCodeResult(400, "Invalid Type");
+                    var stream = new MemoryStream();
+                    package.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{type}_Export_{DateTime.Now:yyyyMMdd}.xlsx");
                 }
-
-                var stream = new MemoryStream();
-                package.SaveAs(stream);
-                stream.Position = 0;
-                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{type}_Export_{DateTime.Now:yyyyMMdd}.xlsx");
             }
-        }
-
-        private void ExportGraduatesSheet(ExcelPackage package)
-        {
-            var worksheet = package.Workbook.Worksheets.Add("الخريجين");
-            // العناوين مطابقة تماماً للقالب
-            string[] headers = {
-                "الاسم العربي", "الاسم الإنجليزي", "الرقم الوطني", "نوع الهوية", "الجنس", "الجنسية",
-                "تاريخ الميلاد", "مكان الميلاد", "حالة الطلب", "الرقم المتسلسل", "رقم العضوية",
-                "تاريخ بدء التدريب", "تاريخ بدء المزاولة", "ملاحظات", "رقم الجوال", "البريد الإلكتروني",
-                "المحافظة", "المدينة", "الشارع", "البناية", "رقم الوطنية", "الهاتف الأرضي",
-                "واتساب", "شخص الطوارئ", "رقم الطوارئ", "اسم البنك", "الفرع", "رقم الحساب",
-                "الآيبان", "معرف تليجرام", "الرقم الوطني للمشرف"
-            };
-
-            for (int i = 0; i < headers.Length; i++) worksheet.Cells[1, i + 1].Value = headers[i];
-
-            var data = db.GraduateApplications.AsNoTracking()
-                .Include(g => g.Gender).Include(g => g.ApplicationStatus).Include(g => g.NationalIdType)
-                .Include(g => g.ContactInfo).Include(g => g.Supervisor).ToList();
-
-            int row = 2;
-            foreach (var item in data)
+            catch (Exception ex)
             {
-                worksheet.Cells[row, 1].Value = item.ArabicName;
-                worksheet.Cells[row, 2].Value = item.EnglishName;
-                worksheet.Cells[row, 3].Value = item.NationalIdNumber;
-                worksheet.Cells[row, 4].Value = item.NationalIdType?.Name;
-                worksheet.Cells[row, 5].Value = item.Gender?.Name;
-                worksheet.Cells[row, 6].Value = item.Nationality;
-                worksheet.Cells[row, 7].Value = item.BirthDate.ToString("yyyy-MM-dd");
-                worksheet.Cells[row, 8].Value = item.BirthPlace;
-                worksheet.Cells[row, 9].Value = item.ApplicationStatus?.Name;
-                worksheet.Cells[row, 10].Value = item.TraineeSerialNo;
-                worksheet.Cells[row, 11].Value = item.MembershipId;
-                worksheet.Cells[row, 12].Value = item.TrainingStartDate?.ToString("yyyy-MM-dd");
-                worksheet.Cells[row, 13].Value = item.PracticeStartDate?.ToString("yyyy-MM-dd");
-                worksheet.Cells[row, 14].Value = item.Notes;
-                // Contact Info
-                worksheet.Cells[row, 15].Value = item.ContactInfo?.MobileNumber;
-                worksheet.Cells[row, 16].Value = item.ContactInfo?.Email;
-                worksheet.Cells[row, 17].Value = item.ContactInfo?.Governorate;
-                worksheet.Cells[row, 18].Value = item.ContactInfo?.City;
-                worksheet.Cells[row, 19].Value = item.ContactInfo?.Street;
-                worksheet.Cells[row, 20].Value = item.ContactInfo?.BuildingNumber;
-                worksheet.Cells[row, 21].Value = item.ContactInfo?.NationalMobileNumber;
-                worksheet.Cells[row, 22].Value = item.ContactInfo?.HomePhoneNumber;
-                worksheet.Cells[row, 23].Value = item.ContactInfo?.WhatsAppNumber;
-                worksheet.Cells[row, 24].Value = item.ContactInfo?.EmergencyContactPerson;
-                worksheet.Cells[row, 25].Value = item.ContactInfo?.EmergencyContactNumber;
-                // Bank Info
-                worksheet.Cells[row, 26].Value = item.BankName;
-                worksheet.Cells[row, 27].Value = item.BankBranch;
-                worksheet.Cells[row, 28].Value = item.AccountNumber;
-                worksheet.Cells[row, 29].Value = item.Iban;
-                // Other
-                worksheet.Cells[row, 30].Value = item.TelegramChatId;
-                worksheet.Cells[row, 31].Value = item.Supervisor?.NationalIdNumber;
-                row++;
+                TempData["ErrorMessage"] = "حدث خطأ أثناء التصدير: " + ex.Message;
+                return RedirectToAction("Index");
             }
-            worksheet.Cells.AutoFitColumns();
         }
+        #endregion
 
-        // ==========================================
-        // 3. الاستيراد (Import Main)
-        // ==========================================
+        #region 3. استيراد البيانات (Import)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ImportData(ImportViewModel model)
@@ -263,97 +133,427 @@ namespace BarManegment.Areas.Admin.Controllers
                 return RedirectToAction("Index");
             }
 
-          ///  ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            db.Configuration.AutoDetectChangesEnabled = false;
+            db.Configuration.ValidateOnSaveEnabled = false;
 
-            try
+            using (var transaction = db.Database.BeginTransaction())
             {
-                using (var package = new ExcelPackage(model.File.InputStream))
+                try
                 {
-                    var worksheet = package.Workbook.Worksheets[0];
-                    int rowCount = worksheet.Dimension.Rows;
-
-                    switch (model.EntityType)
+                    using (var package = new ExcelPackage(model.File.InputStream))
                     {
-                        case "UserTypes":
-                        case "ApplicationStatuses":
-                        case "Genders":
-                        case "NationalIdTypes":
-                        case "ExamTypes":
-                        case "Currencies":
-                        case "AttachmentTypes":
-                        case "QualificationTypes":
-                        case "Provinces":
-                        case "PartyRoles":
-                        case "ContractExemptionReasons":
-                        case "ContractTypes":
-                            ImportLookupsLogic(worksheet, model.EntityType, rowCount);
-                            break;
+                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                        if (worksheet == null || worksheet.Dimension == null) throw new Exception("الملف فارغ.");
 
-                        case "BankAccounts":
-                        case "FeeTypes":
-                            ImportLookupsLogic(worksheet, model.EntityType, rowCount);
-                            break;
+                        int rowCount = worksheet.Dimension.Rows;
+                        if (rowCount < 2) throw new Exception("لا توجد بيانات في الملف.");
 
-                        case "Graduates":
-                            ImportGraduatesLogic(worksheet, rowCount);
-                            break;
+                        switch (model.EntityType)
+                        {
+                            case "UserTypes":
+                            case "ApplicationStatuses":
+                            case "Genders":
+                            case "NationalIdTypes":
+                            case "ExamTypes":
+                            case "Currencies":
+                            case "AttachmentTypes":
+                            case "QualificationTypes":
+                            case "Provinces":
+                            case "PartyRoles":
+                            case "ContractExemptionReasons":
+                            case "ContractTypes":
+                            case "BankAccounts":
+                            case "FeeTypes":
+                                ImportLookupsLogic(worksheet, model.EntityType, rowCount);
+                                break;
 
-                        case "Exams":
-                            ImportExamsLogic(worksheet, rowCount);
-                            break;
-                        case "ExamResults":
-                            ImportExamResultsLogic(worksheet, rowCount);
-                            break;
+                            case "Graduates": ImportGraduatesLogic(worksheet, rowCount); break;
+                            case "Exams": ImportExamsLogic(worksheet, rowCount); break;
+                            case "ExamResults": ImportExamResultsLogic(worksheet, rowCount); break;
+                            case "Payments": ImportPaymentsLogic(worksheet, rowCount); break;
+                            case "Contracts": ImportContractsLogic(worksheet, rowCount); break;
+                            case "StampContractors": ImportContractorsLogic(worksheet, rowCount); break;
+                            case "StampBooks": ImportStampBooksLogic(worksheet, rowCount); break;
+                            case "StampSales": ImportStampSalesLogic(worksheet, rowCount); break;
+                            case "OralExamResults": ImportOralExamResultsLogic(worksheet, rowCount); break;
+                            case "LegalResearch": ImportLegalResearchLogic(worksheet, rowCount); break;
+                            case "Loans": ImportLoansLogic(worksheet, rowCount); break;
+                            case "OpeningJournal": ImportOpeningJournalLogic(worksheet, rowCount); break;
 
-                        case "Payments":
-                            ImportPaymentsLogic(worksheet, rowCount);
-                            break;
-
-                        case "Contracts":
-                            ImportContractsLogic(worksheet, rowCount);
-                            break;
-                        // ...
-                        case "StampContractors":
-                            ImportContractorsLogic(worksheet, rowCount);
-                            break;
-                        case "StampBooks":
-                            ImportStampBooksLogic(worksheet, rowCount);
-                            break;
-                        case "StampSales":
-                            ImportStampSalesLogic(worksheet, rowCount);
-                            break;
-                        // ...
-                        // ...
-                        case "OralExamResults":
-                            ImportOralExamResultsLogic(worksheet, rowCount);
-                            break;
-                        case "LegalResearch":
-                            ImportLegalResearchLogic(worksheet, rowCount);
-                            break;
-                        case "Loans":
-                            ImportLoansLogic(worksheet, rowCount);
-                            break;
-                        // ...
-
-                        default:
-                            TempData["ErrorMessage"] = "نوع البيانات غير معروف.";
-                            return RedirectToAction("Index");
+                            default:
+                                throw new Exception("نوع البيانات غير معروف.");
+                        }
                     }
+
+                    transaction.Commit();
+                    TempData["SuccessMessage"] = "تم استيراد البيانات بنجاح.";
                 }
-                TempData["SuccessMessage"] = "تم استيراد البيانات بنجاح.";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = "خطأ: " + ex.Message + (ex.InnerException != null ? " | " + ex.InnerException.Message : "");
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    TempData["ErrorMessage"] = "فشل الاستيراد: " + ex.Message + (ex.InnerException != null ? " | " + ex.InnerException.Message : "");
+                }
+                finally
+                {
+                    db.Configuration.AutoDetectChangesEnabled = true;
+                    db.Configuration.ValidateOnSaveEnabled = true;
+                }
             }
 
             return RedirectToAction("Index");
         }
+        #endregion
 
-        // ==========================================
-        // 4. دوال المنطق (Logic Methods)
-        // ==========================================
+        #region 4. تعريف العناوين
+        private string[] GetHeaders(string type)
+        {
+            switch (type)
+            {
+                case "UserTypes": return new[] { "الاسم العربي", "الاسم الإنجليزي" };
+                case "Currencies": return new[] { "اسم العملة", "الرمز" };
+                case "QualificationTypes": return new[] { "نوع المؤهل", "نسبة القبول" };
 
+                case "ApplicationStatuses":
+                case "Genders":
+                case "NationalIdTypes":
+                case "ExamTypes":
+                case "AttachmentTypes":
+                case "Provinces":
+                case "PartyRoles":
+                case "ContractExemptionReasons":
+                case "ContractTypes":
+                    return new[] { "الاسم" };
+
+                case "BankAccounts": return new[] { "اسم البنك", "اسم الحساب", "رقم الحساب", "الآيبان", "العملة" };
+                case "FeeTypes": return new[] { "اسم الرسم", "القيمة", "العملة", "رقم حساب البنك", "نسبة المحامي", "نسبة النقابة" };
+
+                case "Graduates":
+                    return new[] {
+                    "الاسم العربي", "الاسم الإنجليزي", "الرقم الوطني", "نوع الهوية", "الجنس", "الجنسية",
+                    "تاريخ الميلاد", "مكان الميلاد", "حالة الطلب", "الرقم المتسلسل", "رقم العضوية",
+                    "تاريخ بدء التدريب", "تاريخ بدء المزاولة", "ملاحظات", "رقم الجوال", "البريد الإلكتروني",
+                    "المحافظة", "المدينة", "الشارع", "البناية", "رقم الوطنية", "الهاتف الأرضي",
+                    "واتساب", "شخص الطوارئ", "رقم الطوارئ", "اسم البنك", "الفرع", "رقم الحساب",
+                    "الآيبان", "معرف تليجرام", "الرقم الوطني للمشرف"
+                };
+
+                case "Exams": return new[] { "عنوان الامتحان", "نوع الامتحان", "وقت البدء", "وقت الانتهاء", "المدة (دقائق)", "نسبة النجاح", "الحالة المطلوبة" };
+                case "ExamResults": return new[] { "عنوان الامتحان", "الرقم الوطني للمتقدم", "العلامة", "النتيجة (ناجح/راسب)" };
+
+                case "Payments": return new[] { "الرقم الوطني", "نوع الرسم", "المبلغ", "تاريخ الدفع", "رقم وصل البنك", "ملاحظات" };
+
+                case "Contracts":
+                    return new[] {
+                    "رقم هوية المحامي", "نوع العقد", "تاريخ المعاملة", "قيمة الرسوم", "الحالة", "ملاحظات",
+                    "هل معفى؟", "سبب الإعفاء",
+                    "اسم الطرف الأول", "هوية الطرف الأول", "صفة الطرف الأول", "محافظة الطرف الأول",
+                    "اسم الطرف الثاني", "هوية الطرف الثاني", "صفة الطرف الثاني", "محافظة الطرف الثاني"
+                };
+
+                case "StampContractors": return new[] { "اسم المتعهد", "رقم الجوال", "رقم الهوية", "المحافظة", "الموقع" };
+                case "StampBooks": return new[] { "الرقم التسلسلي البداية", "الرقم التسلسلي النهاية", "القيمة للطابع", "الحالة (متاح/مصروف)", "اسم المتعهد (إن وجد)" };
+                case "StampSales": return new[] { "رقم الطابع", "اسم المتعهد", "رقم هوية المحامي المشتري", "تاريخ البيع", "هل تم الصرف؟ (نعم/لا)" };
+
+                case "OralExamResults": return new[] { "الرقم الوطني", "تاريخ الامتحان", "النتيجة (ناجح/راسب)", "الدرجة", "ملاحظات" };
+                case "LegalResearch": return new[] { "الرقم الوطني", "عنوان البحث", "تاريخ التقديم", "حالة البحث (مقبول/مرفوض)" };
+                case "Loans": return new[] { "الرقم الوطني", "مبلغ القرض", "عدد الأقساط", "تاريخ البدء", "الحالة (مسدد/قائم)", "ملاحظات" };
+                case "OpeningJournal": return new[] { "رقم الحساب", "اسم الحساب", "مدين", "دائن", "مركز التكلفة", "ملاحظات" };
+
+                default: return new[] { "Unknown" };
+            }
+        }
+        #endregion
+
+        #region 5. دوال التصدير (Export Helper Methods)
+        private void PrepareSheet(ExcelPackage p, string sheetName, string[] headers, out ExcelWorksheet ws)
+        {
+            ws = p.Workbook.Worksheets.Add(sheetName);
+            for (int i = 0; i < headers.Length; i++)
+            {
+                ws.Cells[1, i + 1].Value = headers[i];
+                ws.Cells[1, i + 1].Style.Font.Bold = true;
+                ws.Cells[1, i + 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                ws.Cells[1, i + 1].Style.Fill.BackgroundColor.SetColor(Color.LightSkyBlue);
+            }
+        }
+
+        private void ExportLookupSheet(ExcelPackage p, string type, string[] headers)
+        {
+            PrepareSheet(p, type, headers, out var ws);
+            int rowIndex = 2; // ✅ تم تغيير r إلى rowIndex
+
+            if (type == "UserTypes") foreach (var x in db.UserTypes) { ws.Cells[rowIndex, 1].Value = x.NameArabic; ws.Cells[rowIndex, 2].Value = x.NameEnglish; rowIndex++; }
+            else if (type == "Currencies") foreach (var x in db.Currencies) { ws.Cells[rowIndex, 1].Value = x.Name; ws.Cells[rowIndex, 2].Value = x.Symbol; rowIndex++; }
+            else if (type == "QualificationTypes") foreach (var x in db.QualificationTypes) { ws.Cells[rowIndex, 1].Value = x.Name; ws.Cells[rowIndex, 2].Value = x.MinimumAcceptancePercentage; rowIndex++; }
+            else if (type == "ApplicationStatuses") foreach (var x in db.ApplicationStatuses) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+            else if (type == "Genders") foreach (var x in db.Genders) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+            else if (type == "NationalIdTypes") foreach (var x in db.NationalIdTypes) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+            else if (type == "ExamTypes") foreach (var x in db.ExamTypes) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+            else if (type == "AttachmentTypes") foreach (var x in db.AttachmentTypes) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+            else if (type == "Provinces") foreach (var x in db.Provinces) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+            else if (type == "PartyRoles") foreach (var x in db.PartyRoles) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+            else if (type == "ContractExemptionReasons") foreach (var x in db.ContractExemptionReasons) { ws.Cells[rowIndex, 1].Value = x.Reason; rowIndex++; }
+            else if (type == "ContractTypes") foreach (var x in db.ContractTypes) { ws.Cells[rowIndex, 1].Value = x.Name; rowIndex++; }
+
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportBankAccounts(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "BankAccounts", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var b in db.BankAccounts.Include(b => b.Currency))
+            {
+                ws.Cells[rowIndex, 1].Value = b.BankName;
+                ws.Cells[rowIndex, 2].Value = b.AccountName;
+                ws.Cells[rowIndex, 3].Value = b.AccountNumber;
+                ws.Cells[rowIndex, 4].Value = b.Iban;
+                ws.Cells[rowIndex, 5].Value = b.Currency?.Name;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportFeeTypes(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "FeeTypes", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var f in db.FeeTypes.Include(f => f.Currency).Include(f => f.BankAccount))
+            {
+                ws.Cells[rowIndex, 1].Value = f.Name;
+                ws.Cells[rowIndex, 2].Value = f.DefaultAmount;
+                ws.Cells[rowIndex, 3].Value = f.Currency?.Name;
+                ws.Cells[rowIndex, 4].Value = f.BankAccount?.AccountNumber;
+                ws.Cells[rowIndex, 5].Value = f.LawyerPercentage;
+                ws.Cells[rowIndex, 6].Value = f.BarSharePercentage;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportGraduates(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "Graduates", headers, out var ws);
+            var data = db.GraduateApplications.AsNoTracking()
+                .Include(g => g.Gender).Include(g => g.ApplicationStatus).Include(g => g.NationalIdType)
+                .Include(g => g.ContactInfo).Include(g => g.Supervisor).ToList();
+
+            int rowIndex = 2; // ✅
+            foreach (var item in data)
+            {
+                ws.Cells[rowIndex, 1].Value = item.ArabicName;
+                ws.Cells[rowIndex, 2].Value = item.EnglishName;
+                ws.Cells[rowIndex, 3].Value = item.NationalIdNumber;
+                ws.Cells[rowIndex, 4].Value = item.NationalIdType?.Name;
+                ws.Cells[rowIndex, 5].Value = item.Gender?.Name;
+                ws.Cells[rowIndex, 6].Value = item.Nationality;
+                ws.Cells[rowIndex, 7].Value = item.BirthDate.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 8].Value = item.BirthPlace;
+                ws.Cells[rowIndex, 9].Value = item.ApplicationStatus?.Name;
+                ws.Cells[rowIndex, 10].Value = item.TraineeSerialNo;
+                ws.Cells[rowIndex, 11].Value = item.MembershipId;
+                ws.Cells[rowIndex, 12].Value = item.TrainingStartDate?.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 13].Value = item.PracticeStartDate?.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 14].Value = item.Notes;
+                ws.Cells[rowIndex, 15].Value = item.ContactInfo?.MobileNumber;
+                ws.Cells[rowIndex, 16].Value = item.ContactInfo?.Email;
+                ws.Cells[rowIndex, 17].Value = item.ContactInfo?.Governorate;
+                ws.Cells[rowIndex, 18].Value = item.ContactInfo?.City;
+                ws.Cells[rowIndex, 19].Value = item.ContactInfo?.Street;
+                ws.Cells[rowIndex, 20].Value = item.ContactInfo?.BuildingNumber;
+                ws.Cells[rowIndex, 21].Value = item.ContactInfo?.NationalMobileNumber;
+                ws.Cells[rowIndex, 22].Value = item.ContactInfo?.HomePhoneNumber;
+                ws.Cells[rowIndex, 23].Value = item.ContactInfo?.WhatsAppNumber;
+                ws.Cells[rowIndex, 24].Value = item.ContactInfo?.EmergencyContactPerson;
+                ws.Cells[rowIndex, 25].Value = item.ContactInfo?.EmergencyContactNumber;
+                ws.Cells[rowIndex, 26].Value = item.BankName;
+                ws.Cells[rowIndex, 27].Value = item.BankBranch;
+                ws.Cells[rowIndex, 28].Value = item.AccountNumber;
+                ws.Cells[rowIndex, 29].Value = item.Iban;
+                ws.Cells[rowIndex, 30].Value = item.TelegramChatId;
+                ws.Cells[rowIndex, 31].Value = item.Supervisor?.NationalIdNumber;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportExams(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "Exams", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var e in db.Exams.Include(x => x.ExamType).Include(x => x.RequiredApplicationStatus))
+            {
+                ws.Cells[rowIndex, 1].Value = e.Title;
+                ws.Cells[rowIndex, 2].Value = e.ExamType?.Name;
+                ws.Cells[rowIndex, 3].Value = e.StartTime.ToString("yyyy-MM-dd HH:mm");
+                ws.Cells[rowIndex, 4].Value = e.EndTime.ToString("yyyy-MM-dd HH:mm");
+                ws.Cells[rowIndex, 5].Value = e.DurationInMinutes;
+                ws.Cells[rowIndex, 6].Value = e.PassingPercentage;
+                ws.Cells[rowIndex, 7].Value = e.RequiredApplicationStatus?.Name;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportExamResults(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "ExamResults", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var en in db.ExamEnrollments.Include(x => x.Exam).Include(x => x.GraduateApplication))
+            {
+                ws.Cells[rowIndex, 1].Value = en.Exam?.Title;
+                ws.Cells[rowIndex, 2].Value = en.GraduateApplication?.NationalIdNumber;
+                ws.Cells[rowIndex, 3].Value = en.Score;
+                ws.Cells[rowIndex, 4].Value = en.Result;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportPayments(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "Payments", headers, out var ws);
+            // ✅ تم تغيير المتغير داخل Include من r إلى x لمنع التداخل
+            var receipts = db.Receipts
+                .Include(x => x.PaymentVoucher.GraduateApplication)
+                .Include(x => x.PaymentVoucher.VoucherDetails.Select(d => d.FeeType))
+                .ToList();
+
+            int rowIndex = 2; // ✅
+            foreach (var rec in receipts)
+            {
+                var v = rec.PaymentVoucher;
+                if (v == null) continue;
+                var det = v.VoucherDetails.FirstOrDefault();
+                ws.Cells[rowIndex, 1].Value = v.GraduateApplication?.NationalIdNumber;
+                ws.Cells[rowIndex, 2].Value = det?.FeeType?.Name ?? det?.Description;
+                ws.Cells[rowIndex, 3].Value = v.TotalAmount;
+                ws.Cells[rowIndex, 4].Value = rec.BankPaymentDate.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 5].Value = rec.BankReceiptNumber;
+                ws.Cells[rowIndex, 6].Value = rec.Notes;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportContracts(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "Contracts", headers, out var ws);
+            var trans = db.ContractTransactions.Include(t => t.Lawyer).Include(t => t.ContractType).Include(t => t.ExemptionReason).Include(t => t.Parties.Select(pp => pp.PartyRole)).Include(t => t.Parties.Select(pp => pp.Province)).ToList();
+            int rowIndex = 2; // ✅
+            foreach (var t in trans)
+            {
+                ws.Cells[rowIndex, 1].Value = t.Lawyer?.NationalIdNumber;
+                ws.Cells[rowIndex, 2].Value = t.ContractType?.Name;
+                ws.Cells[rowIndex, 3].Value = t.TransactionDate.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 4].Value = t.FinalFee;
+                ws.Cells[rowIndex, 5].Value = t.Status;
+                ws.Cells[rowIndex, 6].Value = t.Notes;
+                ws.Cells[rowIndex, 7].Value = t.IsExempt ? "نعم" : "لا";
+                ws.Cells[rowIndex, 8].Value = t.ExemptionReason?.Reason;
+                var p1 = t.Parties.FirstOrDefault(x => x.PartyType == 1);
+                if (p1 != null) { ws.Cells[rowIndex, 9].Value = p1.PartyName; ws.Cells[rowIndex, 10].Value = p1.PartyIDNumber; ws.Cells[rowIndex, 11].Value = p1.PartyRole?.Name; ws.Cells[rowIndex, 12].Value = p1.Province?.Name; }
+                var p2 = t.Parties.FirstOrDefault(x => x.PartyType == 2);
+                if (p2 != null) { ws.Cells[rowIndex, 13].Value = p2.PartyName; ws.Cells[rowIndex, 14].Value = p2.PartyIDNumber; ws.Cells[rowIndex, 15].Value = p2.PartyRole?.Name; ws.Cells[rowIndex, 16].Value = p2.Province?.Name; }
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportStampContractors(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "StampContractors", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var c in db.StampContractors)
+            {
+                ws.Cells[rowIndex, 1].Value = c.Name;
+                ws.Cells[rowIndex, 2].Value = c.Phone;
+                ws.Cells[rowIndex, 3].Value = c.NationalId;
+                ws.Cells[rowIndex, 4].Value = c.Governorate;
+                ws.Cells[rowIndex, 5].Value = c.Location;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportStampBooks(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "StampBooks", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var b in db.StampBooks)
+            {
+                ws.Cells[rowIndex, 1].Value = b.StartSerial;
+                ws.Cells[rowIndex, 2].Value = b.EndSerial;
+                ws.Cells[rowIndex, 3].Value = b.ValuePerStamp;
+                ws.Cells[rowIndex, 4].Value = b.Status;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportStampSales(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "StampSales", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var s in db.StampSales.Include(x => x.Stamp).Include(x => x.Contractor).Include(x => x.Lawyer))
+            {
+                ws.Cells[rowIndex, 1].Value = s.Stamp?.SerialNumber; ws.Cells[rowIndex, 2].Value = s.Contractor?.Name;
+                ws.Cells[rowIndex, 3].Value = s.Lawyer?.NationalIdNumber; ws.Cells[rowIndex, 4].Value = s.SaleDate.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 5].Value = s.IsPaidToLawyer ? "نعم" : "لا"; rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportOralResults(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "OralResults", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var x in db.OralExamEnrollments.Include(t => t.Trainee))
+            {
+                ws.Cells[rowIndex, 1].Value = x.Trainee?.NationalIdNumber;
+                ws.Cells[rowIndex, 2].Value = x.ExamDate.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 3].Value = x.Result;
+                ws.Cells[rowIndex, 4].Value = x.Score;
+                ws.Cells[rowIndex, 5].Value = x.Notes;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportResearch(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "Research", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var x in db.LegalResearches.Include(t => t.Trainee))
+            {
+                ws.Cells[rowIndex, 1].Value = x.Trainee?.NationalIdNumber;
+                ws.Cells[rowIndex, 2].Value = x.Title;
+                ws.Cells[rowIndex, 3].Value = x.SubmissionDate.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 4].Value = x.Status;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+
+        private void ExportLoans(ExcelPackage p, string[] headers)
+        {
+            PrepareSheet(p, "Loans", headers, out var ws);
+            int rowIndex = 2; // ✅
+            foreach (var x in db.LoanApplications.Include(t => t.Lawyer))
+            {
+                ws.Cells[rowIndex, 1].Value = x.Lawyer?.NationalIdNumber;
+                ws.Cells[rowIndex, 2].Value = x.Amount;
+                ws.Cells[rowIndex, 3].Value = x.InstallmentCount;
+                ws.Cells[rowIndex, 4].Value = x.StartDate.ToString("yyyy-MM-dd");
+                ws.Cells[rowIndex, 5].Value = x.Status;
+                ws.Cells[rowIndex, 6].Value = x.Notes;
+                rowIndex++;
+            }
+            ws.Cells.AutoFitColumns();
+        }
+        #endregion
+
+        #region 6. دوال الاستيراد (Import Logic Methods)
         private void ImportLookupsLogic(ExcelWorksheet sheet, string entityType, int rowCount)
         {
             for (int row = 2; row <= rowCount; row++)
@@ -364,37 +564,20 @@ namespace BarManegment.Areas.Admin.Controllers
                 if (entityType == "UserTypes" && !db.UserTypes.Any(x => x.NameArabic == name))
                     db.UserTypes.Add(new UserTypeModel { NameArabic = name, NameEnglish = sheet.Cells[row, 2].Text });
 
-                else if (entityType == "ApplicationStatuses" && !db.ApplicationStatuses.Any(x => x.Name == name))
-                    db.ApplicationStatuses.Add(new ApplicationStatus { Name = name });
-
-                else if (entityType == "Genders" && !db.Genders.Any(x => x.Name == name))
-                    db.Genders.Add(new Gender { Name = name });
-
-                else if (entityType == "NationalIdTypes" && !db.NationalIdTypes.Any(x => x.Name == name))
-                    db.NationalIdTypes.Add(new NationalIdType { Name = name });
-
-                else if (entityType == "Provinces" && !db.Provinces.Any(x => x.Name == name))
-                    db.Provinces.Add(new Province { Name = name });
-
-                else if (entityType == "PartyRoles" && !db.PartyRoles.Any(x => x.Name == name))
-                    db.PartyRoles.Add(new PartyRole { Name = name });
-
-                else if (entityType == "ContractExemptionReasons" && !db.ContractExemptionReasons.Any(x => x.Reason == name))
-                    db.ContractExemptionReasons.Add(new ContractExemptionReason { Reason = name });
-
-                else if (entityType == "ContractTypes" && !db.ContractTypes.Any(x => x.Name == name))
-                    db.ContractTypes.Add(new ContractType { Name = name });
-
-                else if (entityType == "Currencies" && !db.Currencies.Any(x => x.Name == name))
-                    db.Currencies.Add(new Currency { Name = name, Symbol = sheet.Cells[row, 2].Text });
+                else if (entityType == "ApplicationStatuses" && !db.ApplicationStatuses.Any(x => x.Name == name)) db.ApplicationStatuses.Add(new ApplicationStatus { Name = name });
+                else if (entityType == "Genders" && !db.Genders.Any(x => x.Name == name)) db.Genders.Add(new Gender { Name = name });
+                else if (entityType == "NationalIdTypes" && !db.NationalIdTypes.Any(x => x.Name == name)) db.NationalIdTypes.Add(new NationalIdType { Name = name });
+                else if (entityType == "Provinces" && !db.Provinces.Any(x => x.Name == name)) db.Provinces.Add(new Province { Name = name });
+                else if (entityType == "PartyRoles" && !db.PartyRoles.Any(x => x.Name == name)) db.PartyRoles.Add(new PartyRole { Name = name });
+                else if (entityType == "ContractExemptionReasons" && !db.ContractExemptionReasons.Any(x => x.Reason == name)) db.ContractExemptionReasons.Add(new ContractExemptionReason { Reason = name });
+                else if (entityType == "ContractTypes" && !db.ContractTypes.Any(x => x.Name == name)) db.ContractTypes.Add(new ContractType { Name = name });
+                else if (entityType == "Currencies" && !db.Currencies.Any(x => x.Name == name)) db.Currencies.Add(new Currency { Name = name, Symbol = sheet.Cells[row, 2].Text });
 
                 else if (entityType == "QualificationTypes" && !db.QualificationTypes.Any(x => x.Name == name))
                 {
                     double.TryParse(sheet.Cells[row, 2].Text, out double min);
                     db.QualificationTypes.Add(new QualificationType { Name = name, MinimumAcceptancePercentage = min });
                 }
-
-                // --- المالية ---
                 else if (entityType == "BankAccounts")
                 {
                     string accNum = sheet.Cells[row, 3].Text.Trim();
@@ -414,10 +597,8 @@ namespace BarManegment.Areas.Admin.Controllers
                         string accNum = sheet.Cells[row, 4].Text;
                         decimal.TryParse(sheet.Cells[row, 5].Text, out decimal lPer);
                         decimal.TryParse(sheet.Cells[row, 6].Text, out decimal bPer);
-
                         var cur = db.Currencies.FirstOrDefault(c => c.Name == curName) ?? db.Currencies.FirstOrDefault();
                         var bank = db.BankAccounts.FirstOrDefault(b => b.AccountNumber == accNum) ?? db.BankAccounts.FirstOrDefault();
-
                         db.FeeTypes.Add(new FeeType { Name = name, DefaultAmount = amt, CurrencyId = cur?.Id ?? 1, BankAccountId = bank?.Id ?? 1, LawyerPercentage = lPer, BarSharePercentage = bPer == 0 ? 1 : bPer, IsActive = true });
                     }
                 }
@@ -434,9 +615,7 @@ namespace BarManegment.Areas.Admin.Controllers
             var defaultIdType = idTypes.FirstOrDefault()?.Id ?? 1;
             var defaultUserType = userTypes.FirstOrDefault(u => u.NameEnglish == "Graduate")?.Id ?? 1;
             var defaultStatus = statuses.FirstOrDefault(s => s.Name == "طلب جديد");
-            var importedNationalIds = new List<string>();
 
-            // الدورة 1: إنشاء المستخدمين والملفات
             for (int row = 2; row <= rowCount; row++)
             {
                 string nameAr = sheet.Cells[row, 1].Text.Trim();
@@ -481,11 +660,9 @@ namespace BarManegment.Areas.Admin.Controllers
                     ContactInfo = new ContactInfo { MobileNumber = sheet.Cells[row, 15].Text, Email = sheet.Cells[row, 16].Text, Governorate = sheet.Cells[row, 17].Text, City = sheet.Cells[row, 18].Text, Street = sheet.Cells[row, 19].Text, BuildingNumber = sheet.Cells[row, 20].Text }
                 };
                 db.GraduateApplications.Add(app);
-                importedNationalIds.Add(natId);
             }
             db.SaveChanges();
 
-            // الدورة 2: ربط المشرفين
             for (int row = 2; row <= rowCount; row++)
             {
                 string traineeId = sheet.Cells[row, 3].Text.Trim();
@@ -494,7 +671,11 @@ namespace BarManegment.Areas.Admin.Controllers
                 {
                     var trainee = db.GraduateApplications.FirstOrDefault(g => g.NationalIdNumber == traineeId);
                     var super = db.GraduateApplications.FirstOrDefault(g => g.NationalIdNumber == superId);
-                    if (trainee != null && super != null && trainee.Id != super.Id) trainee.SupervisorId = super.Id;
+                    if (trainee != null && super != null && trainee.Id != super.Id)
+                    {
+                        trainee.SupervisorId = super.Id;
+                        db.Entry(trainee).State = EntityState.Modified;
+                    }
                 }
             }
             db.SaveChanges();
@@ -565,9 +746,8 @@ namespace BarManegment.Areas.Admin.Controllers
                 db.PaymentVouchers.Add(voucher);
                 db.SaveChanges();
 
-                // إيصال قبض
                 int year = date.Year;
-                var lastSeq = db.Receipts.Where(r => r.Year == year).Max(r => (int?)r.SequenceNumber) ?? 0;
+                var lastSeq = db.Receipts.Where(x => x.Year == year).Max(x => (int?)x.SequenceNumber) ?? 0;
                 db.Receipts.Add(new Receipt { Id = voucher.Id, Year = year, SequenceNumber = lastSeq + 1, BankPaymentDate = date, BankReceiptNumber = sheet.Cells[row, 5].Text, CreationDate = DateTime.Now, Notes = sheet.Cells[row, 6].Text, IssuedByUserId = admin.Id, IssuedByUserName = "System" });
                 db.SaveChanges();
             }
@@ -595,7 +775,6 @@ namespace BarManegment.Areas.Admin.Controllers
                 db.ContractTransactions.Add(trans);
                 db.SaveChanges();
 
-                // أطراف (مثال لطرفين فقط للتبسيط)
                 var p1Prov = provs.FirstOrDefault(p => p.Name == sheet.Cells[row, 12].Text) ?? provs.First();
                 var p1Role = roles.FirstOrDefault(r => r.Name == sheet.Cells[row, 11].Text) ?? roles.First();
                 if (!string.IsNullOrEmpty(sheet.Cells[row, 9].Text))
@@ -613,12 +792,10 @@ namespace BarManegment.Areas.Admin.Controllers
         private void ImportContractorsLogic(ExcelWorksheet sheet, int rowCount)
         {
             var existingContractors = db.StampContractors.Select(c => c.Name).ToList();
-
             for (int row = 2; row <= rowCount; row++)
             {
                 string name = sheet.Cells[row, 1].Text.Trim();
                 if (string.IsNullOrEmpty(name) || existingContractors.Contains(name)) continue;
-
                 db.StampContractors.Add(new StampContractor
                 {
                     Name = name,
@@ -635,27 +812,19 @@ namespace BarManegment.Areas.Admin.Controllers
 
         private void ImportStampBooksLogic(ExcelWorksheet sheet, int rowCount)
         {
-            // تحميل المتعهدين للربط (إذا كان الدفتر مصروفاً)
             var contractors = db.StampContractors.ToList();
-            // تحميل المستخدم الافتراضي (المدخل)
-            var admin = db.Users.FirstOrDefault();
-
             for (int row = 2; row <= rowCount; row++)
             {
                 long.TryParse(sheet.Cells[row, 1].Text, out long startSerial);
                 long.TryParse(sheet.Cells[row, 2].Text, out long endSerial);
                 decimal.TryParse(sheet.Cells[row, 3].Text, out decimal value);
-                string status = sheet.Cells[row, 4].Text.Trim(); // (متاح/مصروف/منتهي)
-                string contractorName = sheet.Cells[row, 5].Text.Trim(); // اسم المتعهد إذا مصروف
+                string status = sheet.Cells[row, 4].Text.Trim();
+                string contractorName = sheet.Cells[row, 5].Text.Trim();
 
                 if (startSerial == 0 || endSerial == 0 || endSerial < startSerial) continue;
-
-                // التحقق من عدم وجود تداخل في الأرقام التسلسلية
                 if (db.Stamps.Any(s => s.SerialNumber >= startSerial && s.SerialNumber <= endSerial)) continue;
 
                 int quantity = (int)(endSerial - startSerial + 1);
-
-                // 1. إنشاء الدفتر
                 var book = new StampBook
                 {
                     StartSerial = startSerial,
@@ -667,9 +836,8 @@ namespace BarManegment.Areas.Admin.Controllers
                     Status = status
                 };
                 db.StampBooks.Add(book);
-                db.SaveChanges(); // نحفظ الدفتر للحصول على ID
+                db.SaveChanges();
 
-                // 2. إنشاء الطوابع الفردية (Batch Insert)
                 var stamps = new List<Stamp>();
                 var contractor = contractors.FirstOrDefault(c => c.Name == contractorName);
 
@@ -681,13 +849,12 @@ namespace BarManegment.Areas.Admin.Controllers
                         SerialNumber = serial,
                         Value = value,
                         Status = (status == "متاح") ? "في المخزن" : (status == "مصروف" ? "مع المتعهد" : "مباع"),
-                        ContractorId = contractor?.Id, // إذا كان الدفتر مصروفاً لمتعهد
-                        IsPaidToLawyer = false // الافتراضي
+                        ContractorId = contractor?.Id,
+                        IsPaidToLawyer = false
                     });
                 }
                 db.Stamps.AddRange(stamps);
 
-                // إذا كان مصروفاً، نسجل حركة الصرف (Issuance)
                 if (contractor != null)
                 {
                     db.StampBookIssuances.Add(new StampBookIssuance
@@ -695,10 +862,9 @@ namespace BarManegment.Areas.Admin.Controllers
                         ContractorId = contractor.Id,
                         StampBookId = book.Id,
                         IssuanceDate = DateTime.Now,
-                        PaymentVoucherId = 0 // (وهمي للأرشيف، أو يمكن ربطه بسند قديم)
+                        PaymentVoucherId = 0
                     });
                 }
-
                 db.SaveChanges();
             }
         }
@@ -711,17 +877,15 @@ namespace BarManegment.Areas.Admin.Controllers
 
             for (int row = 2; row <= rowCount; row++)
             {
-                long.TryParse(sheet.Cells[row, 1].Text, out long serial); // رقم الطابع
+                long.TryParse(sheet.Cells[row, 1].Text, out long serial);
                 string contractorName = sheet.Cells[row, 2].Text.Trim();
-                string lawyerIdNum = sheet.Cells[row, 3].Text.Trim(); // هوية المحامي
+                string lawyerIdNum = sheet.Cells[row, 3].Text.Trim();
                 string saleDateTxt = sheet.Cells[row, 4].Text.Trim();
-                bool isPaid = (sheet.Cells[row, 5].Text.Trim() == "نعم"); // هل تم صرف الحصة؟
+                bool isPaid = (sheet.Cells[row, 5].Text.Trim() == "نعم");
 
-                // 1. البحث عن الطابع
                 var stamp = db.Stamps.FirstOrDefault(s => s.SerialNumber == serial);
-                if (stamp == null) continue; // لا يمكن بيع طابع غير موجود
+                if (stamp == null) continue;
 
-                // 2. البحث عن المحامي والمتعهد
                 var lawyer = lawyers.FirstOrDefault(l => l.NationalIdNumber == lawyerIdNum);
                 var contractor = contractors.FirstOrDefault(c => c.Name == contractorName);
                 if (contractor == null) continue;
@@ -729,14 +893,12 @@ namespace BarManegment.Areas.Admin.Controllers
                 DateTime.TryParse(saleDateTxt, out DateTime date);
                 if (date == DateTime.MinValue) date = DateTime.Now;
 
-                // 3. تحديث الطابع الأصلي
                 stamp.Status = "مباع";
                 stamp.ContractorId = contractor.Id;
                 stamp.SoldToLawyerId = lawyer?.Id;
                 stamp.DateSold = date;
                 stamp.IsPaidToLawyer = isPaid;
 
-                // 4. إنشاء سجل البيع (StampSale)
                 var sale = new StampSale
                 {
                     StampId = stamp.Id,
@@ -746,18 +908,15 @@ namespace BarManegment.Areas.Admin.Controllers
                     LawyerMembershipId = lawyer?.MembershipId ?? "غير معروف",
                     LawyerName = lawyer?.ArabicName ?? "غير معروف",
                     StampValue = stamp.Value,
-                    // حصة المحامي (افتراضياً 40% مثلاً، أو يمكن قراءتها من الإكسل)
                     AmountToLawyer = stamp.Value * 0.40m,
                     AmountToBar = stamp.Value * 0.60m,
                     IsPaidToLawyer = isPaid,
                     BankSendDate = isPaid ? (DateTime?)DateTime.Now : null,
                     RecordedByUserId = admin.Id,
                     RecordedByUserName = "System",
-                    // بيانات بنك المحامي
                     LawyerBankName = lawyer?.BankName,
                     LawyerAccountNumber = lawyer?.AccountNumber
                 };
-
                 db.StampSales.Add(sale);
             }
             db.SaveChanges();
@@ -766,8 +925,6 @@ namespace BarManegment.Areas.Admin.Controllers
         private void ImportOralExamResultsLogic(ExcelWorksheet sheet, int rowCount)
         {
             var trainees = db.GraduateApplications.Select(g => new { g.Id, g.NationalIdNumber }).ToList();
-
-            // للتبسيط، إذا لم توجد لجان، ننشئ لجنة افتراضية للأرشيف
             var defaultCommittee = db.OralExamCommittees.FirstOrDefault(c => c.CommitteeName == "لجنة الأرشيف المستورد");
             if (defaultCommittee == null)
             {
@@ -780,14 +937,12 @@ namespace BarManegment.Areas.Admin.Controllers
             {
                 string nationalId = sheet.Cells[row, 1].Text.Trim();
                 string dateTxt = sheet.Cells[row, 2].Text.Trim();
-                string result = sheet.Cells[row, 3].Text.Trim(); // ناجح/راسب
+                string result = sheet.Cells[row, 3].Text.Trim();
                 string scoreTxt = sheet.Cells[row, 4].Text.Trim();
                 string notes = sheet.Cells[row, 5].Text.Trim();
 
                 var trainee = trainees.FirstOrDefault(t => t.NationalIdNumber == nationalId);
                 if (trainee == null) continue;
-
-                // منع التكرار
                 if (db.OralExamEnrollments.Any(e => e.GraduateApplicationId == trainee.Id && e.OralExamCommitteeId == defaultCommittee.Id)) continue;
 
                 DateTime.TryParse(dateTxt, out DateTime examDate);
@@ -796,7 +951,7 @@ namespace BarManegment.Areas.Admin.Controllers
                 double? score = null;
                 if (double.TryParse(scoreTxt, out double s)) score = s;
 
-                var enrollment = new OralExamEnrollment
+                db.OralExamEnrollments.Add(new OralExamEnrollment
                 {
                     GraduateApplicationId = trainee.Id,
                     OralExamCommitteeId = defaultCommittee.Id,
@@ -804,9 +959,7 @@ namespace BarManegment.Areas.Admin.Controllers
                     Result = !string.IsNullOrEmpty(result) ? result : "ناجح",
                     Score = score,
                     Notes = notes + " (استيراد)"
-                };
-
-                db.OralExamEnrollments.Add(enrollment);
+                });
             }
             db.SaveChanges();
         }
@@ -814,34 +967,27 @@ namespace BarManegment.Areas.Admin.Controllers
         private void ImportLegalResearchLogic(ExcelWorksheet sheet, int rowCount)
         {
             var trainees = db.GraduateApplications.Select(g => new { g.Id, g.NationalIdNumber }).ToList();
-
             for (int row = 2; row <= rowCount; row++)
             {
                 string nationalId = sheet.Cells[row, 1].Text.Trim();
                 string title = sheet.Cells[row, 2].Text.Trim();
                 string dateTxt = sheet.Cells[row, 3].Text.Trim();
-                string status = sheet.Cells[row, 4].Text.Trim(); // مقبول/مرفوض
+                string status = sheet.Cells[row, 4].Text.Trim();
 
                 var trainee = trainees.FirstOrDefault(t => t.NationalIdNumber == nationalId);
                 if (trainee == null) continue;
-
-                // منع التكرار (للمتدرب الواحد)
                 if (db.LegalResearches.Any(r => r.GraduateApplicationId == trainee.Id && r.Title == title)) continue;
 
                 DateTime.TryParse(dateTxt, out DateTime subDate);
                 if (subDate == DateTime.MinValue) subDate = DateTime.Now;
 
-                var research = new LegalResearch
+                db.LegalResearches.Add(new LegalResearch
                 {
                     GraduateApplicationId = trainee.Id,
                     Title = !string.IsNullOrEmpty(title) ? title : "بحث قانوني (أرشيف)",
                     SubmissionDate = subDate,
-                    Status = !string.IsNullOrEmpty(status) ? status : "مقبول",
-                    FinalDocumentPath = null, // لا يمكن استيراد الملفات
-                    DiscussionCommitteeId = null // يمكن تطويره لربط لجنة
-                };
-
-                db.LegalResearches.Add(research);
+                    Status = !string.IsNullOrEmpty(status) ? status : "مقبول"
+                });
             }
             db.SaveChanges();
         }
@@ -850,7 +996,6 @@ namespace BarManegment.Areas.Admin.Controllers
         {
             var lawyers = db.GraduateApplications.Select(g => new { g.Id, g.NationalIdNumber }).ToList();
             var loanTypes = db.LoanTypes.ToList();
-            // إنشاء نوع قرض افتراضي إذا لم يوجد
             var defaultLoanType = loanTypes.FirstOrDefault();
             if (defaultLoanType == null)
             {
@@ -867,7 +1012,7 @@ namespace BarManegment.Areas.Admin.Controllers
                 string amountTxt = sheet.Cells[row, 2].Text.Trim();
                 string installmentsCountTxt = sheet.Cells[row, 3].Text.Trim();
                 string startDateTxt = sheet.Cells[row, 4].Text.Trim();
-                string status = sheet.Cells[row, 5].Text.Trim(); // مسدد/قائم
+                string status = sheet.Cells[row, 5].Text.Trim();
                 string notes = sheet.Cells[row, 6].Text.Trim();
 
                 var lawyer = lawyers.FirstOrDefault(l => l.NationalIdNumber == nationalId);
@@ -875,14 +1020,13 @@ namespace BarManegment.Areas.Admin.Controllers
 
                 decimal.TryParse(amountTxt, out decimal amount);
                 int.TryParse(installmentsCountTxt, out int count);
-                if (count == 0) count = 10; // افتراضي
+                if (count == 0) count = 10;
 
                 DateTime.TryParse(startDateTxt, out DateTime start);
                 if (start == DateTime.MinValue) start = DateTime.Now;
 
                 decimal installmentAmount = amount / count;
 
-                // إنشاء طلب القرض
                 var loan = new LoanApplication
                 {
                     LawyerId = lawyer.Id,
@@ -893,14 +1037,13 @@ namespace BarManegment.Areas.Admin.Controllers
                     StartDate = start,
                     ApplicationDate = start,
                     Status = status,
-                    IsDisbursed = true, // نفترض أنه مصروف لأنه أرشيف
+                    IsDisbursed = true,
                     DisbursementDate = start,
                     Notes = notes + " (استيراد)"
                 };
                 db.LoanApplications.Add(loan);
-                db.SaveChanges(); // للحصول على ID
+                db.SaveChanges();
 
-                // إنشاء الأقساط (Installments)
                 var installments = new List<LoanInstallment>();
                 for (int i = 1; i <= count; i++)
                 {
@@ -910,247 +1053,133 @@ namespace BarManegment.Areas.Admin.Controllers
                         InstallmentNumber = i,
                         DueDate = start.AddMonths(i - 1),
                         Amount = installmentAmount,
-                        Status = (status == "مكتمل" || status == "مسدد") ? "مدفوع" : "مستحق" // تبسيط للحالة
+                        Status = (status == "مكتمل" || status == "مسدد") ? "مدفوع" : "مستحق"
                     });
                 }
                 db.LoanInstallments.AddRange(installments);
                 db.SaveChanges();
             }
         }
-
-        // 1. دالة عامة للجداول البسيطة (Lookups)
-        // 1. دالة عامة للجداول البسيطة (Lookups)
-        private void ExportLookupSheet(ExcelPackage package, string type, string[] headers)
+        #endregion
+        private void ImportOpeningJournalLogic(ExcelWorksheet sheet, int rowCount)
         {
-            var ws = package.Workbook.Worksheets.Add(type);
-            for (int i = 0; i < headers.Length; i++) ws.Cells[1, i + 1].Value = headers[i];
-            ws.Cells[1, 1, 1, headers.Length].Style.Font.Bold = true;
+            // 1. تجهيز البيانات الأساسية
+            var accounts = db.Accounts.ToList();
+            var admin = db.Users.FirstOrDefault();
 
-            // --- التصحيح: تعريف r مرة واحدة هنا ---
-            int r = 2;
+            // إنشاء رأس القيد
+            var entry = new JournalEntry
+            {
+                // ✅ تصحيح 1: تغيير Date إلى EntryDate (أو الاسم الموجود في الموديل الخاص بك)
+                EntryDate = new DateTime(DateTime.Now.Year, 1, 1),
 
-            if (type == "UserTypes")
+                Description = "القيد الافتتاحي (مرحل من النظام السابق)",
+                ReferenceNumber = "OP-" + DateTime.Now.Year,
+                IsPosted = true,
+                CreatedByUserId = admin?.Id,
+                CreatedAt = DateTime.Now,
+                TotalDebit = 0,
+                TotalCredit = 0,
+                JournalEntryDetails = new List<JournalEntryDetail>()
+            };
+
+            decimal totalDebit = 0;
+            decimal totalCredit = 0;
+
+            // 2. قراءة الملف
+            for (int row = 2; row <= rowCount; row++)
             {
-                foreach (var x in db.UserTypes) { ws.Cells[r, 1].Value = x.NameArabic; ws.Cells[r, 2].Value = x.NameEnglish; r++; }
-            }
-            else if (type == "Currencies")
-            {
-                foreach (var x in db.Currencies) { ws.Cells[r, 1].Value = x.Name; ws.Cells[r, 2].Value = x.Symbol; r++; }
-            }
-            else if (type == "QualificationTypes")
-            {
-                foreach (var x in db.QualificationTypes) { ws.Cells[r, 1].Value = x.Name; ws.Cells[r, 2].Value = x.MinimumAcceptancePercentage; r++; }
-            }
-            // الجداول ذات الاسم الواحد
-            else if (type == "ApplicationStatuses")
-            {
-                foreach (var x in db.ApplicationStatuses) { ws.Cells[r, 1].Value = x.Name; r++; }
-            }
-            else if (type == "Genders")
-            {
-                foreach (var x in db.Genders) { ws.Cells[r, 1].Value = x.Name; r++; }
-            }
-            else if (type == "NationalIdTypes")
-            {
-                foreach (var x in db.NationalIdTypes) { ws.Cells[r, 1].Value = x.Name; r++; }
-            }
-            else if (type == "ExamTypes")
-            {
-                foreach (var x in db.ExamTypes) { ws.Cells[r, 1].Value = x.Name; r++; }
-            }
-            else if (type == "AttachmentTypes")
-            {
-                foreach (var x in db.AttachmentTypes) { ws.Cells[r, 1].Value = x.Name; r++; }
-            }
-            else if (type == "Provinces")
-            {
-                foreach (var x in db.Provinces) { ws.Cells[r, 1].Value = x.Name; r++; }
-            }
-            else if (type == "PartyRoles")
-            {
-                foreach (var x in db.PartyRoles) { ws.Cells[r, 1].Value = x.Name; r++; }
-            }
-            else if (type == "ContractExemptionReasons")
-            {
-                foreach (var x in db.ContractExemptionReasons) { ws.Cells[r, 1].Value = x.Reason; r++; }
-            }
-            else if (type == "ContractTypes")
-            {
-                foreach (var x in db.ContractTypes) { ws.Cells[r, 1].Value = x.Name; r++; }
+                string accCode = sheet.Cells[row, 1].Text.Trim();
+                string accName = sheet.Cells[row, 2].Text.Trim();
+
+                if (string.IsNullOrEmpty(accCode)) continue;
+
+                decimal.TryParse(sheet.Cells[row, 3].Text, out decimal debit);
+                decimal.TryParse(sheet.Cells[row, 4].Text, out decimal credit);
+                string notes = sheet.Cells[row, 6].Text.Trim();
+
+                if (debit == 0 && credit == 0) continue;
+
+                // البحث عن الحساب أو إنشاؤه
+                var account = accounts.FirstOrDefault(a => a.Code == accCode);
+                if (account == null)
+                {
+                    account = new Account
+                    {
+                        Code = accCode,
+                        Name = !string.IsNullOrEmpty(accName) ? accName : $"حساب {accCode}",
+
+                        // ❌ تصحيح 2: تم حذف ParentAccountId لأنه غير موجود في الموديل لديك
+
+                        // ✅ تصحيح 3: استخدام قيمة Enum بدلاً من النص
+                        // نفترض أن القيمة 1 تعني (أصول) أو (ميزانية) حسب الـ Enum لديك
+                        // يمكنك تغيير (AccountType)1 إلى BarManegment.Models.AccountType.Asset إذا كنت تعرف الاسم
+                        AccountType = (BarManegment.Models.AccountType)1,
+
+                        IsTransactional = true,
+                        OpeningBalance = 0 // الرصيد نثبته عبر القيد وليس هنا
+                    };
+                    db.Accounts.Add(account);
+                    db.SaveChanges();
+                    accounts.Add(account);
+                }
+
+                var detail = new JournalEntryDetail
+                {
+                    AccountId = account.Id,
+                    Debit = debit,
+                    Credit = credit,
+                    Description = string.IsNullOrEmpty(notes) ? "رصيد افتتاحي" : notes
+                };
+
+                entry.JournalEntryDetails.Add(detail);
+                totalDebit += debit;
+                totalCredit += credit;
             }
 
-            ws.Cells.AutoFitColumns();
+            // 3. التحقق من التوازن
+            if (Math.Abs(totalDebit - totalCredit) > 0.01m)
+            {
+                var diffAccount = db.Accounts.FirstOrDefault(a => a.Name == "فروقات أرصدة افتتاحية");
+                if (diffAccount == null)
+                {
+                    diffAccount = new Account
+                    {
+                        Code = "9999",
+                        Name = "فروقات أرصدة افتتاحية",
+                        // ✅ تصحيح 3 مكرر: استخدام Enum
+                        AccountType = (BarManegment.Models.AccountType)1,
+                        IsTransactional = true
+                    };
+                    db.Accounts.Add(diffAccount);
+                    db.SaveChanges();
+                }
+
+                decimal diff = totalDebit - totalCredit;
+                var diffRow = new JournalEntryDetail
+                {
+                    AccountId = diffAccount.Id,
+                    Description = "تسوية فروقات القيد الافتتاحي"
+                };
+
+                if (diff > 0) diffRow.Credit = diff;
+                else diffRow.Debit = Math.Abs(diff);
+
+                entry.JournalEntryDetails.Add(diffRow);
+
+                if (diff > 0) totalCredit += diff; else totalDebit += Math.Abs(diff);
+            }
+
+            entry.TotalDebit = totalDebit;
+            entry.TotalCredit = totalCredit;
+
+            db.JournalEntries.Add(entry);
+            db.SaveChanges();
         }
-
-        // 2. المالية
-        private void ExportBankAccounts(ExcelPackage p)
+        protected override void Dispose(bool disposing)
         {
-            var ws = p.Workbook.Worksheets.Add("BankAccounts");
-            ws.Cells[1, 1].Value = "اسم البنك"; ws.Cells[1, 2].Value = "اسم الحساب"; ws.Cells[1, 3].Value = "رقم الحساب"; ws.Cells[1, 4].Value = "الآيبان"; ws.Cells[1, 5].Value = "العملة";
-            int r = 2; foreach (var b in db.BankAccounts.Include(b => b.Currency)) { ws.Cells[r, 1].Value = b.BankName; ws.Cells[r, 2].Value = b.AccountName; ws.Cells[r, 3].Value = b.AccountNumber; ws.Cells[r, 4].Value = b.Iban; ws.Cells[r, 5].Value = b.Currency?.Name; r++; }
-            ws.Cells.AutoFitColumns();
+            if (disposing) db.Dispose();
+            base.Dispose(disposing);
         }
-        private void ExportFeeTypes(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("FeeTypes");
-            ws.Cells[1, 1].Value = "اسم الرسم"; ws.Cells[1, 2].Value = "القيمة"; ws.Cells[1, 3].Value = "العملة"; ws.Cells[1, 4].Value = "رقم حساب البنك"; ws.Cells[1, 5].Value = "نسبة المحامي"; ws.Cells[1, 6].Value = "نسبة النقابة";
-            int r = 2; foreach (var f in db.FeeTypes.Include(f => f.Currency).Include(f => f.BankAccount)) { ws.Cells[r, 1].Value = f.Name; ws.Cells[r, 2].Value = f.DefaultAmount; ws.Cells[r, 3].Value = f.Currency?.Name; ws.Cells[r, 4].Value = f.BankAccount?.AccountNumber; ws.Cells[r, 5].Value = f.LawyerPercentage; ws.Cells[r, 6].Value = f.BarSharePercentage; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-
-        // 3. الامتحانات
-        private void ExportExams(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Exams");
-            ws.Cells[1, 1].Value = "عنوان الامتحان"; ws.Cells[1, 2].Value = "نوع الامتحان"; ws.Cells[1, 3].Value = "وقت البدء"; ws.Cells[1, 4].Value = "وقت الانتهاء"; ws.Cells[1, 5].Value = "المدة"; ws.Cells[1, 6].Value = "نسبة النجاح"; ws.Cells[1, 7].Value = "الحالة المطلوبة";
-            int r = 2; foreach (var e in db.Exams.Include(x => x.ExamType).Include(x => x.RequiredApplicationStatus)) { ws.Cells[r, 1].Value = e.Title; ws.Cells[r, 2].Value = e.ExamType?.Name; ws.Cells[r, 3].Value = e.StartTime.ToString("yyyy-MM-dd HH:mm"); ws.Cells[r, 4].Value = e.EndTime.ToString("yyyy-MM-dd HH:mm"); ws.Cells[r, 5].Value = e.DurationInMinutes; ws.Cells[r, 6].Value = e.PassingPercentage; ws.Cells[r, 7].Value = e.RequiredApplicationStatus?.Name; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-        private void ExportExamResults(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("ExamResults");
-            ws.Cells[1, 1].Value = "عنوان الامتحان"; ws.Cells[1, 2].Value = "الرقم الوطني للمتقدم"; ws.Cells[1, 3].Value = "العلامة"; ws.Cells[1, 4].Value = "النتيجة";
-            int r = 2; foreach (var en in db.ExamEnrollments.Include(x => x.Exam).Include(x => x.GraduateApplication)) { ws.Cells[r, 1].Value = en.Exam?.Title; ws.Cells[r, 2].Value = en.GraduateApplication?.NationalIdNumber; ws.Cells[r, 3].Value = en.Score; ws.Cells[r, 4].Value = en.Result; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-
-        // 4. الدفعات
-        private void ExportPayments(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Payments");
-            ws.Cells[1, 1].Value = "الرقم الوطني";
-            ws.Cells[1, 2].Value = "نوع الرسم";
-            ws.Cells[1, 3].Value = "المبلغ";
-            ws.Cells[1, 4].Value = "تاريخ الدفع";
-            ws.Cells[1, 5].Value = "رقم وصل البنك";
-            ws.Cells[1, 6].Value = "ملاحظات";
-
-            // نأخذ البيانات من Receipt المربوطة بـ Voucher
-            // (r => ...) هنا لا بأس بها، لأننا غيرنا اسم المتغير بالأسفل
-            var receipts = db.Receipts
-                .Include(r => r.PaymentVoucher.GraduateApplication)
-                .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType))
-                .ToList();
-
-            // === التصحيح: تغيير اسم المتغير من r إلى row ===
-            int row = 2;
-
-            foreach (var rec in receipts)
-            {
-                var voucher = rec.PaymentVoucher;
-                if (voucher == null) continue;
-
-                var detail = voucher.VoucherDetails.FirstOrDefault();
-
-                // استخدام row بدلاً من r
-                ws.Cells[row, 1].Value = voucher.GraduateApplication?.NationalIdNumber;
-                ws.Cells[row, 2].Value = detail?.FeeType?.Name ?? detail?.Description;
-                ws.Cells[row, 3].Value = voucher.TotalAmount;
-                ws.Cells[row, 4].Value = rec.BankPaymentDate.ToString("yyyy-MM-dd");
-                ws.Cells[row, 5].Value = rec.BankReceiptNumber;
-                ws.Cells[row, 6].Value = rec.Notes;
-
-                row++; // زيادة العداد
-            }
-            ws.Cells.AutoFitColumns();
-        }
-        // 5. العقود
-        private void ExportContracts(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Contracts");
-            // العناوين (نفس الاستيراد)
-            string[] h = { "رقم هوية المحامي", "نوع العقد", "تاريخ المعاملة", "الرسوم", "الحالة", "ملاحظات", "معفى؟", "سبب الإعفاء", "الطرف الأول", "هوية الأول", "صفة الأول", "محافظة الأول", "الطرف الثاني", "هوية الثاني", "صفة الثاني", "محافظة الثاني" };
-            for (int i = 0; i < h.Length; i++) ws.Cells[1, i + 1].Value = h[i];
-
-            var trans = db.ContractTransactions.Include(t => t.Lawyer).Include(t => t.ContractType).Include(t => t.ExemptionReason).Include(t => t.Parties.Select(pp => pp.PartyRole)).Include(t => t.Parties.Select(pp => pp.Province)).ToList();
-            int r = 2;
-            foreach (var t in trans)
-            {
-                ws.Cells[r, 1].Value = t.Lawyer?.NationalIdNumber;
-                ws.Cells[r, 2].Value = t.ContractType?.Name;
-                ws.Cells[r, 3].Value = t.TransactionDate.ToString("yyyy-MM-dd");
-                ws.Cells[r, 4].Value = t.FinalFee;
-                ws.Cells[r, 5].Value = t.Status;
-                ws.Cells[r, 6].Value = t.Notes;
-                ws.Cells[r, 7].Value = t.IsExempt ? "نعم" : "لا";
-                ws.Cells[r, 8].Value = t.ExemptionReason?.Reason;
-
-                var p1 = t.Parties.FirstOrDefault(x => x.PartyType == 1);
-                if (p1 != null) { ws.Cells[r, 9].Value = p1.PartyName; ws.Cells[r, 10].Value = p1.PartyIDNumber; ws.Cells[r, 11].Value = p1.PartyRole?.Name; ws.Cells[r, 12].Value = p1.Province?.Name; }
-
-                var p2 = t.Parties.FirstOrDefault(x => x.PartyType == 2);
-                if (p2 != null) { ws.Cells[r, 13].Value = p2.PartyName; ws.Cells[r, 14].Value = p2.PartyIDNumber; ws.Cells[r, 15].Value = p2.PartyRole?.Name; ws.Cells[r, 16].Value = p2.Province?.Name; }
-                r++;
-            }
-            ws.Cells.AutoFitColumns();
-        }
-
-        // 6. الطوابع
-        private void ExportStampContractors(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Contractors");
-            ws.Cells[1, 1].Value = "الاسم"; ws.Cells[1, 2].Value = "الجوال"; ws.Cells[1, 3].Value = "الهوية"; ws.Cells[1, 4].Value = "المحافظة"; ws.Cells[1, 5].Value = "الموقع";
-            int r = 2; foreach (var c in db.StampContractors) { ws.Cells[r, 1].Value = c.Name; ws.Cells[r, 2].Value = c.Phone; ws.Cells[r, 3].Value = c.NationalId; ws.Cells[r, 4].Value = c.Governorate; ws.Cells[r, 5].Value = c.Location; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-        private void ExportStampBooks(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Books");
-            ws.Cells[1, 1].Value = "من"; ws.Cells[1, 2].Value = "إلى"; ws.Cells[1, 3].Value = "القيمة"; ws.Cells[1, 4].Value = "الحالة";
-            int r = 2; foreach (var b in db.StampBooks) { ws.Cells[r, 1].Value = b.StartSerial; ws.Cells[r, 2].Value = b.EndSerial; ws.Cells[r, 3].Value = b.ValuePerStamp; ws.Cells[r, 4].Value = b.Status; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-        private void ExportStampSales(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Sales");
-            ws.Cells[1, 1].Value = "رقم الطابع"; ws.Cells[1, 2].Value = "المتعهد"; ws.Cells[1, 3].Value = "هوية المحامي"; ws.Cells[1, 4].Value = "التاريخ"; ws.Cells[1, 5].Value = "تم الصرف";
-            // نستخدم StampSales مباشرة أو Stamps المباعة
-            int r = 2; foreach (var s in db.StampSales.Include(x => x.Stamp).Include(x => x.Contractor).Include(x => x.Lawyer))
-            {
-                ws.Cells[r, 1].Value = s.Stamp?.SerialNumber; ws.Cells[r, 2].Value = s.Contractor?.Name;
-                ws.Cells[r, 3].Value = s.Lawyer?.NationalIdNumber; ws.Cells[r, 4].Value = s.SaleDate.ToString("yyyy-MM-dd");
-                ws.Cells[r, 5].Value = s.IsPaidToLawyer ? "نعم" : "لا"; r++;
-            }
-            ws.Cells.AutoFitColumns();
-        }
-
-        // 7. أخرى
-        private void ExportOralResults(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("OralResults");
-            ws.Cells[1, 1].Value = "الرقم الوطني"; ws.Cells[1, 2].Value = "التاريخ"; ws.Cells[1, 3].Value = "النتيجة"; ws.Cells[1, 4].Value = "الدرجة"; ws.Cells[1, 5].Value = "ملاحظات";
-            int r = 2; foreach (var x in db.OralExamEnrollments.Include(t => t.Trainee)) { ws.Cells[r, 1].Value = x.Trainee?.NationalIdNumber; ws.Cells[r, 2].Value = x.ExamDate.ToString("yyyy-MM-dd"); ws.Cells[r, 3].Value = x.Result; ws.Cells[r, 4].Value = x.Score; ws.Cells[r, 5].Value = x.Notes; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-        private void ExportResearch(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Research");
-            ws.Cells[1, 1].Value = "الرقم الوطني"; ws.Cells[1, 2].Value = "العنوان"; ws.Cells[1, 3].Value = "التاريخ"; ws.Cells[1, 4].Value = "الحالة";
-            int r = 2; foreach (var x in db.LegalResearches.Include(t => t.Trainee)) { ws.Cells[r, 1].Value = x.Trainee?.NationalIdNumber; ws.Cells[r, 2].Value = x.Title; ws.Cells[r, 3].Value = x.SubmissionDate.ToString("yyyy-MM-dd"); ws.Cells[r, 4].Value = x.Status; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-        private void ExportLoans(ExcelPackage p)
-        {
-            var ws = p.Workbook.Worksheets.Add("Loans");
-            ws.Cells[1, 1].Value = "الرقم الوطني"; ws.Cells[1, 2].Value = "المبلغ"; ws.Cells[1, 3].Value = "الأقساط"; ws.Cells[1, 4].Value = "تاريخ البدء"; ws.Cells[1, 5].Value = "الحالة"; ws.Cells[1, 6].Value = "ملاحظات";
-            int r = 2; foreach (var x in db.LoanApplications.Include(t => t.Lawyer)) { ws.Cells[r, 1].Value = x.Lawyer?.NationalIdNumber; ws.Cells[r, 2].Value = x.Amount; ws.Cells[r, 3].Value = x.InstallmentCount; ws.Cells[r, 4].Value = x.StartDate.ToString("yyyy-MM-dd"); ws.Cells[r, 5].Value = x.Status; ws.Cells[r, 6].Value = x.Notes; r++; }
-            ws.Cells.AutoFitColumns();
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
 }

@@ -1,0 +1,181 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.LoanApplicationViewModel
+@{
+    ViewBag.Title = "تعديل طلب القرض";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i> @ViewBag.Title</h5>
+                </div>
+                <div class="card-body">
+
+                    @using (Html.BeginForm("Edit", "LoanApplications", FormMethod.Post, new { id = "loanForm" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.Id)
+                        @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
+
+                        <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">1. البيانات الأساسية</h6>
+                        <div class="row g-3 mb-4">
+                            @* في التعديل، نجعل اسم المحامي للقراءة فقط لمنع تغيير المستفيد *@
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.LawyerIdentifier, new { @class = "form-label" })
+                                @Html.EditorFor(m => m.LawyerIdentifier, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                                <small class="text-muted">لا يمكن تغيير المستفيد في وضع التعديل.</small>
+                            </div>
+                            <div class="col-md-6">
+                                @Html.LabelFor(m => m.LoanTypeId, new { @class = "form-label" })
+                                @Html.DropDownListFor(m => m.LoanTypeId, Model.LoanTypesList, "--- اختر نوع القرض ---", new { @class = "form-select" })
+                            </div>
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.Amount, new { @class = "form-label" })
+                                @Html.EditorFor(m => m.Amount, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.InstallmentCount, new { @class = "form-label" })
+                                @Html.EditorFor(m => m.InstallmentCount, new { htmlAttributes = new { @class = "form-control", type = "number", min = "1" } })
+                            </div>
+                            <div class="col-md-4">
+                                @Html.LabelFor(m => m.StartDate, new { @class = "form-label" })
+                                @Html.EditorFor(m => m.StartDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                            </div>
+                            <div class="col-12">
+                                @Html.LabelFor(m => m.Notes, new { @class = "form-label" })
+                                @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "2" })
+                            </div>
+                        </div>
+
+                        <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">2. بيانات الكفلاء (تعديل)</h6>
+                        <div id="guarantors-container">
+                            @if (Model.Guarantors != null)
+                            {
+                                for (int i = 0; i < Model.Guarantors.Count; i++)
+                                {
+                                    <div class="guarantor-row border rounded p-3 mb-3 bg-light position-relative">
+                                        <input type="hidden" name="Guarantors.Index" value="@i" />
+                                        <button type="button" class="btn-close position-absolute top-0 end-0 m-2 btn-remove-guarantor"></button>
+                                        <h6 class="fw-bold mb-3">الكفيل رقم @(i + 1)</h6>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">نوع الكفيل</label>
+                                            @Html.DropDownListFor(m => m.Guarantors[i].GuarantorType, new SelectList(new[] { new { Value = "Lawyer", Text = "محامي مزاول" }, new { Value = "External", Text = "موظف خارجي" } }, "Value", "Text", Model.Guarantors[i].GuarantorType), "--- اختر النوع ---", new { @class = "form-select guarantor-type-select", Name = $"Guarantors[{i}].GuarantorType" })
+                                        </div>
+
+                                        <div class="lawyer-fields" style="@(Model.Guarantors[i].GuarantorType == "Lawyer" ? "" : "display:none;")">
+                                            <div class="mb-3">
+                                                <label class="form-label">معرف المحامي</label>
+                                                @Html.TextBoxFor(m => m.Guarantors[i].LawyerIdentifier, new { @class = "form-control", Name = $"Guarantors[{i}].LawyerIdentifier" })
+                                            </div>
+                                            <div class="form-check">
+                                                @Html.CheckBoxFor(m => m.Guarantors[i].IsOverride, new { @class = "form-check-input", Name = $"Guarantors[{i}].IsOverride" })
+                                                <label class="form-check-label">تجاوز شروط الكفالة</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="external-fields row g-3" style="@(Model.Guarantors[i].GuarantorType == "External" ? "" : "display:none;")">
+                                            <div class="col-md-6"><label>الاسم</label> @Html.TextBoxFor(m => m.Guarantors[i].ExternalName, new { @class = "form-control", Name = $"Guarantors[{i}].ExternalName" })</div>
+                                            <div class="col-md-6"><label>الهوية</label> @Html.TextBoxFor(m => m.Guarantors[i].ExternalIdNumber, new { @class = "form-control", Name = $"Guarantors[{i}].ExternalIdNumber" })</div>
+                                            <div class="col-md-6"><label>الوظيفة</label> @Html.TextBoxFor(m => m.Guarantors[i].JobTitle, new { @class = "form-control", Name = $"Guarantors[{i}].JobTitle" })</div>
+                                            <div class="col-md-6"><label>جهة العمل</label> @Html.TextBoxFor(m => m.Guarantors[i].Workplace, new { @class = "form-control", Name = $"Guarantors[{i}].Workplace" })</div>
+                                            <div class="col-md-6"><label>الرقم الوظيفي</label> @Html.TextBoxFor(m => m.Guarantors[i].WorkplaceEmployeeId, new { @class = "form-control", Name = $"Guarantors[{i}].WorkplaceEmployeeId" })</div>
+                                            <div class="col-md-6"><label>الراتب</label> @Html.TextBoxFor(m => m.Guarantors[i].NetSalary, new { @class = "form-control", Name = $"Guarantors[{i}].NetSalary" })</div>
+                                            <div class="col-md-12"><label>البنك والحساب</label> @Html.TextBoxFor(m => m.Guarantors[i].BankAccountNumber, new { @class = "form-control", Name = $"Guarantors[{i}].BankAccountNumber" })</div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <button type="button" id="add-guarantor" class="btn btn-outline-primary btn-sm mb-4">
+                            <i class="bi bi-plus-circle"></i> إضافة كفيل جديد
+                        </button>
+
+                        @* 💡 ملاحظة: لا يوجد قسم لرفع الملفات في التعديل، يتم إدارتها من التفاصيل *@
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-warning px-5"><i class="bi bi-save me-2"></i> حفظ التعديلات</button>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary px-4">إلغاء</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --- استخدام نفس القالب والجافاسكريبت الموجود في Create --- *@
+<script type="text/template" id="guarantor-template">
+    @* ... (انسخ نفس محتوى القالب من Create.cshtml) ... *@
+    <div class="guarantor-row border rounded p-3 mb-3 bg-light position-relative">
+        <input type="hidden" name="Guarantors.Index" value="{index}" />
+        <button type="button" class="btn-close position-absolute top-0 end-0 m-2 btn-remove-guarantor"></button>
+        <h6 class="fw-bold mb-3">الكفيل رقم {displayIndex}</h6>
+
+        <div class="mb-3">
+            <label class="form-label">نوع الكفيل</label>
+            <select name="Guarantors[{index}].GuarantorType" class="form-select guarantor-type-select">
+                <option value="">--- اختر النوع ---</option>
+                <option value="Lawyer">محامي مزاول</option>
+                <option value="External">موظف خارجي</option>
+            </select>
+        </div>
+
+        <div class="lawyer-fields" style="display:none;">
+            <div class="mb-3">
+                <label class="form-label">معرف المحامي</label>
+                <input type="text" name="Guarantors[{index}].LawyerIdentifier" class="form-control" />
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="Guarantors[{index}].IsOverride" value="true" class="form-check-input" />
+                <label class="form-check-label">تجاوز شروط الكفالة</label>
+                <input type="hidden" name="Guarantors[{index}].IsOverride" value="false" />
+            </div>
+        </div>
+
+        <div class="external-fields row g-3" style="display:none;">
+            <div class="col-md-6"><label>الاسم</label> <input type="text" name="Guarantors[{index}].ExternalName" class="form-control" /></div>
+            <div class="col-md-6"><label>الهوية</label> <input type="text" name="Guarantors[{index}].ExternalIdNumber" class="form-control" /></div>
+            <div class="col-md-6"><label>الوظيفة</label> <input type="text" name="Guarantors[{index}].JobTitle" class="form-control" /></div>
+            <div class="col-md-6"><label>جهة العمل</label> <input type="text" name="Guarantors[{index}].Workplace" class="form-control" /></div>
+            <div class="col-md-6"><label>الرقم الوظيفي</label> <input type="text" name="Guarantors[{index}].WorkplaceEmployeeId" class="form-control" /></div>
+            <div class="col-md-6"><label>الراتب</label> <input type="number" name="Guarantors[{index}].NetSalary" class="form-control" /></div>
+            <div class="col-md-12"><label>البنك والحساب</label> <input type="text" name="Guarantors[{index}].BankAccountNumber" class="form-control" /></div>
+        </div>
+    </div>
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            var guarantorIndex = @(Model.Guarantors != null ? Model.Guarantors.Count : 0);
+
+            $('#add-guarantor').click(function () {
+                var template = $('#guarantor-template').html();
+                template = template.replace(/{index}/g, guarantorIndex);
+                template = template.replace(/{displayIndex}/g, guarantorIndex + 1);
+                $('#guarantors-container').append(template);
+                guarantorIndex++;
+            });
+
+            $(document).on('click', '.btn-remove-guarantor', function () {
+                $(this).closest('.guarantor-row').remove();
+            });
+
+            $(document).on('change', '.guarantor-type-select', function () {
+                var val = $(this).val();
+                var row = $(this).closest('.guarantor-row');
+                row.find('.lawyer-fields').toggle(val === 'Lawyer');
+                row.find('.external-fields').toggle(val === 'External');
+            });
+
+            // تهيئة الحقول الموجودة عند التحميل
+            $('.guarantor-type-select').each(function() {
+                $(this).trigger('change');
+            });
+        });
+    </script>
+}

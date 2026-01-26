@@ -1,0 +1,79 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.LawyerProfileViewModel
+
+<div class="modal fade" id="addQualificationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddQualification", "LawyerProfile", new { area = "Admin" }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("applicationId", Model.Id)
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مؤهل علمي جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">نوع المؤهل</label>
+                            @Html.DropDownList("QualificationTypeId", (SelectList)ViewBag.QualificationTypes, "اختر نوع المؤهل...", new { @class = "form-select", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الجامعة / الجهة المانحة</label>
+                            <input type="text" name="UniversityName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الكلية</label>
+                            <input type="text" name="Faculty" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">التخصص</label>
+                            <input type="text" name="Specialization" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">سنة التخرج</label>
+                            <input type="number" name="GraduationYear" class="form-control" placeholder="مثال: 2005" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">الدرجة / المعدل (اختياري)</label>
+                            <input type="number" step="0.01" name="GradePercentage" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ المؤهل</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addAttachmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (Html.BeginForm("AddAttachment", "LawyerProfile", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.Hidden("applicationId", Model.Id)
+                <div class="modal-header">
+                    <h5 class="modal-title">رفع وثيقة جديدة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">نوع الوثيقة</label>
+                        @Html.DropDownList("AttachmentTypeId", (SelectList)ViewBag.AttachmentTypes, "اختر نوع المرفق...", new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">اختر الملف</label>
+                        <input type="file" name="UploadedFile" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">رفع</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

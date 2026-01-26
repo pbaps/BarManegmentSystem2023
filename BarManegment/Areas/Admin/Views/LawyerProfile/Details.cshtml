@@ -3,63 +3,112 @@
 @{
     ViewBag.Title = "ملف المحامي: " + Model.ArabicName;
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
-
-    // استلام البيانات الإضافية من ViewBag
-    var loans = ViewBag.Loans as List<LoanApplication>;
 }
 
 <div class="container-fluid pt-4 px-4">
 
-    <!-- 1. بطاقة التعريف (محامي) -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body p-4">
-            <div class="row align-items-center">
-                <!-- الصورة -->
-                <div class="col-auto">
-                    <div class="position-relative">
-                        <img src="@(!string.IsNullOrEmpty(Model.PersonalPhotoPath) ? Url.Content(Model.PersonalPhotoPath) : "/Content/Images/default-avatar.png")"
-                             class="rounded-circle border border-3 border-warning shadow-sm"
-                             style="width: 130px; height: 130px; object-fit: cover;">
-                        <span class="position-absolute bottom-0 start-100 translate-middle p-2 border border-light rounded-circle bg-success">
-                            <span class="visually-hidden">Active</span>
-                        </span>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-primary text-white h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="mb-0 opacity-75">رقم العضوية</h6>
+                        <h3 class="fw-bold my-1">@(Model.MembershipId ?? "---")</h3>
+                    </div>
+                    <i class="bi bi-person-badge fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-success text-white h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="mb-0 opacity-75">المتدربون الحاليون</h6>
+                        <h3 class="fw-bold my-1">@Model.ActiveTraineesCount</h3>
+                    </div>
+                    <i class="bi bi-people fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-info text-white h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="mb-0 opacity-75">خبرة (سنوات)</h6>
+                        <h3 class="fw-bold my-1">@Model.YearsOfExperience</h3>
+                    </div>
+                    <i class="bi bi-briefcase fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-warning text-dark h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="mb-0 opacity-75">آخر تجديد</h6>
+                        <h3 class="fw-bold my-1">@Model.LastRenewalYear</h3>
+                    </div>
+                    <i class="bi bi-calendar-check fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 mb-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-lg-9 p-4">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0 me-4">
+                            <div class="position-relative">
+                                <img src="@(!string.IsNullOrEmpty(Model.PersonalPhotoPath) ? Url.Content(Model.PersonalPhotoPath) : "/Content/Images/default-avatar.png")"
+                                     class="rounded-circle border border-4 border-white shadow"
+                                     style="width: 140px; height: 140px; object-fit: cover;">
+                                <span class="position-absolute bottom-0 start-0 translate-middle-x badge rounded-pill bg-@(Model.Status.Contains("مزاول") ? "success" : "secondary") border border-2 border-white">
+                                    @Model.Status
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h2 class="fw-bold text-dark mb-1">@Model.ArabicName</h2>
+                                    <p class="text-muted fs-5 mb-2">@Model.EnglishName</p>
+                                    <div class="d-flex flex-wrap gap-3 text-secondary small">
+                                        <span title="رقم الهوية"><i class="bi bi-card-heading me-1 text-primary"></i> @Model.NationalIdNumber</span>
+                                        <span title="تاريخ الميلاد"><i class="bi bi-cake2 me-1 text-primary"></i> @Model.BirthDate.ToString("yyyy-MM-dd")</span>
+                                        <span title="الجنس"><i class="bi bi-gender-ambiguous me-1 text-primary"></i> @(Model.Gender?.Name ?? "-")</span>
+                                        <span title="تاريخ المزاولة"><i class="bi bi-calendar-event me-1 text-primary"></i> @(Model.PracticeStartDate?.ToString("yyyy-MM-dd") ?? "-")</span>
+                                    </div>
+                                    <div class="mt-3">
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-telephone me-1"></i> @Model.ContactInfo.MobileNumber</span>
+                                        <span class="badge bg-light text-dark border ms-1"><i class="bi bi-envelope me-1"></i> @Model.ContactInfo.Email</span>
+                                        <span class="badge bg-light text-dark border ms-1"><i class="bi bi-geo-alt me-1"></i> @Model.ContactInfo.Governorate - @Model.ContactInfo.City</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- المعلومات -->
-                <div class="col">
-                    <div class="d-flex align-items-center mb-1">
-                        <h2 class="fw-bold text-dark mb-0">@Model.ArabicName</h2>
-                        <span class="badge bg-primary ms-3 rounded-pill">@Model.Status</span>
-                    </div>
-                    <!-- 💡 عرض الاسم الإنجليزي هنا -->
-                    <p class="text-muted mb-2 fs-5">@Model.EnglishName</p>
+                <div class="col-lg-3 bg-light border-start p-4 d-flex flex-column justify-content-center gap-2">
+                    <h6 class="fw-bold text-muted mb-3">إجراءات سريعة</h6>
+                    <a href="@Url.Action("Edit", "GraduateApplications", new { area = "Admin", id = Model.Id })" class="btn btn-outline-primary btn-sm w-100 text-start">
+                        <i class="bi bi-pencil-square me-2"></i> تعديل البيانات
+                    </a>
+                    <a href="@Url.Action("Create", "PracticingLawyerRenewals", new { area = "Admin", id = Model.Id })" class="btn btn-outline-success btn-sm w-100 text-start">
+                        <i class="bi bi-arrow-repeat me-2"></i> تجديد المزاولة
+                    </a>
 
-                    <div class="d-flex flex-wrap gap-3 text-secondary mt-2">
-                        <span class="badge bg-dark text-warning border border-warning p-2">
-                            <i class="bi bi-star-fill me-1"></i> رقم العضوية: <span class="font-monospace fs-6">@(Model.MembershipId ?? "---")</span>
-                        </span>
-                        <span class="d-flex align-items-center"><i class="bi bi-card-heading me-1 text-muted"></i> الهوية: @Model.NationalIdNumber</span>
-                        <span class="d-flex align-items-center"><i class="bi bi-calendar-check me-1 text-muted"></i> تاريخ المزاولة: @(Model.PracticeStartDate?.ToString("yyyy-MM-dd") ?? "---")</span>
-                        <span class="d-flex align-items-center"><i class="bi bi-geo-alt me-1 text-muted"></i> @(Model.ContactInfo?.Governorate ?? "---")</span>
-                    </div>
-                </div>
-
-                <!-- الإجراءات -->
-                <div class="col-auto text-end">
-                    <div class="dropdown">
-                        <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-gear-fill me-1"></i> إجراءات المحامي
+                    <div class="dropdown w-100">
+                        <button class="btn btn-dark btn-sm w-100 dropdown-toggle text-start" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-printer me-2"></i> طباعة وثائق
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><h6 class="dropdown-header">إدارة الملف</h6></li>
-                            <li><a class="dropdown-item" href="@Url.Action("Edit", "GraduateApplications", new { area = "Admin", id = Model.Id })"><i class="bi bi-pencil-square me-2"></i> تعديل البيانات</a></li>
-                            <li><a class="dropdown-item" href="@Url.Action("Create", "PracticingLawyerRenewals", new { area = "Admin", id = Model.Id })"><i class="bi bi-arrow-repeat me-2"></i> تجديد المزاولة</a></li>
-
+                        <ul class="dropdown-menu w-100 shadow">
+                            <li><a class="dropdown-item" href="@Url.Action("PrintPracticingCard", "OathCeremony", new { area = "Admin", id = Model.Id })" target="_blank">بطاقة المزاولة</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("PrintLicenseCertificate", "OathCeremony", new { area = "Admin", id = Model.Id })" target="_blank">شهادة الإجازة</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">طباعة</h6></li>
-                            <li><a class="dropdown-item" href="@Url.Action("PrintPracticingCard", "OathCeremony", new { area = "Admin", id = Model.Id })" target="_blank"><i class="bi bi-person-badge me-2"></i> بطاقة المزاولة</a></li>
-                            <li><a class="dropdown-item" href="@Url.Action("PrintLicenseCertificate", "OathCeremony", new { area = "Admin", id = Model.Id })" target="_blank"><i class="bi bi-award me-2"></i> شهادة الإجازة</a></li>
+                            <li><a class="dropdown-item" href="#">كشف حساب مالي</a></li>
                         </ul>
                     </div>
                 </div>
@@ -68,85 +117,248 @@
     </div>
 
     <div class="row">
-        <!-- العمود الأيمن: البيانات الرئيسية -->
-        <div class="col-lg-8">
-
-            <!-- تبويبات المعلومات -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white border-bottom pt-3 px-4">
-                    <ul class="nav nav-tabs card-header-tabs" id="lawyerTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#finance">المالية والتجديد</button></li>
-                        <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#trainees">المتدربين (@Model.MyTrainees.Count)</button></li>
-                        <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#loans">القروض</button></li>
-                        <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#info">البيانات الشخصية</button></li>
-                        <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#docs">الأرشيف والوثائق</button></li>
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom pt-0 px-0">
+                    <ul class="nav nav-tabs nav-justified" id="lawyerTabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active py-3 fw-bold border-top-0 border-start-0" data-bs-toggle="tab" data-bs-target="#trainees"><i class="bi bi-people me-2"></i> الإشراف والتدريب</button></li>
+                        <li class="nav-item"><button class="nav-link py-3 fw-bold border-top-0" data-bs-toggle="tab" data-bs-target="#finance"><i class="bi bi-cash-coin me-2"></i> الملف المالي</button></li>
+                        <li class="nav-item"><button class="nav-link py-3 fw-bold border-top-0" data-bs-toggle="tab" data-bs-target="#loans"><i class="bi bi-bank me-2"></i> القروض</button></li>
+                        <li class="nav-item"><button class="nav-link py-3 fw-bold border-top-0 border-end-0" data-bs-toggle="tab" data-bs-target="#docs"><i class="bi bi-folder2-open me-2"></i> الوثائق والمؤهلات</button></li>
+                        <li class="nav-item">
+                            <button class="nav-link py-3 fw-bold border-top-0" data-bs-toggle="tab" data-bs-target="#decisions">
+                                <i class="bi bi-gavel me-2"></i> قرارات المجلس
+                            </button>
+                        </li>
+                    
+                    
                     </ul>
                 </div>
+
                 <div class="card-body p-4">
                     <div class="tab-content">
 
-                        <!-- 1. المالية والتجديد -->
-                        <div class="tab-pane fade show active" id="finance">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold text-success m-0"><i class="bi bi-patch-check-fill me-2"></i> سجل تجديدات المزاولة</h6>
-                                <a href="@Url.Action("Create", "PracticingLawyerRenewals", new { area = "Admin", id = Model.Id })" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-lg"></i> تجديد جديد</a>
-                            </div>
+                        <div class="tab-pane fade show active" id="trainees">
 
-                            @if (Model.PracticingRenewals != null && Model.PracticingRenewals.Any())
+                            @if (Model.PendingTrainingLogs.Any())
                             {
-                                <table class="table table-bordered table-sm mb-4">
-                                    <thead class="table-light"><tr><th>سنة التجديد</th><th>تاريخ الدفع</th><th>رقم الإيصال</th><th>الحالة</th></tr></thead>
-                                    <tbody>
-                                        @foreach (var r in Model.PracticingRenewals)
-                                        {
-                                            <tr>
-                                                <td class="fw-bold">@r.RenewalYear</td>
-                                                <td>@(r.RenewalDate.ToString("yyyy-MM-dd"))</td>
-                                                <td class="font-monospace">@(r.Receipt?.ReceiptNumber ?? "-")</td>
-                                                <td>
-                                                    @if (r.IsActive)
-                                                    {<span class="badge bg-success">نشط</span> }
-                                                    else
-                                                    { <span class="badge bg-secondary">أرشيف</span>}
-                                                </td>
-                                            </tr>
+                                <div class="alert alert-warning border-warning d-flex align-items-center mb-4">
+                                    <i class="bi bi-exclamation-circle-fill fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">تنبيه: يوجد @Model.PendingTrainingLogs.Count سجل تدريب بانتظار الاعتماد</h6>
+                                        <small>يرجى مراجعة سجلات المتدربين الشهرية.</small>
+                                    </div>
+                                </div>
+                            }
 
+                            <h6 class="fw-bold text-primary mb-3">سجل المتدربين تحت الإشراف</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>الاسم</th>
+                                            <th>تاريخ البدء</th>
+                                            <th>رقم المتدرب</th>
+                                            <th>الحالة</th>
+                                            <th>الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.MyTrainees.Any())
+                                        {
+                                            foreach (var t in Model.MyTrainees)
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold">
+                                                        <a href="@Url.Action("Details", "TraineeProfile", new { area = "Admin", id = t.Id })" class="text-decoration-none">
+                                                            @t.ArabicName
+                                                        </a>
+                                                    </td>
+                                                    <td>@(t.TrainingStartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                                    <td><span class="font-monospace">@t.TraineeSerialNo</span></td>
+                                                    <td>
+                                                        @if (t.ApplicationStatus.Name == "متدرب مقيد")
+                                                        {<span class="badge bg-success">نشط</span> }
+                                                        else
+                                                        { <span class="badge bg-secondary">@t.ApplicationStatus.Name</span>}
+                                                    </td>
+                                                    <td>
+                                                        <a href="@Url.Action("Details", "TraineeProfile", new { area = "Admin", id = t.Id })" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye"></i> عرض الملف
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr><td colspan="5" class="text-center text-muted py-4">لا يوجد متدربين مسجلين لهذا المحامي.</td></tr>
                                         }
                                     </tbody>
                                 </table>
-                            }
-                            else
-                            { <div class="alert alert-light text-center border mb-4">لا يوجد سجلات تجديد سابقة.</div>}
-
-                            <hr />
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold text-primary m-0"><i class="bi bi-receipt me-2"></i> سجل الإيصالات المالية</h6>
-                                <a href="@Url.Action("Create", "PaymentVouchers", new { area = "Admin", id = Model.Id })" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> قسيمة عامة</a>
                             </div>
-                            @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
-                            {
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle">
-                                        <thead class="table-light"><tr><th>رقم الإيصال</th><th>التاريخ</th><th>المبلغ</th><th>التفاصيل</th><th>طباعة</th></tr></thead>
-                                        <tbody>
-                                            @foreach (var receipt in Model.PaymentHistory)
+                        </div>
+
+                        <div class="tab-pane fade" id="finance">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light fw-bold">سجل تجديدات المزاولة</div>
+                                        <div class="card-body p-0">
+                                            <table class="table table-sm mb-0">
+                                                <thead><tr><th>السنة</th><th>التاريخ</th><th>الإيصال</th></tr></thead>
+                                                <tbody>
+                                                    @foreach (var r in Model.PracticingRenewals)
+                                                    {
+                                                        <tr>
+                                                            <td>@r.RenewalYear</td>
+                                                            <td>@r.RenewalDate.ToString("yyyy-MM-dd")</td>
+                                                            <td>@(r.Receipt?.ReceiptNumber ?? "-")</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                            @if (!Model.PracticingRenewals.Any())
+                                            {<div class="p-3 text-center small text-muted">لا يوجد بيانات</div>}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light fw-bold">آخر الحركات المالية</div>
+                                        <div class="card-body p-0">
+                                            <table class="table table-sm mb-0">
+                                                <thead><tr><th>البيان</th><th>التاريخ</th><th>المبلغ</th></tr></thead>
+                                                <tbody>
+                                                    @foreach (var p in Model.PaymentHistory.Take(5))
+                                                    {
+                                                        <tr>
+                                                            <td class="text-truncate" style="max-width: 150px;">
+                                                                @(p.PaymentVoucher?.VoucherDetails.FirstOrDefault()?.FeeType?.Name ?? "دفعة")
+                                                            </td>
+                                                            <td>@p.BankPaymentDate.ToString("yyyy-MM-dd")</td>
+                                                            <td class="text-success fw-bold">@p.PaymentVoucher.TotalAmount</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                            @if (!Model.PaymentHistory.Any())
+                                            {<div class="p-3 text-center small text-muted">لا يوجد بيانات</div>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="loans">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-dark m-0">سجل القروض والتمويل</h6>
+                                <span class="badge bg-info text-dark">إجمالي القروض: @Model.TotalLoansAmount.ToString("N0")</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light"><tr><th>نوع القرض</th><th>القيمة</th><th>تاريخ الطلب</th><th>الحالة</th><th>ملاحظات</th></tr></thead>
+                                    <tbody>
+                                        @if (Model.Loans.Any())
+                                        {
+                                            foreach (var l in Model.Loans)
                                             {
                                                 <tr>
-                                                    <td class="font-monospace">@receipt.ReceiptNumber</td>
-                                                    <td>@receipt.BankPaymentDate.ToString("yyyy-MM-dd")</td>
-                                                    <td class="fw-bold text-success">@receipt.PaymentVoucher.TotalAmount.ToString("N0")</td>
-                                                    <td class="small text-muted">
-                                                        <ul class="list-unstyled mb-0">
-                                                            @if (receipt.PaymentVoucher != null && receipt.PaymentVoucher.VoucherDetails != null)
-                                                            {
-                                                                foreach (var d in receipt.PaymentVoucher.VoucherDetails)
-                                                                {
-                                                                    <li>- @d.FeeType.Name</li>
-}
-                                                            }
-                                                        </ul>
+                                                    <td>@l.LoanType.Name</td>
+                                                    <td class="fw-bold">@l.Amount.ToString("N0")</td>
+                                                    <td>@l.ApplicationDate.ToString("yyyy-MM-dd")</td>
+                                                    <td>
+                                                        @if (l.Status == "مقبول")
+                                                        {<span class="badge bg-success">مقبول</span> }
+                                                        else if (l.Status == "مرفوض")
+                                                        { <span class="badge bg-danger">مرفوض</span> }
+                                                        else
+                                                        { <span class="badge bg-warning text-dark">@l.Status</span>}
                                                     </td>
-                                                    <td><a href="@Url.Action("Details", "Receipts", new { area = "Admin", id = receipt.Id })" target="_blank" class="btn btn-sm btn-secondary"><i class="bi bi-printer"></i></a></td>
+                                                    <td class="small text-muted">@l.Notes</td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr><td colspan="5" class="text-center py-4 text-muted">لا يوجد قروض مسجلة.</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="docs">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold border-bottom pb-2 mb-3">المؤهلات العلمية</h6>
+                                    @Html.Partial("~/Areas/Members/Views/Profile/_QualificationList.cshtml", Model.Qualifications)
+                                    <button class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#addQualificationModal"><i class="bi bi-plus-lg"></i> إضافة مؤهل</button>
+                                </div>
+                                <div class="col-md-6 border-start">
+                                    <h6 class="fw-bold border-bottom pb-2 mb-3">المرفقات والأرشيف</h6>
+                                    @Html.Partial("~/Areas/Admin/Views/GraduateApplications/_AttachmentList.cshtml", Model.Attachments)
+                                    <button class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#addAttachmentModal"><i class="bi bi-cloud-upload"></i> رفع ملف</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="decisions">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-dark m-0">سجل القرارات الصادرة عن مجلس النقابة</h6>
+                            </div>
+
+                            @if (Model.CouncilDecisions != null && Model.CouncilDecisions.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>رقم الجلسة</th>
+                                                <th>تاريخ الجلسة</th>
+                                                <th>نوع الطلب</th>
+                                                <th>موضوع القرار</th>
+                                                <th>نص القرار</th>
+                                                <th>الحكم</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var decision in Model.CouncilDecisions)
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold text-primary text-center">
+                                                        @(decision.CouncilSession?.SessionNumber.ToString() ?? "قيد الدراسة")
+                                                    </td>
+                                                    <td>
+                                                        @(decision.CouncilSession?.SessionDate.ToString("yyyy/MM/dd") ?? "-")
+                                                    </td>
+                                                    <td><span class="badge bg-light text-dark border">@decision.RequestType</span></td>
+                                                    <td class="fw-bold">@decision.Title</td>
+                                                    <td class="text-wrap small text-muted" style="max-width: 350px;">
+                                                        @decision.DecisionText
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if (decision.CouncilDecisionType == "Approved")
+                                                        {
+                                                            <span class="badge bg-success">موافق عليه</span>
+                                                        }
+                                                        else if (decision.CouncilDecisionType == "Rejected")
+                                                        {
+                                                            <span class="badge bg-danger">مرفوض</span>
+                                                        }
+                                                        else if (decision.CouncilDecisionType == "Postponed")
+                                                        {
+                                                            <span class="badge bg-warning text-dark">مؤجل</span>
+                                                        }
+                                                        else if (decision.CouncilDecisionType == "Modified")
+                                                        {
+                                                            <span class="badge bg-info text-dark">موافق بتعديل</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-secondary">@decision.CouncilDecisionType</span>
+                                                        }
+                                                    </td>
                                                 </tr>
                                             }
                                         </tbody>
@@ -154,114 +366,14 @@
                                 </div>
                             }
                             else
-                            { <div class="text-center text-muted py-3">لا يوجد إيصالات.</div>}
-                        </div>
-
-                        <!-- 2. المتدربين -->
-                        <div class="tab-pane fade" id="trainees">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <h6 class="fw-bold mb-3 text-primary">المتدربون الحاليون تحت الإشراف</h6>
-                                    @if (Model.MyTrainees != null && Model.MyTrainees.Any())
-                                    {
-                                        <div class="list-group">
-                                            @foreach (var t in Model.MyTrainees)
-                                            {
-                                                <a href="@Url.Action("Details", "RegisteredTrainees", new { id = t.Id })" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
-                                                    <div>
-                                                        <div class="fw-bold">@t.ArabicName</div>
-                                                        <small class="text-muted"><i class="bi bi-calendar2-check me-1"></i> تاريخ البدء: @(t.TrainingStartDate?.ToString("yyyy-MM-dd") ?? "-")</small>
-                                                    </div>
-                                                    <span class="badge bg-light text-dark border">@t.TraineeSerialNo</span>
-                                                </a>
-                                            }
-                                        </div>
-                                    }
-                                    else
-                                    { <div class="alert alert-light text-center border">لا يوجد متدربين حالياً.</div>}
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-light border-0">
-                                        <div class="card-body">
-                                            <h6 class="fw-bold">سجلات بانتظار الاعتماد</h6>
-                                            @if (Model.PendingTrainingLogs != null && Model.PendingTrainingLogs.Any())
-                                            {
-                                                <ul class="list-group list-group-flush small">
-                                                    @foreach (var log in Model.PendingTrainingLogs)
-                                                    {
-                                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
-                                                            <span>@log.Trainee.ArabicName</span>
-                                                            <span class="badge bg-warning text-dark">@log.Month/@log.Year</span>
-                                                        </li>
-                                                    }
-                                                </ul>
-                                            }
-                                            else
-                                            { <span class="text-muted small">لا يوجد سجلات معلقة.</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 3. القروض -->
-                        <div class="tab-pane fade" id="loans">
-                            @if (loans != null && loans.Any())
                             {
-                                <table class="table table-hover">
-                                    <thead><tr><th>نوع القرض</th><th>المبلغ</th><th>تاريخ الطلب</th><th>الحالة</th></tr></thead>
-                                    <tbody>
-                                        @foreach (var l in loans)
-                                        {
-                                            <tr>
-                                                <td>@l.LoanType.Name</td>
-                                                <td>@l.Amount</td>
-                                                <td>@l.ApplicationDate.ToString("yyyy-MM-dd")</td>
-                                                <td>@l.Status</td>
-                                            </tr>
-
-                                        }
-                                    </tbody>
-                                </table>
+                                <div class="text-center py-5">
+                                    <i class="bi bi-journal-x fs-1 text-muted opacity-50 mb-3 d-block"></i>
+                                    <p class="text-muted">لا يوجد قرارات مجلس مرتبطة بهذا المحامي حتى الآن.</p>
+                                </div>
                             }
-                            else
-                            { <div class="text-center py-5 text-muted">لا يوجد قروض مسجلة لهذا المحامي.</div>}
                         </div>
 
-                        <!-- 4. البيانات الشخصية -->
-                        <div class="tab-pane fade" id="info">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="text-muted small">رقم الهاتف</label>
-                                    <div class="fw-bold">@Model.ContactInfo.MobileNumber</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="text-muted small">البريد الإلكتروني</label>
-                                    <div class="fw-bold">@Model.ContactInfo.Email</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="text-muted small">تاريخ الميلاد</label>
-                                    <div class="fw-bold">@Model.BirthDate.ToString("yyyy-MM-dd")</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="text-muted small">الجنس</label>
-                                    <div class="fw-bold">@(Model.Gender?.Name ?? "-")</div>
-                                </div>
-                                <div class="col-12">
-                                    <label class="text-muted small">العنوان</label>
-                                    <div class="fw-bold">@Model.ContactInfo.City - @Model.ContactInfo.Street</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 5. الوثائق (💡 تم إصلاح الخطأ هنا: استخدام Model.Attachments) -->
-                        <div class="tab-pane fade" id="docs">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold m-0">المرفقات والوثائق</h6>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addAttachmentModal"><i class="bi bi-cloud-upload"></i> رفع وثيقة جديدة</button>
-                            </div>
-                            @Html.Partial("~/Areas/Admin/Views/GraduateApplications/_AttachmentList.cshtml", Model.Attachments.ToList())
-                        </div>
                     </div>
                 </div>
             </div>
@@ -269,24 +381,4 @@
     </div>
 </div>
 
-<!-- Modal: إضافة مرفق -->
-<div class="modal fade" id="addAttachmentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            @using (Html.BeginForm("AddAttachment", "RegisteredTrainees", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
-            {
-                @Html.AntiForgeryToken()
-                @Html.Hidden("applicationId", Model.Id)
-                <div class="modal-header"><h5 class="modal-title">رفع وثيقة جديدة</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">نوع الوثيقة</label>
-                        @Html.DropDownList("AttachmentTypeId", (SelectList)ViewBag.AttachmentTypes, new { @class = "form-select" })
-                    </div>
-                    <div class="mb-3"><input type="file" name="UploadedFile" class="form-control" required /></div>
-                </div>
-                <div class="modal-footer"><button type="submit" class="btn btn-primary">رفع</button></div>
-            }
-        </div>
-    </div>
-</div>
+@Html.Partial("_LawyerModals", Model)

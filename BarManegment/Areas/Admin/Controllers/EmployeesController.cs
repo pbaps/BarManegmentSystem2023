@@ -187,6 +187,15 @@ namespace BarManegment.Areas.Admin.Controllers
                         string extension = Path.GetExtension(employee.ImageFile.FileName);
                         fileName = fileName + "_" + DateTime.Now.ToString("yymmssfff") + extension;
 
+                        // 🔥 كود حذف الصورة القديمة (جديد) 🔥
+                        if (!string.IsNullOrEmpty(oldData.ProfilePicturePath))
+                        {
+                            string oldPath = Server.MapPath(oldData.ProfilePicturePath);
+                            if (System.IO.File.Exists(oldPath))
+                            {
+                                System.IO.File.Delete(oldPath);
+                            }
+                        }
                         string uploadDir = Server.MapPath("~/Uploads/Employees/");
                         if (!Directory.Exists(uploadDir))
                         {
@@ -243,8 +252,28 @@ namespace BarManegment.Areas.Admin.Controllers
 
             return View(employee);
         }
+
         // ============================================================
-        // 5. التنظيف (Dispose)
+        // 5. طباعة قسيمة الراتب التعريفية (Salary Slip)
+        // ============================================================
+        public ActionResult PrintSalarySlip(int? id)
+        {
+            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+            var employee = db.Employees
+                             .Include(e => e.Department)
+                             .Include(e => e.JobTitle)
+                             .FirstOrDefault(e => e.Id == id);
+
+            if (employee == null) return HttpNotFound();
+
+            // تسجيل عملية الطباعة
+            AuditService.LogAction("Print Slip", "Employees", $"Printed Salary Slip for: {employee.FullName}");
+
+            return View(employee);
+        }
+        // ============================================================
+        // 6. التنظيف (Dispose)
         // ============================================================
         protected override void Dispose(bool disposing)
         {

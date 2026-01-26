@@ -1,0 +1,131 @@
+﻿@model IEnumerable<System.IO.FileInfo>
+@{
+    ViewBag.Title = "إدارة النسخ الاحتياطي";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-hdd-network-fill me-2"></i> إدارة النسخ الاحتياطية</h5>
+
+ 
+            @using (Html.BeginForm("CreateFullBackup", "SystemMaintenance", new { area = "Admin" }, FormMethod.Post, new { id = "backupForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="input-group">
+                    <input type="text" name="customPath" class="form-control"
+                           placeholder="مسار مخصص (اختياري) مثال: D:\Backups"
+                           title="اتركه فارغاً للحفظ في المجلد الافتراضي داخل النظام" />
+
+                    <button type="submit" class="btn btn-warning fw-bold" onclick="return confirm('هل أنت متأكد؟ قد تستغرق العملية وقتاً.')">
+                        <i class="bi bi-plus-circle-fill me-1"></i>    إنشاء نسخة احتياطية
+                    </button>
+                </div>
+                <small class="text-muted d-block mt-1 me-1">
+                    * ملاحظة: إذا اخترت مساراً خارجياً، تأكد من أن السيرفر يملك صلاحية الكتابة عليه.
+                </small>
+            }
+        </div>
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+            }
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                النسخة الاحتياطية تشمل: <strong>قاعدة البيانات (.bak)</strong> + <strong>مجلد المرفقات والصور (Uploads)</strong>.
+            </div>
+
+            <table class="table table-hover table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>اسم الملف</th>
+                        <th>تاريخ الإنشاء</th>
+                        <th>الحجم</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">لا توجد نسخ احتياطية محفوظة حالياً.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var file in Model)
+                        {
+                            <tr>
+                                <td dir="ltr" class="text-start fw-bold">@file.Name</td>
+                                <td>@file.CreationTime.ToString("yyyy/MM/dd HH:mm tt")</td>
+                                <td>
+                                    @{
+                                        long size = file.Length;
+                                        string[] suf = { "B", "KB", "MB", "GB" };
+                                        int place = 0;
+                                        while (size >= 1024 && place < suf.Length - 1)
+                                        {
+                                            size = size / 1024;
+                                            place++;
+                                        }
+                                        <span class="badge bg-secondary">@size @suf[place]</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("DownloadBackup", new { fileName = file.Name })" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-download"></i> تحميل
+                                    </a>
+
+                                    @using (Html.BeginForm("DeleteBackup", "SystemMaintenance", new { fileName = file.Name }, FormMethod.Post, new { @class = "d-inline" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من الحذف النهائي لهذا الملف؟')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                    @using (Html.BeginForm("RestoreBackup", "SystemMaintenance", new { fileName = file.Name }, FormMethod.Post, new { @class = "d-inline" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-warning"
+                                                onclick="return confirm('⚠️ تحذير خطير جداً!\n\nهل أنت متأكد من استرجاع هذه النسخة؟\nسيتم مسح جميع البيانات الحالية واستبدالها ببيانات هذه النسخة.\nلا يمكن التراجع عن هذه الخطوة.')">
+                                            <i class="bi bi-arrow-counterclockwise"></i> استرجاع
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            @* === قسم الاسترجاع من مسار خارجي === *@
+            <div class="card mt-4 border-danger shadow-sm">
+                <div class="card-header bg-danger text-white bg-opacity-75">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i> استرجاع طوارئ من مسار خارجي</h6>
+                </div>
+                <div class="card-body bg-light">
+                    <p class="text-muted small">استخدم هذا الخيار لاسترجاع نسخة محفوظة خارج مجلد النظام (مثلاً على D:\Backups).</p>
+
+                    @using (Html.BeginForm("RestoreFromPath", "SystemMaintenance", new { area = "Admin" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <div class="input-group">
+                            <input type="text" name="customFilePath" class="form-control" placeholder="المسار الكامل للملف (مثال: D:\Backups\FullBackup_2026.zip)" required />
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('⚠️ تحذير نهائي!\nهل أنت متأكد تماماً؟ سيتم مسح البيانات الحالية.')">
+                                <i class="bi bi-arrow-counterclockwise"></i> استرجاع الآن
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

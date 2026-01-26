@@ -211,14 +211,13 @@ namespace BarManegment.Areas.Admin.Controllers
             int contractorId = model.SelectedContractorId;
             int bookId = model.SelectedBookId;
 
-            // تحويل VoucherId من string إلى int (لأنه قادم من حقل مخفي في المودال قد يكون نصاً)
+            // التحقق من المدخلات
             if (!int.TryParse(model.VoucherId, out int voucherId))
             {
                 TempData["ErrorMessage"] = "رقم القسيمة غير صالح.";
                 return RedirectToAction("Index");
             }
 
-            // 1. التحقق من القسيمة
             var voucher = db.PaymentVouchers.Include(v => v.Receipt).FirstOrDefault(v => v.Id == voucherId);
             if (voucher == null || voucher.Receipt == null)
             {
@@ -226,11 +225,10 @@ namespace BarManegment.Areas.Admin.Controllers
                 return RedirectToAction("Index");
             }
 
-            // 2. التحقق من الدفتر
             var book = db.StampBooks.Find(bookId);
-            if (book == null || book.Status != "في المخزن")
+            if (book == null)
             {
-                TempData["ErrorMessage"] = "الدفتر المختار غير متاح.";
+                TempData["ErrorMessage"] = "الدفتر غير موجود.";
                 return RedirectToAction("Index");
             }
 
@@ -238,7 +236,7 @@ namespace BarManegment.Areas.Admin.Controllers
             {
                 try
                 {
-                    // 3. تسجيل الصرف
+                    // 1. تسجيل عملية الصرف في جدول السجلات
                     var issuance = new StampBookIssuance
                     {
                         ContractorId = contractorId,
@@ -248,19 +246,31 @@ namespace BarManegment.Areas.Admin.Controllers
                     };
                     db.StampBookIssuances.Add(issuance);
 
-                    // 4. تحديث حالة الدفتر
-                    book.Status = "مع المتعهد"; // تم التغيير من "تم صرفه" ليكون أوضح
+                    // 2. تحديث حالة الدفتر (الأب)
+                    book.Status = "مع المتعهد";
                     db.Entry(book).State = EntityState.Modified;
 
-                    // 5. تحديث حالة الطوابع الفردية (SQL مباشر للأداء)
-                    db.Database.ExecuteSqlCommand(
-                        "UPDATE Stamps SET Status = 'مع المتعهد', ContractorId = {0} WHERE StampBookId = {1}",
-                        contractorId, bookId);
+                    // 3. ✅✅✅ تحديث الطوابع الفردية (الأبناء) - هذا هو الجزء الأهم
+                    // 3. تحديث حالة الطوابع الفردية
+                    var stamps = db.Stamps.Where(s => s.StampBookId == bookId).ToList();
+                    if (stamps.Any())
+                    {
+                        foreach (var stamp in stamps)
+                        {
+                            stamp.Status = "مع المتعهد"; // ✅ التعديل الحاسم
+                            stamp.ContractorId = contractorId;
+                        }
+                    }
+                    else
+                    {
+                        // في حال كان الدفتر فارغاً في قاعدة البيانات (حالة نادرة)
+                        throw new Exception("الدفتر موجود ولكن لا يحتوي على طوابع في النظام.");
+                    }
 
                     db.SaveChanges();
                     transaction.Commit();
 
-                    TempData["SuccessMessage"] = $"تم صرف الدفتر ({book.StartSerial}-{book.EndSerial}) بنجاح.";
+                    TempData["SuccessMessage"] = $"تم صرف الدفتر ({book.StartSerial}-{book.EndSerial}) وتحديث {stamps.Count} طابع.";
                 }
                 catch (Exception ex)
                 {

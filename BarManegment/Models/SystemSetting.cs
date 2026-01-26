@@ -10,5 +10,11 @@ namespace BarManegment.Models
 
         [Required]
         public string SettingValue { get; set; }
+
+        public string Description { get; set; }
+
+        public int? ValueInt { get; set; }
+
+
     }
 }

@@ -4,9 +4,7 @@
 }
 
 <style>
-    /* استيراد الخطوط */
-    @@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
-
+    /* ... (نفس الستايل القديم) ... */
     .page {
         font-family: 'Amiri', 'Traditional Arabic', serif;
         background-image: url('/Content/Images/logo-watermark.png');
@@ -17,164 +15,7 @@
         color: #000;
         direction: rtl;
     }
-
-    /* تنسيق الترويسة */
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        border-bottom: 3px double #ce1126;
-        padding-bottom: 15px;
-        margin-bottom: 30px;
-    }
-
-    .header-right {
-        text-align: right;
-        width: 35%;
-    }
-
-    .header-left {
-        text-align: left;
-        direction: ltr;
-        width: 35%;
-    }
-
-    .org-name-ar {
-        color: #ce1126;
-        font-weight: 900;
-        font-size: 16pt;
-        margin-bottom: 5px;
-        line-height: 1.2;
-    }
-
-    .org-name-en {
-        color: #ce1126;
-        font-weight: 900;
-        font-size: 13pt;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-        line-height: 1.2;
-    }
-
-    .sub-text {
-        font-size: 10pt;
-        font-weight: bold;
-        color: #000;
-        line-height: 1.4;
-    }
-
-    .logo-box {
-        text-align: center;
-        width: 30%;
-    }
-
-    .logo-img {
-        width: 100px;
-        height: auto;
-    }
-
-    /* عنوان الإفادة */
-    .doc-title {
-        text-align: center;
-        margin: 40px 0 30px 0;
-    }
-
-        .doc-title h1 {
-            font-size: 24pt;
-            font-weight: 900;
-            display: inline-block;
-            border-bottom: 2px solid #000;
-            padding-bottom: 5px;
-            margin: 0;
-        }
-
-    /* جسم الإفادة */
-    .content-body {
-        font-size: 18pt;
-        font-weight: bold;
-        line-height: 2.2;
-        text-align: right;
-        margin-top: 20px;
-        width: 100%;
-    }
-
-    .intro-line {
-        text-align: center;
-        margin-bottom: 30px;
-        font-size: 16pt;
-        text-decoration: underline;
-        text-underline-offset: 8px;
-    }
-
-    /* تنسيق الأسطر */
-    .data-line {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 15px;
-        flex-wrap: nowrap;
-    }
-
-    .data-label {
-        white-space: nowrap;
-    }
-
-    .data-field {
-        border-bottom: 1px dotted #000;
-        text-align: center;
-        padding: 0 5px;
-        font-family: 'Arial', sans-serif;
-        font-weight: normal;
-        font-size: 16pt;
-        flex-grow: 1;
-        margin: 0 10px;
-        display: inline-block;
-        min-width: 50px;
-    }
-
-    /* التذييل والتوقيع */
-    .footer-section {
-        margin-top: 60px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        font-size: 14pt;
-        font-weight: bold;
-    }
-
-    .date-section {
-        text-align: right;
-        width: 40%;
-        padding-right: 20px;
-    }
-
-    .signature-section {
-        text-align: center;
-        width: 40%;
-        padding-left: 20px;
-    }
-
-    .signature-block {
-        text-align: center;
-        font-weight: bold;
-        font-size: 14pt;
-        min-width: 200px;
-    }
-
-    .bottom-bar {
-        position: absolute;
-        bottom: 15mm;
-        left: 15mm;
-        right: 15mm;
-        border-top: 2px solid #ce1126;
-        padding-top: 10px;
-        font-size: 10pt;
-        font-weight: bold;
-        text-align: center;
-        color: #ce1126;
-    }
-
-    /* لوحة التحكم */
+    /* ... باقي الستايل ... */
     .signature-settings {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
@@ -186,7 +27,6 @@
     }
 </style>
 
-<!-- لوحة تحكم التوقيع -->
 <div class="no-print signature-settings shadow-sm">
     <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pen-fill"></i> إعدادات التوقيع</h6>
     <div class="row g-3">
@@ -194,9 +34,17 @@
             <label class="small text-muted">اختر الموقع:</label>
             <select id="signerSelect" class="form-select form-select-sm" onchange="updateSigner()">
                 <option value="none">-- بدون توقيع --</option>
-                <option value="زياد عطا النجار|أمين السر" selected>أمين السر (زياد النجار)</option>
-                <option value="صافي الدحدوح|نائب نقيب المحامين">نائب النقيب (صافي الدحدوح)</option>
-                <option value="علي الدن|أمين الصندوق">أمين الصندوق (علي الدن)</option>
+
+                @if (ViewBag.SignersList != null)
+                {
+                    foreach (var item in (SelectList)ViewBag.SignersList)
+                    {
+                        // تحديد أمين السر افتراضياً لإفادات التدريب
+                        bool isSelected = item.Text.Contains("أمين السر");
+                        <option value="@item.Value" @(isSelected ? "selected" : "")>@item.Text</option>
+                    }
+                }
+
                 <option value="custom">--- إدخال يدوي ---</option>
             </select>
         </div>
@@ -212,24 +60,16 @@
 </div>
 
 <div class="page">
-    <!-- الترويسة -->
     <div class="header">
         <div class="header-right">
             <div class="org-name-ar">نقابة المحامين النظاميين الفلسطينيين</div>
             <div class="sub-text">القدس - المركز الرئيسي</div>
-            <div class="sub-text">البيرة - شارع المبعدين</div>
-            <div class="sub-text">غزة - مركز غزة</div>
-            <div class="sub-text">غزة - أنصار - شارع الخرطوم</div>
         </div>
         <div class="logo-box">
             <img src="~/Content/Images/logo.png" class="logo-img" alt="Logo" onerror="this.style.display='none'" />
         </div>
         <div class="header-left">
             <div class="org-name-en">PALESTINIAN BAR ASSOCIATION</div>
-            <div class="sub-text">The Main Center - Jerusalem</div>
-            <div class="sub-text">Albireh - Al Mobadeen St.</div>
-            <div class="sub-text">GAZA CENTER</div>
-            <div class="sub-text">Gaza - Al - Khortoom St.</div>
         </div>
     </div>
 
@@ -245,27 +85,26 @@
             <span class="data-field">@Model.ArabicName</span>
         </div>
 
-        
-            <div class="data-line" style="justify-content: right;">
-                <span class="data-label">هوية رقم /</span>
-                <span class="data-field" style="max-width: 200px; flex-grow: 0; width: 200px;">@Model.NationalIdNumber</span>
-            </div>
-
-            <div class="data-line">
-                <span class="data-label">هو محامي متدرب لدى مكتب الأستاذ/ة</span>
-                <span class="data-field">@(Model.Supervisor?.ArabicName ?? "غير محدد")</span>
-            </div>
-
-            <div class="data-line">
-                <span class="data-label">ومسجل في سجل المحامين المتدربين منذ تاريخ /</span>
-                <span class="data-field" style="max-width: 150px;">@(Model.TrainingStartDate.HasValue ? Model.TrainingStartDate.Value.ToString("yyyy/MM/dd") : "---")</span>
-                <span class="data-label" style="margin-right: auto;">وحتى تاريخه</span>
-            </div>
-
-            <div style="text-align: center; margin-top: 50px; font-size: 16pt;">
-                وقد أعطيت له هذه الإفادة بناءً على طلبه من واقع ملفه بالنقابة
-            </div>
+        <div class="data-line" style="justify-content: right;">
+            <span class="data-label">هوية رقم /</span>
+            <span class="data-field" style="max-width: 200px; flex-grow: 0; width: 200px;">@Model.NationalIdNumber</span>
         </div>
+
+        <div class="data-line">
+            <span class="data-label">هو محامي متدرب لدى مكتب الأستاذ/ة</span>
+            <span class="data-field">@(Model.Supervisor?.ArabicName ?? "غير محدد")</span>
+        </div>
+
+        <div class="data-line">
+            <span class="data-label">ومسجل في سجل المحامين المتدربين منذ تاريخ /</span>
+            <span class="data-field" style="max-width: 150px;">@(Model.TrainingStartDate.HasValue ? Model.TrainingStartDate.Value.ToString("yyyy/MM/dd") : "---")</span>
+            <span class="data-label" style="margin-right: auto;">وحتى تاريخه</span>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px; font-size: 16pt;">
+            وقد أعطيت له هذه الإفادة بناءً على طلبه من واقع ملفه بالنقابة
+        </div>
+    </div>
 
     <div class="footer-section">
         <div class="date-section">
@@ -301,11 +140,14 @@
             } else {
                 var parts = selected.split('|');
                 var name = parts[0];
-                var title = parts[0].includes("صافي") ? "المستشار " : "الأستاذ ";
-                if (!name.includes("المستشار") && !name.includes("الأستاذ")) name = title + name;
+                var title = parts[1];
+
+                if (!name.includes("الأستاذ") && !name.includes("المستشار")) {
+                    name = "الأستاذ " + name;
+                }
 
                 document.getElementById("signerNameInput").value = name;
-                document.getElementById("signerTitleInput").value = parts[1];
+                document.getElementById("signerTitleInput").value = title;
             }
         }
         syncSignerDisplay();

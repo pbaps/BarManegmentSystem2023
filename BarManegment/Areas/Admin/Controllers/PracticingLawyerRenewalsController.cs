@@ -19,24 +19,33 @@ namespace BarManegment.Areas.Admin.Controllers
         // ============================================================
         // 1. الترسيت السنوي (Annual Reset) - 🔒 خاص بالمسؤول العام
         // ============================================================
+        // ============================================================
+        // 1. الترسيت السنوي (Annual Reset) - 🔒 خاص بالمسؤول العام
+        // ============================================================
+        // ✅ السماح للمدير العام فقط، مع تخطي فحص الصلاحيات الروتيني لهذه الدالة الحساسة
         public ActionResult AnnualStatusReset()
         {
-            // 💡 التحقق الأمني: السماح فقط للمسؤول العام (Administrator)
-            if (Session["UserType"]?.ToString() != "Administrator")
+            // 1. التحقق من أن المستخدم هو "مدير عام" فعلاً
+            // نفترض أن Administrator هو الـ Role Name بالإنجليزية
+            // يفضل استخدام دالة مساعدة، لكن للسرعة سنفحص الاثنين (عربي وانجليزي)
+            var userType = Session["UserType"]?.ToString();
+
+            if (userType != "Administrator" && userType != "مسؤول عام")
             {
                 TempData["ErrorMessage"] = "عذراً، هذا الإجراء مخصص للمسؤول العام (مدير النظام) فقط.";
                 return RedirectToAction("Index", "Home", new { area = "Admin" });
             }
 
             var practicingStatus = db.ApplicationStatuses.FirstOrDefault(s => s.Name == "محامي مزاول");
+
+            // تهيئة القيمة لتجنب الخطأ في العرض
+            ViewBag.PracticingCount = 0;
+
             if (practicingStatus != null)
             {
                 ViewBag.PracticingCount = db.GraduateApplications.Count(g => g.ApplicationStatusId == practicingStatus.Id);
             }
-            else
-            {
-                ViewBag.PracticingCount = 0;
-            }
+
             return View();
         }
 

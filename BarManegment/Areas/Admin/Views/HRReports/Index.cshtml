@@ -1,0 +1,41 @@
+﻿@{
+    ViewBag.Title = "تقارير الموظفين";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white fw-bold">
+                    <i class="bi bi-calendar-month me-2"></i> كشف الحضور الشهري
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("MonthlyAttendance", "HRReports", FormMethod.Get, new { target = "_blank" }))
+                    {
+                        <div class="mb-3">
+                            <label>الموظف (اختياري)</label>
+                            @Html.DropDownList("empId", (SelectList)ViewBag.EmployeeId, "كل الموظفين", new { @class = "form-select select2" })
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label>الشهر</label>
+                                <select name="month" class="form-select">
+                                    @for (int i = 1; i <= 12; i++)
+                                    {
+                                        <option value="@i" @(i == DateTime.Now.Month ? "selected" : "")>@i</option>
+}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label>السنة</label>
+                                <input type="number" name="year" class="form-control" value="@DateTime.Now.Year" />
+                            </div>
+                        </div>
+                        <button class="btn btn-success w-100 fw-bold">عرض وطباعة</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

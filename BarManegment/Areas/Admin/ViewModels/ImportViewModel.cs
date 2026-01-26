@@ -11,6 +11,6 @@ namespace BarManegment.Areas.Admin.ViewModels
 
         [Required]
         [Display(Name = "نوع البيانات")]
-        public string EntityType { get; set; } // لتحديد الجدول (خريجين، امتحانات، إلخ)
+        public string EntityType { get; set; }
     }
 }

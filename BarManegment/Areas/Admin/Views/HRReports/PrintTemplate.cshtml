@@ -1,0 +1,38 @@
+﻿@model IEnumerable<BarManegment.Models.AttendanceLog>
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLayoutHR.cshtml";
+}
+
+<table class="table table-bordered border-dark text-center align-middle">
+    <thead class="bg-light">
+        <tr>
+            <th>التاريخ</th>
+            <th>اسم الموظف</th>
+            <th>القسم</th>
+            <th>وقت الحضور</th>
+            <th>وقت الانصراف</th>
+            <th>الحالة</th>
+            <th>ملاحظات</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Date.ToString("yyyy/MM/dd") <br> <small>@item.Date.ToString("dddd")</small></td>
+                <td class="fw-bold text-start">@item.Employee.FullName</td>
+                <td>@item.Employee.Department.Name</td>
+                <td dir="ltr">@(item.CheckInTime.HasValue ? DateTime.Today.Add(item.CheckInTime.Value).ToString("hh:mm tt") : "-")</td>
+                <td dir="ltr">@(item.CheckOutTime.HasValue ? DateTime.Today.Add(item.CheckOutTime.Value).ToString("hh:mm tt") : "-")</td>
+                <td>@item.Status</td>
+                <td class="small">@item.SystemNotes</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="signature-box">
+    <div class="sign-line">توقيع مسؤول القسم</div>
+    <div class="sign-line">توقيع الموارد البشرية</div>
+    <div class="sign-line">اعتماد المدير المالي</div>
+</div>

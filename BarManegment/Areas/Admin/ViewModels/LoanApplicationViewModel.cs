@@ -7,7 +7,8 @@ using System.Web.Mvc;
 namespace BarManegment.Areas.Admin.ViewModels
 {
     public class LoanApplicationViewModel
-    {
+    { 
+        public int Id { get; set; }
         [Required(ErrorMessage = "معرف المحامي مطلوب")]
         [Display(Name = "معرف المحامي (الرقم الوطني/العضوية)")]
         public string LawyerIdentifier { get; set; }

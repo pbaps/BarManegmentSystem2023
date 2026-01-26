@@ -10,19 +10,27 @@ using BarManegment.Services;
 namespace BarManegment.Areas.Admin.Controllers
 {
     [Authorize]
-    [CustomAuthorize(Permission = "CanView")] // تأكد من إضافة هذا الإذن لاحقاً
+    [CustomAuthorize(Permission = "CanView")] // الصلاحية العامة للمتحكم
     public class PayrollController : BaseController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
+        // ============================================================
         // 1. عرض سجلات الرواتب الشهرية
+        // ============================================================
         public ActionResult Index()
         {
-            var payrolls = db.MonthlyPayrolls.OrderByDescending(p => p.Year).ThenByDescending(p => p.Month).ToList();
+            var payrolls = db.MonthlyPayrolls
+                .OrderByDescending(p => p.Year)
+                .ThenByDescending(p => p.Month)
+                .ToList();
             return View(payrolls);
         }
 
-        // 2. صفحة إنشاء مسير جديد (اختيار الشهر والسنة)
+        // ============================================================
+        // 2. صفحة إنشاء مسير جديد
+        // ============================================================
+        [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult Create()
         {
             ViewBag.Month = DateTime.Now.Month;
@@ -30,19 +38,22 @@ namespace BarManegment.Areas.Admin.Controllers
             return View();
         }
 
+        // ============================================================
         // 3. معالجة وإنشاء الرواتب (The Engine)
+        // ============================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult Generate(int month, int year, string notes)
         {
-            // أ) التحقق هل تم إصدار الرواتب لهذا الشهر سابقاً؟
+            // أ) التحقق من عدم التكرار
             if (db.MonthlyPayrolls.Any(p => p.Month == month && p.Year == year))
             {
                 TempData["ErrorMessage"] = $"عفواً، تم إصدار رواتب شهر {month}/{year} مسبقاً.";
                 return RedirectToAction("Index");
             }
 
-            // ب) جلب الموظفين النشطين فقط
+            // ب) جلب الموظفين النشطين
             var activeEmployees = db.Employees
                                     .Include(e => e.Department)
                                     .Where(e => e.IsActive)
@@ -54,7 +65,7 @@ namespace BarManegment.Areas.Admin.Controllers
                 return RedirectToAction("Index");
             }
 
-            // ج) إنشاء رأس المسير (Master)
+            // ج) إنشاء رأس المسير
             var payroll = new MonthlyPayroll
             {
                 Month = month,
@@ -68,39 +79,44 @@ namespace BarManegment.Areas.Admin.Controllers
             decimal totalGross = 0;
             decimal totalNet = 0;
 
-            // د) الدوران على كل موظف وحساب راتبه
+            // د) حساب الرواتب
             foreach (var emp in activeEmployees)
             {
-                // 1. تجميع العلاوات (ما عدا المواصلات والزيادة السنوية لأنها مفصلة)
+                // 1. تجميع العلاوات الثابتة
                 decimal allowances = emp.ManagerAllowance +
                                      emp.HeadOfDeptAllowance +
                                      emp.MasterDegreeAllowance +
                                      emp.PhdDegreeAllowance +
                                      emp.SpecializationAllowance;
 
-                // 2. إنشاء القسيمة
+                // 2. قراءة الزيادة السنوية (المعتمدة مسبقاً في ملف الموظف)
+                // ✅ تعديل هام: لا نقوم بحساب الزيادة هنا لتجنب الأخطاء التراكمية.
+                // يتم الاعتماد على القيمة المخزنة في سجل الموظف والتي يتم تحديثها سنوياً بإجراء منفصل.
+                decimal annualIncrement = emp.AnnualIncrementAmount ?? 0;
+
+                // 3. إنشاء القسيمة
                 var slip = new PayrollSlip
                 {
                     EmployeeId = emp.Id,
                     BasicSalary = emp.BasicSalary,
                     AllowancesTotal = allowances,
-                    AnnualIncrementAmount = emp.CalculatedAnnualIncrementAmount, // الزيادة السنوية
+                    AnnualIncrementAmount = annualIncrement,
                     TransportAllowance = emp.TransportAllowance,
 
                     // الاستقطاعات
-                    EmployeePensionDeduction = emp.PensionAmountEmployee, // 7%
+                    EmployeePensionDeduction = emp.PensionAmountEmployee,
                     OtherDeductions = emp.OtherMonthlyDeduction,
 
-                    // الإجماليات
+                    // الإجماليات (يفترض أن TotalSalary في المودل يجمع كل ما سبق)
+                    // Gross = Basic + Allowances + Increment + Transport
                     GrossSalary = emp.TotalSalary,
                     NetSalary = emp.NetSalary,
 
-                    // بيانات البنك
+                    // بيانات البنك للحفظ التاريخي
                     BankName = emp.BankName,
                     BankAccountNumber = emp.BankAccountNumber
                 };
 
-                // إضافة للأرقام الكلية للمسير
                 totalGross += slip.GrossSalary;
                 totalNet += slip.NetSalary;
 
@@ -110,17 +126,18 @@ namespace BarManegment.Areas.Admin.Controllers
             payroll.TotalGrossAmount = totalGross;
             payroll.TotalNetAmount = totalNet;
 
-            // هـ) الحفظ في قاعدة البيانات
             db.MonthlyPayrolls.Add(payroll);
             db.SaveChanges();
 
-            AuditService.LogAction("Generate Payroll", "Payroll", $"Generated for {month}/{year} - Count: {activeEmployees.Count}");
-            TempData["SuccessMessage"] = $"تم إصدار مسير رواتب شهر {month}/{year} بنجاح لـ {activeEmployees.Count} موظف.";
+            AuditService.LogAction("Generate Payroll", "Payroll", $"Generated Payroll for {month}/{year} - Total Employees: {activeEmployees.Count}");
+            TempData["SuccessMessage"] = $"تم إصدار مسير رواتب شهر {month}/{year} بنجاح.";
 
             return RedirectToAction("Details", new { id = payroll.Id });
         }
 
-        // 4. عرض تفاصيل المسير (قائمة الموظفين)
+        // ============================================================
+        // 4. عرض التفاصيل
+        // ============================================================
         public ActionResult Details(int id)
         {
             var payroll = db.MonthlyPayrolls.Include(p => p.PayrollSlips.Select(s => s.Employee)).FirstOrDefault(p => p.Id == id);
@@ -128,9 +145,11 @@ namespace BarManegment.Areas.Admin.Controllers
             return View(payroll);
         }
 
-        // 5. الترحيل للمالية (Post to GL) - سنبرمجه لاحقاً بالتفصيل
+        // ============================================================
+        // 5. الترحيل للمالية (Post to GL) - النسخة الديناميكية
+        // ============================================================
         [HttpPost]
-        [CustomAuthorize(Permission = "CanAdd")] // صلاحية إضافة قيد
+        [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult PostToJournal(int id)
         {
             var payroll = db.MonthlyPayrolls.Include(p => p.PayrollSlips).FirstOrDefault(p => p.Id == id);
@@ -142,103 +161,96 @@ namespace BarManegment.Areas.Admin.Controllers
                 return RedirectToAction("Details", new { id = id });
             }
 
-            // 1. البحث عن الحسابات في الدليل المحاسبي (بناءً على Seed Data)
-            // مصروف الرواتب: 5101
-            // النقدية بالبنوك: 1102 (أو حساب وسيط: رواتب مستحقة)
-            // التزامات أخرى (تأمين): سنحتاج لحساب التزام، سنفترضه 2103 مؤقتاً أو ننشئه
+            // ✅ التصحيح هنا: استخدام Name أو StartDate.Year بدلاً من y.Year
+            // بما أن payroll.Year رقم، نقوم بتحويله لنص لمقارنته مع Name
+            string payrollYearString = payroll.Year.ToString();
 
-            var salaryExpenseAccount = db.Accounts.FirstOrDefault(a => a.Code == "5101"); // مصروف الرواتب
-            var bankAccount = db.Accounts.FirstOrDefault(a => a.Code == "1102"); // البنك (الدفع)
+            var fiscalYear = db.FiscalYears
+                .FirstOrDefault(y => (y.Name == payrollYearString || y.StartDate.Year == payroll.Year) && !y.IsClosed);
 
-            // إذا لم توجد الحسابات، نوقف العملية
-            if (salaryExpenseAccount == null || bankAccount == null)
+            // إذا لم نجد سنة مطابقة، نبحث عن السنة الحالية المفتوحة
+            if (fiscalYear == null)
             {
-                TempData["ErrorMessage"] = "عفواً، حساب 'مصروف الرواتب' أو 'البنك' غير معرف في دليل الحسابات. يرجى التأكد من التكويد (5101, 1102).";
+                fiscalYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
+            }
+
+            if (fiscalYear == null)
+            {
+                TempData["ErrorMessage"] = $"لا توجد سنة مالية مفتوحة لعام {payroll.Year}. يرجى فتح السنة المالية من الإعدادات أولاً.";
                 return RedirectToAction("Details", new { id = id });
             }
 
-            // 2. إنشاء القيد الرئيسي (Journal Entry Master)
-            var journalEntry = new JournalEntry
+            try
             {
-                EntryDate = DateTime.Now,
-                Description = $"استحقاق رواتب شهر {payroll.Month}/{payroll.Year}",
-                ReferenceNumber = $"PAY-{payroll.Year}-{payroll.Month}",
-                IsPosted = true, // ترحيل مباشر
-                CreatedBy = Session["FullName"]?.ToString() ?? "System",
-                JournalEntryDetails = new List<JournalEntryDetail>()
-            };
+                int expenseAccId = GetAccountIdFromSettings("Payroll_SalariesExpenseAccount", "5101");
+                int bankAccId = GetAccountIdFromSettings("Default_Bank_Payment_Account", "1102");
+                int liabilityAccId = GetAccountIdFromSettings("Payroll_PensionLiabilityAccount", "2103");
 
-            // 3. الطرف المدين (Dr): مصروف الرواتب (بالمبلغ الإجمالي Gross)
-            journalEntry.JournalEntryDetails.Add(new JournalEntryDetail
-            {
-                AccountId = salaryExpenseAccount.Id,
-                Debit = payroll.TotalGrossAmount,
-                Credit = 0,
-                Description = "إجمالي الرواتب والأجور"
-            });
+                var journalEntry = new JournalEntry
+                {
+                    FiscalYearId = fiscalYear.Id,
+                    EntryDate = DateTime.Now,
+                    Description = $"استحقاق رواتب شهر {payroll.Month}/{payroll.Year}",
+                    ReferenceNumber = $"PAY-{payroll.Year}-{payroll.Month}",
+                    IsPosted = true,
+                    CreatedBy = Session["FullName"]?.ToString() ?? "System",
+                    JournalEntryDetails = new List<JournalEntryDetail>()
+                };
 
-            // 4. الطرف الدائن (Cr): 
-            // أ) هيئة التأمين والمعاشات (حصة الموظف المستقطعة)
-            decimal totalPension = payroll.PayrollSlips.Sum(s => s.EmployeePensionDeduction);
-
-            // ملاحظة: يفضل أن يكون هناك حساب خاص بالالتزامات (21xx)، هنا سنضعه في حساب دائن عام للتوضيح
-            // إذا لم يوجد حساب تأمين، سنضيفه للبنك مؤقتاً أو ننشئ حساباً وهمياً للالتزام، 
-            // لكن الأصح محاسبياً فصله. سنفترض وجود حساب التزامات (دائنون)
-            var liabilityAccount = db.Accounts.FirstOrDefault(a => a.Code.StartsWith("21")) ?? bankAccount;
-
-            if (totalPension > 0)
-            {
+                // المدين
                 journalEntry.JournalEntryDetails.Add(new JournalEntryDetail
                 {
-                    AccountId = liabilityAccount.Id, // حساب هيئة التأمين
-                    Debit = 0,
-                    Credit = totalPension,
-                    Description = "استقطاعات التأمين والمعاشات (حصة الموظف)"
+                    AccountId = expenseAccId,
+                    Debit = payroll.TotalGrossAmount,
+                    Credit = 0,
+                    Description = "إجمالي الرواتب والأجور"
                 });
-            }
 
-            // ب) خصومات أخرى
-            decimal totalOtherDeductions = payroll.PayrollSlips.Sum(s => s.OtherDeductions);
-            if (totalOtherDeductions > 0)
-            {
-                // عادة تخصم من سلف الموظفين (أصل) أو إيرادات أخرى
-                // سنضيفها لنفس حساب الالتزام للتبسيط الآن
+                // الدائن 1 (الالتزامات)
+                decimal totalDeductions = payroll.PayrollSlips.Sum(s => s.EmployeePensionDeduction + s.OtherDeductions);
+                if (totalDeductions > 0)
+                {
+                    journalEntry.JournalEntryDetails.Add(new JournalEntryDetail
+                    {
+                        AccountId = liabilityAccId,
+                        Debit = 0,
+                        Credit = totalDeductions,
+                        Description = "استقطاعات التأمين وخصومات الموظفين"
+                    });
+                }
+
+                // الدائن 2 (البنك)
                 journalEntry.JournalEntryDetails.Add(new JournalEntryDetail
                 {
-                    AccountId = liabilityAccount.Id,
+                    AccountId = bankAccId,
                     Debit = 0,
-                    Credit = totalOtherDeductions,
-                    Description = "خصومات أخرى"
+                    Credit = payroll.TotalNetAmount,
+                    Description = "صافي الرواتب المحول للبنك"
                 });
+
+                db.JournalEntries.Add(journalEntry);
+                payroll.IsPostedToJournal = true;
+                payroll.JournalEntry = journalEntry;
+
+                db.SaveChanges(); // لحفظ القيد أولاً
+
+                payroll.JournalEntryId = journalEntry.Id;
+                db.SaveChanges(); // لحفظ التحديث في المسير
+
+                AuditService.LogAction("Post Payroll", "Payroll", $"Posted Payroll #{id} to Journal #{journalEntry.Id}");
+                TempData["SuccessMessage"] = $"تم اعتماد الرواتب وترحيل القيد المحاسبي رقم #{journalEntry.Id} للسنة المالية {fiscalYear.Name}.";
             }
-
-            // ج) صافي الرواتب (يصرف من البنك أو يسجل كرواتب مستحقة)
-            journalEntry.JournalEntryDetails.Add(new JournalEntryDetail
+            catch (Exception ex)
             {
-                AccountId = bankAccount.Id,
-                Debit = 0,
-                Credit = payroll.TotalNetAmount,
-                Description = "صافي الرواتب المحول للبنك"
-            });
-
-            // 5. حفظ القيد وربطه بالمسير
-            db.JournalEntries.Add(journalEntry);
-
-            payroll.IsPostedToJournal = true;
-            payroll.JournalEntry = journalEntry; // الربط المباشر إذا كانت العلاقة موجودة، أو عبر ID بعد الحفظ
-
-            db.SaveChanges(); // الحفظ لتوليد ID للقيد
-
-            payroll.JournalEntryId = journalEntry.Id;
-            db.SaveChanges(); // تحديث المسير
-
-            AuditService.LogAction("Post Payroll", "Payroll", $"Posted Payroll {payroll.Id} to Journal #{journalEntry.Id}");
-            TempData["SuccessMessage"] = $"تم اعتماد الرواتب وترحيل القيد المحاسبي رقم #{journalEntry.Id} بنجاح.";
+                TempData["ErrorMessage"] = "فشل الترحيل المالي: " + ex.Message;
+            }
 
             return RedirectToAction("Details", new { id = id });
         }
 
-        // 6. حذف المسير (تراجع) - مسموح فقط إذا لم يتم الترحيل
+        // ============================================================
+        // 6. حذف المسير (تراجع)
+        // ============================================================
         [HttpPost]
         [CustomAuthorize(Permission = "CanDelete")]
         public ActionResult Delete(int id)
@@ -247,7 +259,6 @@ namespace BarManegment.Areas.Admin.Controllers
 
             if (payroll == null) return HttpNotFound();
 
-            // التحقق من الترحيل (لا يحذف إذا كان مرحلاً)
             if (payroll.IsPostedToJournal)
             {
                 TempData["ErrorMessage"] = "لا يمكن حذف مسير تم ترحيله مالياً. يجب عكس القيد أولاً.";
@@ -256,18 +267,17 @@ namespace BarManegment.Areas.Admin.Controllers
 
             try
             {
-                // 1. حذف التفاصيل (القسائم) أولاً
+                // حذف التفاصيل أولاً
                 if (payroll.PayrollSlips != null && payroll.PayrollSlips.Any())
                 {
                     db.PayrollSlips.RemoveRange(payroll.PayrollSlips);
                 }
 
-                // 2. حذف الرأس (المسير)
                 db.MonthlyPayrolls.Remove(payroll);
-
                 db.SaveChanges();
 
-                TempData["SuccessMessage"] = "تم حذف مسير الرواتب وجميع القسائم المرتبطة به بنجاح.";
+                AuditService.LogAction("Delete Payroll", "Payroll", $"Deleted Payroll #{id}");
+                TempData["SuccessMessage"] = "تم حذف مسير الرواتب بنجاح.";
             }
             catch (Exception ex)
             {
@@ -277,7 +287,9 @@ namespace BarManegment.Areas.Admin.Controllers
             return RedirectToAction("Index");
         }
 
-        // أمر طباعة كشف الرواتب الشهري
+        // ============================================================
+        // 7. الطباعة
+        // ============================================================
         public ActionResult Print(int id)
         {
             var payroll = db.MonthlyPayrolls
@@ -287,7 +299,125 @@ namespace BarManegment.Areas.Admin.Controllers
 
             if (payroll == null) return HttpNotFound();
 
+            AuditService.LogAction("Print Payroll", "Payroll", $"Printed Payroll #{id}");
             return View(payroll);
+        }
+
+        // ============================================================
+        // Helper: دالة جلب الحسابات من الإعدادات
+        // ============================================================
+        private int GetAccountIdFromSettings(string settingKey, string fallbackCode)
+        {
+            // 1. محاولة جلب الإعداد من قاعدة البيانات
+            var setting = db.SystemSettings.FirstOrDefault(s => s.SettingKey == settingKey);
+
+            if (setting != null && setting.ValueInt.HasValue)
+            {
+                return setting.ValueInt.Value;
+            }
+
+            // 2. Fallback: البحث بالكود القديم إذا لم يتم ضبط الإعداد
+            var account = db.Accounts.FirstOrDefault(a => a.Code == fallbackCode)
+                          ?? db.Accounts.FirstOrDefault(a => a.Code.StartsWith(fallbackCode));
+
+            if (account == null)
+            {
+                throw new Exception($"لم يتم العثور على الحساب المطلوب. يرجى ضبط الإعداد '{settingKey}' أو التأكد من وجود حساب بالكود '{fallbackCode}'.");
+            }
+
+            return account.Id;
+        }
+
+
+        // ============================================================
+        // 8. وظيفة تطبيق العلاوة السنوية (تُشغل مرة واحدة شهرياً أو سنوياً)
+        // ============================================================
+        [CustomAuthorize(Permission = "CanEdit")] // صلاحية خاصة للمدير المالي
+        public ActionResult ManageAnnualIncrements()
+        {
+            // عرض صفحة تحتوي على زر لتطبيق الزيادات
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [CustomAuthorize(Permission = "CanEdit")]
+        public ActionResult ApplyAnnualIncrements(int month, int year)
+        {
+            try
+            {
+                // 1. جلب إعدادات النسبة
+                var incPercentSetting = db.SystemSettings.Find("AnnualIncrementPercent");
+                decimal percentage = decimal.Parse(incPercentSetting?.SettingValue ?? "0");
+
+                if (percentage <= 0)
+                {
+                    TempData["ErrorMessage"] = "نسبة الزيادة السنوية غير محددة في الإعدادات.";
+                    return RedirectToAction("ManageAnnualIncrements");
+                }
+
+                // 2. جلب الموظفين النشطين
+                var employees = db.Employees.Where(e => e.IsActive).ToList();
+                int updatedCount = 0;
+                int maxServiceYears = 25; // السقف الزمني
+
+                foreach (var emp in employees)
+                {
+                    if (!emp.HireDate.HasValue) continue;
+
+                    // 3. حساب سنوات الخدمة
+                    var today = new DateTime(year, month, 1);
+                    int yearsOfService = today.Year - emp.HireDate.Value.Year;
+                    if (today.Month < emp.HireDate.Value.Month) yearsOfService--;
+
+                    // 4. التحقق من الاستحقاق:
+                    // - هل هذا هو شهر التعيين؟ (أي أكمل سنة كاملة جديدة)
+                    // - هل لم يتجاوز السقف؟
+                    if (emp.HireDate.Value.Month == month && yearsOfService > 0 && yearsOfService < maxServiceYears)
+                    {
+                        // حساب قيمة الزيادة (على الراتب الأساسي)
+                        decimal incrementValue = Math.Round(emp.BasicSalary * (percentage / 100), 2);
+
+                        // إضافة الزيادة للرصيد المتراكم
+                        if (emp.AnnualIncrementAmount == null) emp.AnnualIncrementAmount = 0;
+
+                        emp.AnnualIncrementAmount += incrementValue;
+                        updatedCount++;
+                    }
+                }
+
+                if (updatedCount > 0)
+                {
+                    db.SaveChanges();
+                    AuditService.LogAction("Apply Increments", "Payroll", $"Applied annual increments for {updatedCount} employees in {month}/{year}.");
+                    TempData["SuccessMessage"] = $"تم تطبيق الزيادة السنوية بنجاح على {updatedCount} موظف.";
+                }
+                else
+                {
+                    TempData["InfoMessage"] = "لا يوجد موظفين يستحقون الزيادة السنوية في هذا الشهر.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "حدث خطأ: " + ex.Message;
+            }
+
+            return RedirectToAction("ManageAnnualIncrements");
+        }
+
+
+
+
+
+
+
+
+
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) db.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

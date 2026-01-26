@@ -57,10 +57,12 @@
             /* إجبار المتصفح على طباعة الألوان الخلفية */
             .bg-light {
                 background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
             }
 
             .bg-secondary {
                 background-color: #e9ecef !important;
+                -webkit-print-color-adjust: exact;
             }
         }
 
@@ -152,7 +154,7 @@
                     <div class="col-6"><span class="data-label">القسم:</span> @(Model.Department?.Name ?? "-")</div>
                 </div>
                 <div class="row mb-2">
-                    <div class="col-6"><span class="data-label">تاريخ التعيين:</span> @Model.HireDate.ToString("yyyy/MM/dd")</div>
+                    <div class="col-6"><span class="data-label">تاريخ التعيين:</span> @(Model.HireDate.HasValue ? Model.HireDate.Value.ToString("yyyy/MM/dd") : "-")</div>
                     <div class="col-6"><span class="data-label">رقم الهاتف:</span> @Model.Phone</div>
                 </div>
                 <div class="row mb-2">
@@ -160,10 +162,15 @@
                     <div class="col-6">
                         <span class="data-label">سنوات الخدمة:</span>
                         @{
-                            var today = DateTime.Now;
-                            int serviceYears = today.Year - Model.HireDate.Year;
-                            if (Model.HireDate.Date > today.AddYears(-serviceYears)) { serviceYears--; }
-                            if (serviceYears < 0) { serviceYears = 0; }
+                            // ✅ تصحيح: حساب السنوات
+                            int serviceYears = 0;
+                            if (Model.HireDate.HasValue)
+                            {
+                                var today = DateTime.Now;
+                                serviceYears = today.Year - Model.HireDate.Value.Year;
+                                if (Model.HireDate.Value.Date > today.AddYears(-serviceYears)) { serviceYears--; }
+                                if (serviceYears < 0) { serviceYears = 0; }
+                            }
                         }
                         @serviceYears سنوات
                     </div>
@@ -195,7 +202,7 @@
                 </tr>
                 <tr>
                     <td class="fw-bold">الزيادة السنوية (@Model.AnnualIncrementPercent%)</td>
-                    <td>@Model.CalculatedAnnualIncrementAmount.ToString("N2")</td>
+                    <td>@((Model.AnnualIncrementAmount ?? 0).ToString("N2"))</td>
                     <td class="fw-bold">علاوة تخصص/مهنة</td>
                     <td>@Model.SpecializationAllowance.ToString("N2")</td>
                 </tr>

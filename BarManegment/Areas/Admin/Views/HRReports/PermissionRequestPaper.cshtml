@@ -1,0 +1,93 @@
+﻿@model BarManegment.Models.HourlyPermission
+@{
+    ViewBag.ReportTitle = "نموذج إذن مغادرة / مهمة عمل";
+    Layout = "~/Areas/Admin/Views/Shared/_PrintLayoutHR.cshtml";
+
+    // حساب المدة بالساعات والدقائق
+    var duration = Model.EndTime - Model.StartTime;
+    var durationString = string.Format("{0} ساعة و {1} دقيقة", duration.Hours, duration.Minutes);
+}
+
+<div class="border border-dark p-4 rounded mt-3 position-relative">
+
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; font-size: 8rem; font-weight: bold; pointer-events: none;">
+        PBA
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-6">
+            <h5 class="fw-bold">بيانات الموظف:</h5>
+            <ul class="list-unstyled mt-2">
+                <li class="mb-2"><strong>الاسم الرباعي:</strong> @Model.Employee.FullName</li>
+                <li class="mb-2"><strong>القسم / الدائرة:</strong> @(Model.Employee.Department?.Name ?? "غير محدد")</li>
+                <li class="mb-2"><strong>المسمى الوظيفي:</strong> @(Model.Employee.JobTitle?.Name ?? "غير محدد")</li>
+            </ul>
+        </div>
+        <div class="col-6 text-start">
+            <div class="border p-3 d-inline-block text-center rounded bg-light">
+                <small class="d-block text-muted">رقم الإذن</small>
+                <span class="fs-4 fw-bold">PER-@Model.Id</span>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="row mb-4 align-items-center">
+        <div class="col-12">
+            <h5 class="fw-bold mb-3">تفاصيل الإذن:</h5>
+        </div>
+
+        <div class="col-4">
+            <div class="p-2 border rounded text-center">
+                <small class="text-muted d-block">التاريخ</small>
+                <strong>@Model.Date.ToString("yyyy/MM/dd")</strong>
+            </div>
+        </div>
+
+        <div class="col-4">
+            <div class="p-2 border rounded text-center">
+                <small class="text-muted d-block">الوقت (من - إلى)</small>
+                <strong dir="ltr">@Model.StartTime.ToString(@"hh\:mm") - @Model.EndTime.ToString(@"hh\:mm")</strong>
+            </div>
+        </div>
+
+        <div class="col-4">
+            <div class="p-2 border rounded text-center bg-warning bg-opacity-10">
+                <small class="text-muted d-block">النوع</small>
+                <strong>@Model.Type</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <strong>سبب المغادرة / البيان:</strong>
+        <p class="border p-3 mt-2 bg-light" style="min-height: 60px;">@Model.Reason</p>
+    </div>
+
+    <hr class="my-4 border-dark" />
+
+    <div class="row text-center mt-5 align-items-end">
+        <div class="col-4">
+            <p class="fw-bold">توقيع الموظف</p>
+            <div class="mt-4 border-bottom w-75 mx-auto"></div>
+        </div>
+        <div class="col-4">
+            <p class="fw-bold">المسؤول المباشر</p>
+            <div class="mt-4 border-bottom w-75 mx-auto"></div>
+        </div>
+        <div class="col-4">
+            <p class="fw-bold">الشؤون الإدارية</p>
+            <div class="mt-4">
+                <small class="d-block mb-2">
+                    @(Model.Status == "مقبول" ? "[ ✔ ] معتمد" : "[   ] معتمد")
+                </small>
+                <div class="border-bottom w-75 mx-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 small text-muted">
+        * يرجى تسليم هذا الإذن لقسم الاستقبال أو الأمن عند الخروج.
+    </div>
+</div>

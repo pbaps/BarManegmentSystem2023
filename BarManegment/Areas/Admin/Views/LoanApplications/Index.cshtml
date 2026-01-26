@@ -59,6 +59,13 @@
                 </td>
                 <td>
                     @Html.ActionLink("تفاصيل", "Details", new { id = item.Id }, new { @class = "btn btn-sm btn-info" })
+
+                    @* ✅ زر التعديل يظهر فقط إذا لم يتم الصرف *@
+                    @if (!item.IsDisbursed)
+                    {
+                        @Html.ActionLink("تعديل", "Edit", new { id = item.Id }, new { @class = "btn btn-warning text-dark" })
+                    }
+
                 </td>
             </tr>
         }

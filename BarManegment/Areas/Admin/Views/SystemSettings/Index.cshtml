@@ -15,112 +15,280 @@
         </div>
     }
 
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow border-0">
-                <div class="card-header bg-primary text-white py-3">
-                    <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i> إعدادات النظام العامة</h5>
+        <div class="col-lg-12">
+            <div class="card shadow-sm border-0">
+
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-primary fw-bold"><i class="bi bi-sliders me-2"></i> إعدادات النظام الشاملة</h5>
+
+                    <button type="button" onclick="$('#settingsForm').submit();" class="btn btn-success btn-sm fw-bold">
+                        <i class="bi bi-save me-1"></i> حفظ التغييرات
+                    </button>
                 </div>
-                <div class="card-body p-4">
-                    @using (Html.BeginForm())
+
+                <div class="card-body p-0">
+                    @using (Html.BeginForm("Index", "SystemSettings", FormMethod.Post, new { id = "settingsForm" }))
                     {
                         @Html.AntiForgeryToken()
 
-                        <h5 class="text-primary fw-bold mb-3"><i class="bi bi-calendar-range me-2"></i> فترة التسجيل للامتحان</h5>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                @Html.LabelFor(m => m.ExamRegistrationStartDate, new { @class = "form-label fw-bold" })
-                                @Html.TextBoxFor(m => m.ExamRegistrationStartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-                                @Html.ValidationMessageFor(m => m.ExamRegistrationStartDate, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-md-6">
-                                @Html.LabelFor(m => m.ExamRegistrationEndDate, new { @class = "form-label fw-bold" })
-                                @Html.TextBoxFor(m => m.ExamRegistrationEndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-                                @Html.ValidationMessageFor(m => m.ExamRegistrationEndDate, "", new { @class = "text-danger small" })
+                    <ul class="nav nav-tabs nav-tabs-bordered p-3 bg-light" id="settingsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold" id="exams-tab" data-bs-toggle="tab" data-bs-target="#exams" type="button" role="tab" aria-selected="true">
+                                <i class="bi bi-calendar-check me-2"></i> القبول والامتحانات
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="training-tab" data-bs-toggle="tab" data-bs-target="#training" type="button" role="tab" aria-selected="false">
+                                <i class="bi bi-journal-medical me-2"></i> التدريب والمزاولة
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll" type="button" role="tab" aria-selected="false">
+                                <i class="bi bi-cash-stack me-2"></i> الرواتب والتأمين
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold text-primary" id="mapping-tab" data-bs-toggle="tab" data-bs-target="#mapping" type="button" role="tab" aria-selected="false">
+                                <i class="bi bi-diagram-3-fill me-2"></i> الربط المالي (هام)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold text-success" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab">
+                                <i class="bi bi-geo-alt-fill me-2"></i> الحضور الذكي
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-4" id="settingsTabsContent">
+
+                        <div class="tab-pane fade show active" id="exams" role="tabpanel" aria-labelledby="exams-tab">
+                            <h6 class="text-muted border-bottom pb-2 mb-3">فترات ومعدلات القبول</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            @Html.LabelFor(m => m.ExamRegistrationStartDate, new { @class = "form-label" })
+                                            @Html.TextBoxFor(m => m.ExamRegistrationStartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                                        </div>
+                                        <div class="col-md-6">
+                                            @Html.LabelFor(m => m.ExamRegistrationEndDate, new { @class = "form-label" })
+                                            @Html.TextBoxFor(m => m.ExamRegistrationEndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            @Html.LabelFor(m => m.MinHighSchoolScore, new { @class = "form-label" })
+                                            <div class="input-group">
+                                                @Html.EditorFor(m => m.MinHighSchoolScore, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.1" } })
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            @Html.LabelFor(m => m.MinBachelorScore, new { @class = "form-label" })
+                                            <div class="input-group">
+                                                @Html.EditorFor(m => m.MinBachelorScore, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.1" } })
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <hr class="my-4 opacity-25" />
-
-                        <h5 class="text-success fw-bold mb-3"><i class="bi bi-mortarboard me-2"></i> معايير القبول (الحد الأدنى للمعدلات)</h5>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                @Html.LabelFor(m => m.MinHighSchoolScore, new { @class = "form-label fw-bold" })
-                                <div class="input-group">
-                                    @Html.EditorFor(m => m.MinHighSchoolScore, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.1" } })
-                                    <span class="input-group-text">%</span>
+                        <div class="tab-pane fade" id="training" role="tabpanel" aria-labelledby="training-tab">
+                            <h6 class="text-muted border-bottom pb-2 mb-3">شروط التدريب وتجديد المزاولة</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    @Html.LabelFor(m => m.RequiredTrainingHours, new { @class = "form-label" })
+                                    <div class="input-group">
+                                        @Html.EditorFor(m => m.RequiredTrainingHours, new { htmlAttributes = new { @class = "form-control", type = "number", min = "0" } })
+                                        <span class="input-group-text">ساعة</span>
+                                    </div>
+                                    <div class="form-text">عدد الساعات الإلزامية التي يجب على المتدرب إتمامها.</div>
                                 </div>
-                                <div class="form-text">أقل معدل ثانوية عامة مسموح به للتقدم.</div>
-                                @Html.ValidationMessageFor(m => m.MinHighSchoolScore, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-md-6">
-                                @Html.LabelFor(m => m.MinBachelorScore, new { @class = "form-label fw-bold" })
-                                <div class="input-group">
-                                    @Html.EditorFor(m => m.MinBachelorScore, new { htmlAttributes = new { @class = "form-control", type = "number", step = "0.1" } })
-                                    <span class="input-group-text">%</span>
+                                <div class="col-md-6">
+                                    @Html.LabelFor(m => m.RenewalGracePeriodEndDate, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.RenewalGracePeriodEndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                                    <div class="form-text text-danger">بعد هذا التاريخ، سيتم احتساب غرامة تأخير على التجديد.</div>
                                 </div>
-                                <div class="form-text">أقل معدل بكالوريوس مسموح به للتقدم.</div>
-                                @Html.ValidationMessageFor(m => m.MinBachelorScore, "", new { @class = "text-danger small" })
                             </div>
                         </div>
 
-                        <hr class="my-4 opacity-25" />
-
-                        <h5 class="text-warning text-dark fw-bold mb-3"><i class="bi bi-journal-check me-2"></i> متطلبات التدريب والتجديد</h5>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                @Html.LabelFor(m => m.RequiredTrainingHours, new { @class = "form-label fw-bold" })
-                                <div class="input-group">
-                                    @Html.EditorFor(m => m.RequiredTrainingHours, new { htmlAttributes = new { @class = "form-control", type = "number", min = "0" } })
-                                    <span class="input-group-text">ساعة</span>
+                        <div class="tab-pane fade" id="payroll" role="tabpanel" aria-labelledby="payroll-tab">
+                            <h6 class="text-muted border-bottom pb-2 mb-3">القيم الافتراضية للرواتب</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="card bg-light border-0 h-100">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title text-primary">الزيادة السنوية</h6>
+                                            <div class="input-group mt-3">
+                                                @Html.TextBoxFor(m => m.AnnualIncrementPercent, new { @class = "form-control text-center fw-bold", type = "number", step = "0.1" })
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                @Html.ValidationMessageFor(m => m.RequiredTrainingHours, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-md-6">
-                                @Html.LabelFor(m => m.RenewalGracePeriodEndDate, new { @class = "form-label fw-bold" })
-                                @Html.TextBoxFor(m => m.RenewalGracePeriodEndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-                                @Html.ValidationMessageFor(m => m.RenewalGracePeriodEndDate, "", new { @class = "text-danger small" })
+                                <div class="col-md-4">
+                                    <div class="card bg-light border-0 h-100">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title text-danger">استقطاع الموظف (تأمين)</h6>
+                                            <div class="input-group mt-3">
+                                                @Html.TextBoxFor(m => m.EmployeePensionPercent, new { @class = "form-control text-center fw-bold", type = "number", step = "0.1" })
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light border-0 h-100">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title text-success">مساهمة النقابة (تأمين)</h6>
+                                            <div class="input-group mt-3">
+                                                @Html.TextBoxFor(m => m.EmployerPensionPercent, new { @class = "form-control text-center fw-bold", type = "number", step = "0.1" })
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <hr class="my-4 opacity-25" />
+                        <div class="tab-pane fade" id="mapping" role="tabpanel" aria-labelledby="mapping-tab">
 
-                        <h5 class="text-danger fw-bold mb-3"><i class="bi bi-cash-coin me-2"></i> إعدادات الرواتب والتأمين (الافتراضية)</h5>
-                        <div class="row g-3 mb-4 bg-light p-3 rounded border">
-                            <div class="col-md-4">
-                                @Html.LabelFor(m => m.AnnualIncrementPercent, new { @class = "form-label fw-bold" })
-                                <div class="input-group">
-                                    @Html.TextBoxFor(m => m.AnnualIncrementPercent, new { @class = "form-control", type = "number", step = "0.1", min = "0", max = "100" })
-                                    <span class="input-group-text">%</span>
+                            <div class="alert alert-info border-0 shadow-sm d-flex align-items-center" role="alert">
+                                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                                <div>
+                                    <strong>تنبيه هام:</strong> هذه الإعدادات تربط العمليات التشغيلية (الامتحانات، التصديقات) بدليل الحسابات وأنواع الرسوم. تغييرها يؤثر مباشرة على القيود المالية.
                                 </div>
-                                <div class="form-text small">نسبة الزيادة السنوية للموظفين.</div>
-                                @Html.ValidationMessageFor(m => m.AnnualIncrementPercent, "", new { @class = "text-danger small" })
                             </div>
 
-                            <div class="col-md-4">
-                                @Html.LabelFor(m => m.EmployeePensionPercent, new { @class = "form-label fw-bold" })
-                                <div class="input-group">
-                                    @Html.TextBoxFor(m => m.EmployeePensionPercent, new { @class = "form-control", type = "number", step = "0.1", min = "0", max = "100" })
-                                    <span class="input-group-text">%</span>
-                                </div>
-                                <div class="form-text small">نسبة الخصم من الموظف.</div>
-                                @Html.ValidationMessageFor(m => m.EmployeePensionPercent, "", new { @class = "text-danger small" })
-                            </div>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-start border-4 border-primary">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold mb-3 text-primary">إعدادات الامتحانات</h6>
 
-                            <div class="col-md-4">
-                                @Html.LabelFor(m => m.EmployerPensionPercent, new { @class = "form-label fw-bold" })
-                                <div class="input-group">
-                                    @Html.TextBoxFor(m => m.EmployerPensionPercent, new { @class = "form-control", type = "number", step = "0.1", min = "0", max = "100" })
-                                    <span class="input-group-text">%</span>
+                                            <div class="form-check form-switch mb-3">
+                                                @Html.CheckBoxFor(m => m.IsExamFeeEnabled, new { @class = "form-check-input", style = "cursor: pointer;" })
+                                                @Html.LabelFor(m => m.IsExamFeeEnabled, new { @class = "form-check-label fw-bold" })
+                                            </div>
+
+                                            <label class="form-label small text-muted">نوع رسم القبول</label>
+                                            @Html.DropDownListFor(m => m.ExamRegistrationFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-text small">نسبة مساهمة النقابة.</div>
-                                @Html.ValidationMessageFor(m => m.EmployerPensionPercent, "", new { @class = "text-danger small" })
+
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-start border-4 border-success">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold mb-3 text-success">إعدادات العقود</h6>
+
+                                            <div class="mb-3">
+                                                <label class="form-label small text-muted">رسم تصديق العقد الافتراضي</label>
+                                                @Html.DropDownListFor(m => m.ContractFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                            </div>
+
+                                            <label class="form-label small text-muted">نوع عقد "وكالة جواز السفر"</label>
+                                            @Html.DropDownListFor(m => m.PassportAgencyContractTypeId, (SelectList)ViewBag.ContractTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="card border-start border-4 border-warning">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold mb-3 text-warning text-dark">دليل الحسابات (GL Mapping)</h6>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label small text-muted">حساب إيراد طوابع مؤجل</label>
+                                                    @Html.DropDownListFor(m => m.StampPrepaidAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small text-muted">حساب أمانات المحامين</label>
+                                                    @Html.DropDownListFor(m => m.StampLawyerShareAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small text-muted">حساب إيراد الطوابع (النقابة)</label>
+                                                    @Html.DropDownListFor(m => m.StampRevenueAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small text-muted">حساب البنك الافتراضي للصرف</label>
+                                                    @Html.DropDownListFor(m => m.DefaultBankPaymentAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small text-muted">نوع الرسم لبيع الطوابع (للمتعهدين)</label>
+                                                    @Html.DropDownListFor(m => m.StampContractorFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="text-end mt-5">
-                            <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">
-                                <i class="bi bi-save me-2"></i> حفظ الإعدادات
+                        <div class="tab-pane fade" id="attendance" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 class="fw-bold text-success mb-3">إعدادات الموقع الجغرافي (Geofencing)</h6>
+                                    <div class="alert alert-success bg-opacity-10 border-success">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        <strong>كيف تحصل على الإحداثيات؟</strong>
+                                        <ol class="mb-0 small mt-2">
+                                            <li>افتح <b>Google Maps</b> وابحث عن موقع النقابة.</li>
+                                            <li>اضغط <b>بزر الفأرة الأيمن</b> تماماً فوق المبنى.</li>
+                                            <li>ستظهر أرقام في أول القائمة (مثل: 31.51234, 34.45678). اضغط عليها لنسخها.</li>
+                                            <li>الرقم الأول هو (Latitude) والثاني هو (Longitude).</li>
+                                        </ol>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            @Html.LabelFor(m => m.OfficeLatitude, new { @class = "form-label fw-bold" })
+                                            @Html.EditorFor(m => m.OfficeLatitude, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: 31.512345" } })
+                                            @Html.ValidationMessageFor(m => m.OfficeLatitude, "", new { @class = "text-danger small" })
+                                        </div>
+                                        <div class="col-md-6">
+                                            @Html.LabelFor(m => m.OfficeLongitude, new { @class = "form-label fw-bold" })
+                                            @Html.EditorFor(m => m.OfficeLongitude, new { htmlAttributes = new { @class = "form-control", placeholder = "مثال: 34.456789" } })
+                                            @Html.ValidationMessageFor(m => m.OfficeLongitude, "", new { @class = "text-danger small" })
+                                        </div>
+                                        <div class="col-md-6">
+                                            @Html.LabelFor(m => m.AllowedRadiusMeters, new { @class = "form-label fw-bold" })
+                                            <div class="input-group">
+                                                @Html.EditorFor(m => m.AllowedRadiusMeters, new { htmlAttributes = new { @class = "form-control", type = "number" } })
+                                                <span class="input-group-text">متر</span>
+                                            </div>
+                                            <div class="form-text">المسافة المسموح للموظف بتسجيل الحضور ضمنها حول المقر.</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 text-center d-flex align-items-center justify-content-center">
+                                    <div class="text-muted opacity-50">
+                                        <i class="bi bi-pin-map-fill" style="font-size: 8rem;"></i>
+                                        <p>GPS Tracking System</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                        <div class="card-footer bg-light py-3 text-end">
+                            <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                                <i class="bi bi-check2-circle me-2"></i> حفظ كافة الإعدادات
                             </button>
                         </div>
                     }
@@ -129,3 +297,29 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تفعيل مكتبة Select2
+            $('.select2').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                dir: "rtl",
+                placeholder: "اختر...",
+                allowClear: true,
+                dropdownParent: $('#settingsTabsContent') // هام ليعمل داخل التبويبات بشكل صحيح
+            });
+
+            // حفظ التبويب النشط عند إعادة تحميل الصفحة (للبقاء في نفس المكان)
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                localStorage.setItem('activeSettingsTab', $(e.target).attr('id'));
+            });
+
+            var activeTab = localStorage.getItem('activeSettingsTab');
+            if (activeTab) {
+                $('#' + activeTab).tab('show');
+            }
+        });
+    </script>
+}

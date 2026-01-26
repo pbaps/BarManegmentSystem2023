@@ -129,6 +129,7 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.IO.Pipelines, Version=10.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.IO.Pipelines.10.0.1\lib\net462\System.IO.Pipelines.dll</HintPath>
     </Reference>
@@ -239,7 +240,9 @@
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
     <Compile Include="Areas\Admin\Controllers\AccountingReportsController.cs" />
     <Compile Include="Areas\Admin\Controllers\AdminLoginController.cs" />
+    <Compile Include="Areas\Admin\Controllers\AttendanceController.cs" />
     <Compile Include="Areas\Admin\Controllers\BankAccountsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\BranchesController.cs" />
     <Compile Include="Areas\Admin\Controllers\CentralQueryController.cs" />
     <Compile Include="Areas\Admin\Controllers\CheckPortfolioController.cs" />
     <Compile Include="Areas\Admin\Controllers\CommitteeManagementController.cs" />
@@ -267,6 +270,7 @@
     <Compile Include="Areas\Admin\Controllers\FiscalYearsController.cs" />
     <Compile Include="Areas\Admin\Controllers\GeneralExpensesController.cs" />
     <Compile Include="Areas\Admin\Controllers\GeneralLedgerController.cs" />
+    <Compile Include="Areas\Admin\Controllers\HRReportsController.cs" />
     <Compile Include="Areas\Admin\Controllers\ItemsController.cs" />
     <Compile Include="Areas\Admin\Controllers\JobTitlesController.cs" />
     <Compile Include="Areas\Admin\Controllers\LawyerFinancialDataController.cs" />
@@ -274,6 +278,8 @@
     <Compile Include="Areas\Admin\Controllers\PurchaseInvoicesController.cs" />
     <Compile Include="Areas\Admin\Controllers\StockIssuesController.cs" />
     <Compile Include="Areas\Admin\Controllers\SuppliersController.cs" />
+    <Compile Include="Areas\Admin\Controllers\SystemMaintenanceController.cs" />
+    <Compile Include="Areas\Admin\Controllers\WorkShiftsController.cs" />
     <Compile Include="Areas\Admin\ViewModels\BalanceSheetViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\BankTransferReportViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\BatchAidViewModel.cs" />
@@ -357,7 +363,6 @@
     <Compile Include="Areas\Admin\ViewModels\OathCeremonyViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\OathRequestCreateViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\OathRequestReviewViewModel.cs" />
-    <Compile Include="Areas\Admin\ViewModels\PassportMinorViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\PaymentVouchersViewModels.cs" />
     <Compile Include="Areas\Admin\ViewModels\PermissionsViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\PrintLoanReceiptViewModel.cs" />
@@ -370,6 +375,7 @@
     <Compile Include="Areas\Admin\ViewModels\RequestReviewViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StampDashboardViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StampIssuanceViewModel.cs" />
+    <Compile Include="Areas\Admin\ViewModels\StampSalesReportViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StampShareManagementViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StockIssueViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\StopContinueRequestViewModel.cs" />
@@ -381,7 +387,6 @@
     <Compile Include="Areas\Admin\ViewModels\TraineeQueryViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\TraineeReviewViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\TrainingCommitteeIndexViewModel.cs" />
-    <Compile Include="Areas\Admin\ViewModels\TransactionPartyViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\TransferRequestViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\TrialBalanceViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\UploadExamResultsViewModel.cs" />
@@ -439,19 +444,36 @@
     <Compile Include="Helpers\PasswordHelper.cs" />
     <Compile Include="Helpers\PermissionHelper.cs" />
     <Compile Include="Helpers\TafqeetHelper.cs" />
-    <Compile Include="Migrations\202601031203451_InitialCreate.cs" />
-    <Compile Include="Migrations\202601031203451_InitialCreate.designer.cs">
-      <DependentUpon>202601031203451_InitialCreate.cs</DependentUpon>
+    <Compile Include="Migrations\202601200741174_InitialCreate.cs" />
+    <Compile Include="Migrations\202601200741174_InitialCreate.designer.cs">
+      <DependentUpon>202601200741174_InitialCreate.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202601051421401_FixFinancialModels_Final.cs" />
-    <Compile Include="Migrations\202601051421401_FixFinancialModels_Final.designer.cs">
-      <DependentUpon>202601051421401_FixFinancialModels_Final.cs</DependentUpon>
+    <Compile Include="Migrations\202601200840238_AddLoanFilePaths.cs" />
+    <Compile Include="Migrations\202601200840238_AddLoanFilePaths.designer.cs">
+      <DependentUpon>202601200840238_AddLoanFilePaths.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202601200933283_UpdateLoanInstallmentSchema.cs" />
+    <Compile Include="Migrations\202601200933283_UpdateLoanInstallmentSchema.designer.cs">
+      <DependentUpon>202601200933283_UpdateLoanInstallmentSchema.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202601201016321_UpdateLoanInstallmentSchema2.cs" />
+    <Compile Include="Migrations\202601201016321_UpdateLoanInstallmentSchema2.designer.cs">
+      <DependentUpon>202601201016321_UpdateLoanInstallmentSchema2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202601211135247_UpdateLoanInstallmentSchema23.cs" />
+    <Compile Include="Migrations\202601211135247_UpdateLoanInstallmentSchema23.designer.cs">
+      <DependentUpon>202601211135247_UpdateLoanInstallmentSchema23.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202601211258547_AddReasonToRequests.cs" />
+    <Compile Include="Migrations\202601211258547_AddReasonToRequests.designer.cs">
+      <DependentUpon>202601211258547_AddReasonToRequests.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Answer.cs" />
     <Compile Include="Models\ApplicationStatus.cs" />
     <Compile Include="Models\Attachment.cs" />
     <Compile Include="Models\AttachmentType.cs" />
+    <Compile Include="Models\AttendanceModels.cs" />
     <Compile Include="Models\BankAccount.cs" />
     <Compile Include="Models\BarExpense.cs" />
     <Compile Include="Models\CommitteeDecision.cs" />
@@ -497,7 +519,6 @@
     <Compile Include="Models\JobTitle.cs" />
     <Compile Include="Models\LawyerExtendedData.cs" />
     <Compile Include="Models\LawyerFinancialAid.cs" />
-    <Compile Include="Models\LeaveRequest.cs" />
     <Compile Include="Models\LeaveType.cs" />
     <Compile Include="Models\LegalResearch.cs" />
     <Compile Include="Models\LoanApplication.cs" />
@@ -540,6 +561,7 @@
     <Compile Include="Models\VoucherDetail.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AccountingService.cs" />
+    <Compile Include="Services\AttendanceService.cs" />
     <Compile Include="Services\AuditService.cs" />
     <Compile Include="Services\EmailService.cs" />
     <Compile Include="Services\SupervisorService.cs" />
@@ -1012,6 +1034,29 @@
     <Content Include="Areas\Admin\Views\FiscalYears\Index.cshtml" />
     <Content Include="Areas\Admin\Views\FiscalYears\Create.cshtml" />
     <Content Include="Areas\Admin\Views\FiscalYears\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Payroll\ManageAnnualIncrements.cshtml" />
+    <Content Include="Areas\Admin\Views\Employees\PrintSalarySlip.cshtml" />
+    <Content Include="Areas\Admin\Views\Attendance\MyAttendance.cshtml" />
+    <Content Include="Areas\Admin\Views\Branches\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Branches\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Branches\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Attendance\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Attendance\RequestLeave.cshtml" />
+    <Content Include="Areas\Admin\Views\Attendance\ManageLeaves.cshtml" />
+    <Content Include="Areas\Admin\Views\Attendance\RequestPermission.cshtml" />
+    <Content Include="Areas\Admin\Views\Attendance\ManagePermissions.cshtml" />
+    <Content Include="Areas\Admin\Views\WorkShifts\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\WorkShifts\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Attendance\AccessDenied.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_PrintLayoutHR.cshtml" />
+    <Content Include="Areas\Admin\Views\HRReports\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\HRReports\PrintTemplate.cshtml" />
+    <Content Include="Areas\Admin\Views\HRReports\LeaveRequestPaper.cshtml" />
+    <Content Include="Areas\Admin\Views\HRReports\PermissionRequestPaper.cshtml" />
+    <Content Include="Areas\Admin\Views\LawyerProfile\_LawyerModals.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\StampSales\SalesReport.cshtml" />
+    <Content Include="Areas\Admin\Views\SystemMaintenance\Index.cshtml" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.1.js" />
     <Content Include="Scripts\jquery-3.7.1.min.js" />
@@ -1091,6 +1136,7 @@
     <Content Include="Views\ExamRegistration\Success.cshtml" />
     <Content Include="Views\ExamRegistration\RegistrationClosed.cshtml" />
     <Content Include="Views\Shared\_RegisterLayout.cshtml" />
+    <Content Include="Views\ExamRegistration\PrintVoucher.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -1110,11 +1156,23 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202601031203451_InitialCreate.resx">
-      <DependentUpon>202601031203451_InitialCreate.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202601200741174_InitialCreate.resx">
+      <DependentUpon>202601200741174_InitialCreate.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202601051421401_FixFinancialModels_Final.resx">
-      <DependentUpon>202601051421401_FixFinancialModels_Final.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202601200840238_AddLoanFilePaths.resx">
+      <DependentUpon>202601200840238_AddLoanFilePaths.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601200933283_UpdateLoanInstallmentSchema.resx">
+      <DependentUpon>202601200933283_UpdateLoanInstallmentSchema.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601201016321_UpdateLoanInstallmentSchema2.resx">
+      <DependentUpon>202601201016321_UpdateLoanInstallmentSchema2.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601211135247_UpdateLoanInstallmentSchema23.resx">
+      <DependentUpon>202601211135247_UpdateLoanInstallmentSchema23.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202601211258547_AddReasonToRequests.resx">
+      <DependentUpon>202601211258547_AddReasonToRequests.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

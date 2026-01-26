@@ -179,7 +179,6 @@
     }
 </style>
 
-<!-- لوحة تحكم التوقيع -->
 <div class="no-print signature-settings shadow-sm">
     <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pen-fill"></i> إعدادات التوقيع</h6>
     <div class="row g-3">
@@ -187,9 +186,17 @@
             <label class="small text-muted">اختر الموقع:</label>
             <select id="signerSelect" class="form-select form-select-sm" onchange="updateSigner()">
                 <option value="none">-- بدون توقيع --</option>
-                <option value="صافي الدحدوح|نائب نقيب المحامين" selected>نائب النقيب (صافي الدحدوح)</option>
-                <option value="زياد عطا النجار|أمين السر">أمين السر (زياد النجار)</option>
-                <option value="علي الدن|أمين الصندوق">أمين الصندوق (علي الدن)</option>
+
+                @if (ViewBag.SignersList != null)
+                {
+                    foreach (var item in (SelectList)ViewBag.SignersList)
+                    {
+                        // تحديد نائب النقيب افتراضياً لإفادات المزاولة
+                        bool isSelected = item.Text.Contains("نائب نقيب");
+                        <option value="@item.Value" @(isSelected ? "selected" : "")>@item.Text</option>
+                    }
+                }
+
                 <option value="custom">--- إدخال يدوي ---</option>
             </select>
         </div>
@@ -205,7 +212,6 @@
 </div>
 
 <div class="page">
-    <!-- الترويسة -->
     <div class="header">
         <div class="header-right">
             <div class="org-name-ar">نقابة المحامين النظاميين الفلسطينيين</div>
@@ -233,26 +239,22 @@
     <div class="content-body">
         <div class="intro-line">تفيد نقابة المحامين الفلسطينيين</div>
 
-        <!-- السطر الأول -->
         <div class="data-line">
             <span class="data-label">بأن الأستاذ/ة</span>
             <span class="data-field">@Model.ArabicName</span>
             <span class="data-label">المحامي/ة</span>
         </div>
 
-        <!-- السطر الثاني -->
         <div class="data-line" style="justify-content: right;">
-            <span class="data-label  ">عضوية رقم /</span>
+            <span class="data-label">عضوية رقم /</span>
             <span class="data-field" style="max-width: 200px; flex-grow: 0; width: 200px;">@(Model.MembershipId ?? "---")</span>
         </div>
 
-        <!-- السطر الثالث -->
         <div class="data-line">
             <span class="data-label">قد حصل على إجازة ممارسة مهنة المحاماة في فلسطين بتاريخ /</span>
             <span class="data-field" style="max-width: 150px; flex-grow: 0; width: 150px;">@(Model.PracticeStartDate.HasValue ? Model.PracticeStartDate.Value.ToString("yyyy/MM/dd") : "---")</span>
         </div>
 
-        <!-- السطر الرابع -->
         <div class="data-line">
             <span class="data-label">ومسجل في سجل المحامين /</span>
             <span class="data-field" style="max-width: 150px;">مزاول</span>
@@ -265,7 +267,6 @@
         </div>
     </div>
 
-    <!-- التذييل -->
     <div class="footer-section">
         <div class="date-section">
             حرر في : @DateTime.Now.ToString("yyyy/MM/dd")
@@ -300,11 +301,14 @@
             } else {
                 var parts = selected.split('|');
                 var name = parts[0];
-                var title = parts[0].includes("صافي") ? "المستشار " : "الأستاذ ";
-                if (!name.includes("المستشار") && !name.includes("الأستاذ")) name = title + name;
+                var title = parts[1];
+
+                if (!name.includes("الأستاذ") && !name.includes("المستشار") && !name.includes("الدكتور")) {
+                    name = "الأستاذ " + name;
+                }
 
                 document.getElementById("signerNameInput").value = name;
-                document.getElementById("signerTitleInput").value = parts[1];
+                document.getElementById("signerTitleInput").value = title;
             }
         }
         syncSignerDisplay();

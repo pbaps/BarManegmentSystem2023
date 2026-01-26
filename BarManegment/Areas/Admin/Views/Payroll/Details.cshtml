@@ -12,77 +12,111 @@
             <h4 class="text-primary fw-bold mb-0">
                 <i class="bi bi-file-spreadsheet-fill me-2"></i> مسير رواتب شهر @Model.Month لسنة @Model.Year
             </h4>
-            <span class="text-muted small">تاريخ الإصدار: @Model.IssueDate.ToString("yyyy/MM/dd") | بواسطة: @Model.CreatedBy</span>
+            <span class="text-muted small">
+                <i class="bi bi-clock"></i> تاريخ الإصدار: @Model.IssueDate.ToString("yyyy/MM/dd")
+                | <i class="bi bi-person"></i> بواسطة: @Model.CreatedBy
+            </span>
         </div>
         <div class="btn-group shadow-sm">
-            <a href="@Url.Action("Print", new { id = Model.Id })" target="_blank" class="btn btn-outline-secondary">
-                <i class="bi bi-printer me-1"></i> طباعة الكشف الرسمي
+            <a href="@Url.Action("Print", new { id = Model.Id })" target="_blank" class="btn btn-outline-dark">
+                <i class="bi bi-printer me-1"></i> طباعة رسمية
             </a>
-
-
-
             <a href="@Url.Action("Index")" class="btn btn-secondary">
-                <i class="bi bi-arrow-left me-1"></i> عودة
+                <i class="bi bi-arrow-left me-1"></i> عودة للقائمة
             </a>
         </div>
     </div>
 
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <div class="row align-items-center">
-                <div class="col-md-3 text-center border-start">
-                    <h6 class="text-muted fw-bold">الحالة المالية</h6>
+
+                <div class="col-md-3 text-center border-start bg-light py-3 rounded">
+                    <h6 class="text-muted fw-bold mb-3">حالة المسير</h6>
+
                     @if (Model.IsPostedToJournal)
                     {
-                        <span class="badge bg-success fs-6 px-3 py-2 mb-2"><i class="bi bi-check-circle-fill me-2"></i> مرحل للحسابات</span>
-                        <br />
-                        <small class="text-muted font-monospace">رقم القيد: #@Model.JournalEntryId</small>
+                        <div class="mb-3">
+                            <span class="badge bg-success fs-6 px-3 py-2 w-100">
+                                <i class="bi bi-check-circle-fill me-2"></i> معتمد ومرحل
+                            </span>
+                            <div class="mt-2 text-muted small font-monospace">
+                                <i class="bi bi-hash"></i> رقم القيد:
+                                <a href="@Url.Action("Details", "JournalEntries", new { id = Model.JournalEntryId })" class="text-decoration-none fw-bold">@Model.JournalEntryId</a>
+                            </div>
+                        </div>
                     }
                     else
                     {
-                        <span class="badge bg-warning text-dark fs-6 px-3 py-2 mb-2"><i class="bi bi-hourglass-split me-2"></i> مسودة (غير مرحل)</span>
+                        <div class="mb-3">
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2 w-100 mb-2">
+                                <i class="bi bi-hourglass-split me-2"></i> مسودة (قيد المراجعة)
+                            </span>
 
-                        <form action="@Url.Action("PostToJournal", new { id = Model.Id })" method="post" onsubmit="return confirm('هل أنت متأكد من اعتماد الرواتب وترحيل القيد المالي؟ لا يمكن التراجع بعد هذه الخطوة.');">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">
-                                <i class="bi bi-journal-check me-1"></i> اعتماد وترحيل للمالية
-                            </button>
-                        </form>
+                            <form action="@Url.Action("PostToJournal", new { id = Model.Id })" method="post" onsubmit="return confirm('تنبيه هام:\nهل أنت متأكد من اعتماد الرواتب وترحيل القيد المالي؟\nلا يمكن التراجع عن هذه الخطوة.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold shadow-sm">
+                                    <i class="bi bi-check2-all me-1"></i> اعتماد وترحيل للمالية
+                                </button>
+                            </form>
 
-                        <form action="@Url.Action("Delete", new { id = Model.Id })" method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذا المسير؟');" class="mt-1">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">
-                                <i class="bi bi-trash me-1"></i> حذف المسير
-                            </button>
-                        </form>
+                            <form action="@Url.Action("Delete", new { id = Model.Id })" method="post" onsubmit="return confirm('تحذير:\nهل أنت متأكد من حذف هذا المسير وجميع القسائم المرتبطة به؟');" class="mt-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                    <i class="bi bi-trash me-1"></i> حذف المسير
+                                </button>
+                            </form>
+                        </div>
                     }
                 </div>
 
                 <div class="col-md-9">
-                    <div class="row text-center">
+                    <div class="row text-center g-3">
                         <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border">
-                                <small class="d-block text-muted fw-bold">إجمالي الاستحقاقات (Gross)</small>
-                                <h4 class="text-primary fw-bold mb-0">@Model.TotalGrossAmount.ToString("N2")</h4>
+                            <div class="p-3 bg-white rounded border shadow-sm h-100">
+                                <small class="d-block text-muted fw-bold text-uppercase mb-1">إجمالي الاستحقاق (Gross)</small>
+                                <h3 class="text-primary fw-bold mb-0">@Model.TotalGrossAmount.ToString("N0")</h3>
+                                <span class="text-muted small">@Model.PayrollSlips.Count موظف</span>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border">
-                                <small class="d-block text-muted fw-bold">إجمالي الاستقطاعات</small>
-                                <h4 class="text-danger fw-bold mb-0">@((Model.TotalGrossAmount - Model.TotalNetAmount).ToString("N2"))</h4>
+                            <div class="p-3 bg-white rounded border shadow-sm h-100">
+                                <small class="d-block text-muted fw-bold text-uppercase mb-1">إجمالي الاستقطاعات</small>
+                                <h3 class="text-danger fw-bold mb-0">@((Model.TotalGrossAmount - Model.TotalNetAmount).ToString("N0"))</h3>
+                                <span class="text-danger small"><i class="bi bi-arrow-down"></i> خصومات وتأمين</span>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="p-3 bg-success bg-opacity-10 rounded border border-success">
-                                <small class="d-block text-success fw-bold">صافي الرواتب (Net Pay)</small>
-                                <h4 class="text-success fw-bold mb-0">@Model.TotalNetAmount.ToString("N2")</h4>
+                            <div class="p-3 bg-success bg-opacity-10 rounded border border-success h-100 position-relative overflow-hidden">
+                                <div class="position-absolute top-0 end-0 p-1">
+                                    <i class="bi bi-wallet2 text-success opacity-25 fs-1"></i>
+                                </div>
+                                <small class="d-block text-success fw-bold text-uppercase mb-1">صافي الرواتب (Net Pay)</small>
+                                <h3 class="text-success fw-bold mb-0">@Model.TotalNetAmount.ToString("N0")</h3>
+                                <span class="text-success small fw-bold">المبلغ المستحق للصرف</span>
                             </div>
                         </div>
                     </div>
+
                     @if (!string.IsNullOrEmpty(Model.Notes))
                     {
-                        <div class="alert alert-info mt-3 mb-0 py-2 small">
-                            <i class="bi bi-info-circle me-2"></i> <strong>ملاحظات:</strong> @Model.Notes
+                        <div class="alert alert-light border mt-3 mb-0 py-2 small text-muted">
+                            <i class="bi bi-info-circle-fill me-2 text-info"></i> <strong>ملاحظات:</strong> @Model.Notes
                         </div>
                     }
                 </div>
@@ -91,55 +125,65 @@
     </div>
 
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <h6 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i> تفاصيل رواتب الموظفين</h6>
+        <div class="card-header bg-white py-3 border-bottom">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-people-fill me-2"></i> تفاصيل رواتب الموظفين</h6>
+                </div>
+                <div class="col-auto">
+                    <input type="text" id="searchTable" class="form-control form-control-sm" placeholder="بحث باسم الموظف..." onkeyup="searchTable()">
+                </div>
+            </div>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle mb-0 text-center table-sm" style="font-size: 0.9rem;">
-                    <thead class="table-dark">
+            <div class="table-responsive" style="max-height: 600px;">
+                <table class="table table-hover table-striped align-middle mb-0 text-center table-sm" id="payrollTable" style="font-size: 0.85rem;">
+                    <thead class="table-dark sticky-top">
                         <tr>
-                            <th class="text-start ps-3">الموظف</th>
-                            <th>الأساسي</th>
-                            <th>علاوات</th>
-                            <th>زيادة سنوية</th>
-                            <th>مواصلات</th>
-                            <th class="bg-secondary text-white">إجمالي الاستحقاق</th>
-                            <th>تقاعد (7%)</th>
-                            <th>خصومات أخرى</th>
-                            <th class="bg-success text-white">صافي الراتب</th>
+                            <th class="text-start ps-3 py-2">الموظف</th>
+                            <th class="py-2">الأساسي</th>
+                            <th class="py-2">علاوات</th>
+                            <th class="py-2">زيادة سنوية</th>
+                            <th class="py-2">مواصلات</th>
+                            <th class="bg-secondary text-white py-2">إجمالي الاستحقاق</th>
+                            <th class="py-2">تقاعد (7%)</th>
+                            <th class="py-2">خصومات أخرى</th>
+                            <th class="bg-success text-white py-2">صافي الراتب</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var slip in Model.PayrollSlips)
                         {
                             <tr>
-                                <td class="text-start ps-3 fw-bold">@slip.Employee.FullName</td>
+                                <td class="text-start ps-3">
+                                    <div class="fw-bold">@slip.Employee.FullName</div>
+                                    <span class="text-muted small">@slip.Employee.JobTitle?.Name</span>
+                                </td>
                                 <td>@slip.BasicSalary.ToString("N0")</td>
                                 <td>@slip.AllowancesTotal.ToString("N0")</td>
                                 <td>@slip.AnnualIncrementAmount.ToString("N0")</td>
                                 <td>@slip.TransportAllowance.ToString("N0")</td>
 
-                                <td class="fw-bold bg-light">@slip.GrossSalary.ToString("N2")</td>
+                                <td class="fw-bold bg-light text-primary">@slip.GrossSalary.ToString("N0")</td>
 
-                                <td class="text-danger">@slip.EmployeePensionDeduction.ToString("N2")</td>
-                                <td class="text-danger">@slip.OtherDeductions.ToString("N2")</td>
+                                <td class="text-danger">@slip.EmployeePensionDeduction.ToString("N0")</td>
+                                <td class="text-danger">@slip.OtherDeductions.ToString("N0")</td>
 
-                                <td class="fw-bold text-success bg-success bg-opacity-10">@slip.NetSalary.ToString("N2")</td>
+                                <td class="fw-bold text-success bg-success bg-opacity-10 fs-6">@slip.NetSalary.ToString("N0")</td>
                             </tr>
                         }
                     </tbody>
-                    <tfoot class="table-light fw-bold">
+                    <tfoot class="table-light fw-bold border-top border-2">
                         <tr>
-                            <td class="text-start ps-3">المجموع الكلي</td>
+                            <td class="text-start ps-3 py-3">المجموع الكلي</td>
                             <td>@Model.PayrollSlips.Sum(s => s.BasicSalary).ToString("N0")</td>
                             <td>@Model.PayrollSlips.Sum(s => s.AllowancesTotal).ToString("N0")</td>
                             <td>@Model.PayrollSlips.Sum(s => s.AnnualIncrementAmount).ToString("N0")</td>
                             <td>@Model.PayrollSlips.Sum(s => s.TransportAllowance).ToString("N0")</td>
-                            <td>@Model.TotalGrossAmount.ToString("N2")</td>
-                            <td class="text-danger">@Model.PayrollSlips.Sum(s => s.EmployeePensionDeduction).ToString("N2")</td>
-                            <td class="text-danger">@Model.PayrollSlips.Sum(s => s.OtherDeductions).ToString("N2")</td>
-                            <td class="text-success">@Model.TotalNetAmount.ToString("N2")</td>
+                            <td class="text-primary">@Model.TotalGrossAmount.ToString("N0")</td>
+                            <td class="text-danger">@Model.PayrollSlips.Sum(s => s.EmployeePensionDeduction).ToString("N0")</td>
+                            <td class="text-danger">@Model.PayrollSlips.Sum(s => s.OtherDeductions).ToString("N0")</td>
+                            <td class="bg-success text-white">@Model.TotalNetAmount.ToString("N0")</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -148,32 +192,27 @@
     </div>
 </div>
 
-@section Styles {
-    <style>
-        @@media print {
-            .no-print, header, footer, #sidebar {
-                display: none !important;
-            }
+@section Scripts {
+    <script>
+        // دالة بسيطة للبحث في الجدول
+        function searchTable() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchTable");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("payrollTable");
+            tr = table.getElementsByTagName("tr");
 
-            .card {
-                border: 1px solid #ddd !important;
-            }
-
-            .bg-light {
-                background-color: #f8f9fa !important;
-                -webkit-print-color-adjust: exact;
-            }
-
-            .table-dark {
-                background-color: #212529 !important;
-                color: white !important;
-                -webkit-print-color-adjust: exact;
-            }
-
-            .bg-success {
-                background-color: #d1e7dd !important;
-                -webkit-print-color-adjust: exact;
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0]; // البحث في العمود الأول (الاسم)
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
             }
         }
-    </style>
+    </script>
 }

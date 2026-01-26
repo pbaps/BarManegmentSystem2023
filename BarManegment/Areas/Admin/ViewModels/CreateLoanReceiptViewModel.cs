@@ -23,5 +23,7 @@ namespace BarManegment.Areas.Admin.ViewModels
         [Display(Name = "تاريخ سداد البنك")]
         [DataType(DataType.Date)]
         public DateTime BankPaymentDate { get; set; } = DateTime.Now;
+
+        public string Description { get; set; }
     }
 }

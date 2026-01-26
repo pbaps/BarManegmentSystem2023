@@ -11,8 +11,8 @@ namespace BarManegment.ViewModels
         [Display(Name = "الاسم الكامل")]
         public string FullName { get; set; }
 
-        [Required(ErrorMessage = "الرقم الوطني مطلوب")]
-        [Display(Name = "الرقم الوطني")]
+        [Required(ErrorMessage = "رقم الهوية مطلوب")]
+        [Display(Name = "رقم الهوية")]
         [RegularExpression(@"^\d{9}$", ErrorMessage = "الرجاء إدخال رقم هوية صحيح مكون من 9 أرقام.")]
         public string NationalIdNumber { get; set; }
 

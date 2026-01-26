@@ -30,7 +30,7 @@ namespace BarManegment.Models
 
         [Display(Name = "تاريخ التعيين")]
         [DataType(DataType.Date)]
-        public DateTime HireDate { get; set; }
+        public DateTime? HireDate { get; set; } // جعلته Nullable لتجنب مشاكل البيانات القديمة
 
         [Display(Name = "القسم")]
         public int DepartmentId { get; set; }
@@ -48,7 +48,11 @@ namespace BarManegment.Models
         [Display(Name = "الراتب الأساسي")]
         public decimal BasicSalary { get; set; }
 
-        // --- إعدادات الزيادة السنوية (جديد) ---
+        // --- إعدادات الزيادة السنوية (معدل) ---
+
+        [Display(Name = "قيمة العلاوة السنوية المتراكمة")]
+        public decimal? AnnualIncrementAmount { get; set; } = 0; // ✅ الحقل الجديد المخزن في قاعدة البيانات
+
         [Display(Name = "نسبة الزيادة السنوية (%)")]
         public decimal AnnualIncrementPercent { get; set; } = 5;
 
@@ -91,26 +95,7 @@ namespace BarManegment.Models
         // 4. الحسابات التلقائية (Logic)
         // ============================
 
-        // أ) حساب قيمة الزيادة السنوية الحالية
-        public decimal CalculatedAnnualIncrementAmount
-        {
-            get
-            {
-                if (HireDate == DateTime.MinValue) return 0;
-                var today = DateTime.Now;
-                int yearsOfService = today.Year - HireDate.Year;
-                if (HireDate.Date > today.AddYears(-yearsOfService)) yearsOfService--;
-                if (yearsOfService < 0) yearsOfService = 0;
-
-                int applicableYears = (yearsOfService > MaxIncrementYears) ? MaxIncrementYears : yearsOfService;
-
-                // الزيادة = (الراتب الأساسي * النسبة) * عدد السنوات
-                return (BasicSalary * (AnnualIncrementPercent / 100)) * applicableYears;
-            }
-        }
-
         // ب) حساب "الوعاء التأميني" (الراتب الخاضع للتأمين)
-        // حسب طلبك: الأساسي + الماجستير + الدكتوراه + التخصص
         public decimal PensionBasisSalary
         {
             get
@@ -122,7 +107,7 @@ namespace BarManegment.Models
             }
         }
 
-        // ج) حساب قيم الاستقطاع بناءً على الوعاء الجديد
+        // ج) حساب قيم الاستقطاع
         public decimal PensionAmountEmployee => PensionBasisSalary * (EmployeePensionPercent / 100);
         public decimal PensionAmountEmployer => PensionBasisSalary * (EmployerPensionPercent / 100);
         public decimal TotalToPensionAuthority => PensionAmountEmployee + PensionAmountEmployer;
@@ -130,7 +115,7 @@ namespace BarManegment.Models
         // د) إجمالي الراتب (Gross Salary) - يشمل كل شيء قبل الخصم
         public decimal TotalSalary =>
             BasicSalary +
-            CalculatedAnnualIncrementAmount + // الزيادة السنوية
+            (AnnualIncrementAmount ?? 0) + // ✅ استخدام القيمة المخزنة
             ManagerAllowance +
             HeadOfDeptAllowance +
             MasterDegreeAllowance +

@@ -43,6 +43,7 @@ namespace BarManegment.ViewModels
 
         [Required(ErrorMessage = "حالة الطلب مطلوبة")]
         [Display(Name = "حالة الطلب")]
+        [Range(1, int.MaxValue, ErrorMessage = "يجب اختيار حالة صحيحة")]
         public int ApplicationStatusId { get; set; }
 
         public string PersonalPhotoPath { get; set; }

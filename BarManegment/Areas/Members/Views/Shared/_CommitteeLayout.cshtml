@@ -44,14 +44,14 @@
     <!-- شريط علوي مبسط -->
     <nav class="navbar navbar-expand-lg navbar-committee shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="@Url.Action("Dashboard", "CommitteePortal", new { area = "Admin" })">
+            <a class="navbar-brand fw-bold" href="@Url.Action("Dashboard", "CommitteePortal", new { area = "Members" })">
                 <i class="bi bi-gavel me-2"></i> نقابة المحامين - بوابة اللجان
             </a>
 
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="@Url.Action("Dashboard", "CommitteePortal", new { area = "Admin" })">الرئيسية</a>
+                        <a class="nav-link" href="@Url.Action("Index", "Dashboard", new { area = "Members" })">الرئيسية</a>
                     </li>
                 </ul>
 

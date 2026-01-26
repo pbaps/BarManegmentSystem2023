@@ -5,6 +5,7 @@ using System.Web.Mvc;
 using System.Data.Entity;
 using BarManegment.Helpers;
 using System.Web.Security;
+using System;
 
 namespace BarManegment.Areas.ExamPortal.Controllers
 {
@@ -15,10 +16,7 @@ namespace BarManegment.Areas.ExamPortal.Controllers
 
         public ActionResult Index()
         {
-            if (Session["TraineeName"] != null)
-            {
-                return RedirectToAction("Index", "Dashboard");
-            }
+            if (Session["EnrollmentId"] != null) return RedirectToAction("Index", "Dashboard");
             return View();
         }
 
@@ -26,76 +24,127 @@ namespace BarManegment.Areas.ExamPortal.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Index(ExamLoginViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return View(model);
+
+            var now = DateTime.Now;
+            string inputId = model.NationalIdNumber.Trim(); // إزالة المسافات
+
+            // =========================================================
+            // 1. البحث في جدول الأعضاء (Users) - التصحيح هنا
+            // =========================================================
+            // ✅ البحث في Username OR IdentificationNumber
+            var user = db.Users.Include(u => u.UserType)
+                               .FirstOrDefault(u => u.Username == inputId || u.IdentificationNumber == inputId);
+
+            if (user != null)
             {
-                // 1. المحاولة الأولى: التحقق كـ "متدرب" أو "محامي مزاول" (من بوابة الأعضاء)
-                // هؤلاء لديهم حسابات مستخدمين (Users)
-                var user = db.Users.Include(u => u.UserType).FirstOrDefault(u => u.Username == model.NationalIdNumber);
-
-                if (user != null && (user.UserType.NameEnglish == "Graduate" || user.UserType.NameEnglish == "Practicing" || user.UserType.NameEnglish == "Advocate"))
+                // 1.1 التحقق من كلمة المرور
+                if (!PasswordHelper.VerifyPassword(model.Password, user.HashedPassword))
                 {
-                    if (user.IsActive && PasswordHelper.VerifyPassword(model.Password, user.HashedPassword))
-                    {
-                        var graduateApp = db.GraduateApplications.FirstOrDefault(g => g.UserId == user.Id);
-                        if (graduateApp != null)
-                        {
-                            // هل لديه امتحان نشط؟
-                            var enrollment = db.ExamEnrollments.Include(e => e.Exam)
-                                .FirstOrDefault(e => e.GraduateApplicationId == graduateApp.Id && e.Exam.IsActive);
-
-                            if (enrollment != null)
-                            {
-                                Session["EnrollmentId"] = enrollment.Id;
-                                Session["TraineeName"] = user.FullNameArabic;
-                                Session["ApplicantType"] = "Graduate";
-                                Session["ApplicantId"] = graduateApp.Id; // GraduateApplicationId
-
-                                FormsAuthentication.SetAuthCookie(user.Username, false);
-                                return RedirectToAction("Index", "Dashboard");
-                            }
-                            else
-                            {
-                                ModelState.AddModelError("", "لا يوجد امتحان نشط متاح لك حالياً.");
-                                return View(model);
-                            }
-                        }
-                    }
+                    ModelState.AddModelError("Password", "كلمة المرور غير صحيحة.");
+                    return View(model);
                 }
 
-                // 2. المحاولة الثانية: التحقق كـ "خريج جديد" (من طلبات الامتحان مباشرة)
-                // هؤلاء ليس لديهم حسابات Users بعد، بل ExamApplication
-                var examApp = db.ExamApplications.FirstOrDefault(a => a.NationalIdNumber == model.NationalIdNumber);
-                if (examApp != null && !string.IsNullOrEmpty(examApp.TemporaryPassword) && PasswordHelper.VerifyPassword(model.Password, examApp.TemporaryPassword))
+                // 1.2 التحقق من نوع المستخدم
+                if (user.UserType.NameEnglish != "Graduate" && user.UserType.NameEnglish != "Practicing" && user.UserType.NameEnglish != "Advocate")
                 {
-                    var enrollment = db.ExamEnrollments.Include(e => e.Exam)
-                        .FirstOrDefault(e => e.ExamApplicationId == examApp.Id && e.Exam.IsActive);
-
-                    if (enrollment != null)
-                    {
-                        Session["EnrollmentId"] = enrollment.Id;
-                        Session["TraineeName"] = examApp.FullName;
-                        Session["ApplicantType"] = "ExamApplicant";
-                        Session["ApplicantId"] = examApp.Id; // ExamApplicationId
-
-                        FormsAuthentication.SetAuthCookie(examApp.NationalIdNumber, false);
-                        return RedirectToAction("Index", "Dashboard");
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("", "لا يوجد امتحان نشط متاح لك حالياً.");
-                        return View(model);
-                    }
+                    ModelState.AddModelError("", "هذا الحساب ليس لديه صلاحية تقديم امتحانات (نوع المستخدم غير مطابق).");
+                    return View(model);
                 }
 
-                ModelState.AddModelError("", "البيانات المدخلة غير صحيحة أو الامتحان غير مفعل حاليًا.");
+                // 1.3 التحقق من ملف العضوية
+                var graduateApp = db.GraduateApplications.FirstOrDefault(g => g.UserId == user.Id);
+                if (graduateApp == null)
+                {
+                    ModelState.AddModelError("", "المستخدم موجود ولكن لا يوجد ملف عضوية مرتبط به.");
+                    return View(model);
+                }
+
+                // 1.4 التحقق من الامتحان
+                var enrollment = db.ExamEnrollments
+                    .Include(e => e.Exam)
+                    .FirstOrDefault(e =>
+                        e.GraduateApplicationId == graduateApp.Id &&
+                        e.Exam.IsActive);
+
+                if (enrollment == null)
+                {
+                    ModelState.AddModelError("", "أنت غير مسجل في أي امتحان نشط حالياً.");
+                    return View(model);
+                }
+
+                // 1.5 التحقق من الوقت
+                if (now < enrollment.Exam.StartTime)
+                {
+                    ModelState.AddModelError("", $"الامتحان لم يبدأ بعد. موعد البدء: {enrollment.Exam.StartTime:yyyy-MM-dd HH:mm}");
+                    return View(model);
+                }
+                if (now > enrollment.Exam.EndTime)
+                {
+                    ModelState.AddModelError("", "عذراً، انتهى وقت الامتحان.");
+                    return View(model);
+                }
+
+                // --> نجاح
+                SetExamSession(enrollment.Id, user.FullNameArabic, "Member", graduateApp.Id, user.Username);
+                return RedirectToAction("Index", "Dashboard");
             }
+
+            // =========================================================
+            // 2. البحث في جدول الخريجين الجدد (ExamApplications)
+            // =========================================================
+            var examApp = db.ExamApplications.FirstOrDefault(a => a.NationalIdNumber == inputId);
+
+            if (examApp != null)
+            {
+                if (string.IsNullOrEmpty(examApp.TemporaryPassword) || !PasswordHelper.VerifyPassword(model.Password, examApp.TemporaryPassword))
+                {
+                    ModelState.AddModelError("Password", "كلمة المرور غير صحيحة.");
+                    return View(model);
+                }
+
+                var enrollment = db.ExamEnrollments.Include(e => e.Exam)
+                    .FirstOrDefault(e => e.ExamApplicationId == examApp.Id && e.Exam.IsActive);
+
+                if (enrollment == null)
+                {
+                    ModelState.AddModelError("", "لست مسجلاً في امتحان.");
+                    return View(model);
+                }
+
+                if (now < enrollment.Exam.StartTime)
+                {
+                    ModelState.AddModelError("", "الامتحان لم يبدأ بعد.");
+                    return View(model);
+                }
+                if (now > enrollment.Exam.EndTime)
+                {
+                    ModelState.AddModelError("", "انتهى وقت الامتحان.");
+                    return View(model);
+                }
+
+                // --> نجاح
+                SetExamSession(enrollment.Id, examApp.FullName, "ExternalApplicant", examApp.Id, examApp.NationalIdNumber);
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            // =========================================================
+            // 3. فشل تام
+            // =========================================================
+            ModelState.AddModelError("", "البيانات المدخلة غير صحيحة.");
             return View(model);
         }
 
-        public ActionResult LogOffConfirmation()
+        private void SetExamSession(int enrollmentId, string name, string type, int applicantId, string username)
         {
-            return View();
+            Session["EnrollmentId"] = enrollmentId;
+            Session["TraineeName"] = name;
+            Session["ApplicantType"] = type;
+            Session["ApplicantId"] = applicantId;
+            FormsAuthentication.SetAuthCookie(username, false);
         }
+
+        public ActionResult LogOffConfirmation() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]

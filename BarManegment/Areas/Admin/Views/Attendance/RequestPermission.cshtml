@@ -1,0 +1,54 @@
+﻿@model BarManegment.Models.HourlyPermission
+
+@{
+    ViewBag.Title = "طلب إذن مغادرة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container pt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-info text-dark py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i> طلب إذن ساعي</h5>
+                </div>
+                <div class="card-body p-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">تاريخ الإذن</label>
+                            @Html.EditorFor(m => m.Date, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label">من الساعة</label>
+                                @Html.EditorFor(m => m.StartTime, new { htmlAttributes = new { @class = "form-control", type = "time" } })
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">إلى الساعة</label>
+                                @Html.EditorFor(m => m.EndTime, new { htmlAttributes = new { @class = "form-control", type = "time" } })
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">نوع الإذن</label>
+                            @Html.DropDownListFor(m => m.Type, new SelectList(new[] { "شخصي", "عمل خارجي", "طبي" }), new { @class = "form-select" })
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">السبب</label>
+                            @Html.TextAreaFor(m => m.Reason, new { @class = "form-control", rows = 2 })
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-info fw-bold">تسجيل الطلب</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

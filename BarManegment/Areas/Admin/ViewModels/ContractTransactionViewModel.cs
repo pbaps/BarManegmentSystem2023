@@ -1,4 +1,5 @@
-﻿using BarManegment.Models; // مطلوب لـ ContractTransaction
+﻿using BarManegment.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -6,27 +7,29 @@ namespace BarManegment.Areas.Admin.ViewModels
 {
     public class ContractTransactionViewModel
     {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "تاريخ المعاملة مطلوب")]
         [Display(Name = "تاريخ المعاملة")]
         [DataType(DataType.Date)]
-        public System.DateTime TransactionDate { get; set; } = System.DateTime.Now;
+        public DateTime TransactionDate { get; set; } = DateTime.Now;
 
-        [Required(ErrorMessage = "معرف المحامي مطلوب (الرقم الوطني/العضوية/اسم المستخدم)")]
-        [Display(Name = "معرف المحامي (الرقم الوطني/العضوية)")]
+        [Required(ErrorMessage = "معرف المحامي مطلوب")]
+        [Display(Name = "معرف المحامي (رقم الهوية أو العضوية)")]
         public string LawyerIdentifier { get; set; }
-
-        // (حقل مخفي لـ ID المحامي بعد التحقق منه)
-        public int LawyerId { get; set; }
 
         [Required(ErrorMessage = "نوع العقد مطلوب")]
         [Display(Name = "نوع العقد")]
         public int ContractTypeId { get; set; }
 
-        [Required]
+        [Display(Name = "قيمة العقد (للحساب النسبي)")]
+        public decimal ContractValue { get; set; }
+
         [Display(Name = "الرسوم النهائية")]
         public decimal FinalFee { get; set; }
 
-        [Display(Name = "إعفاء من الرسوم")]
-        public bool IsExempt { get; set; } = false;
+        [Display(Name = "معفى من الرسوم")]
+        public bool IsExempt { get; set; }
 
         [Display(Name = "سبب الإعفاء")]
         public int? ExemptionReasonId { get; set; }
@@ -35,31 +38,63 @@ namespace BarManegment.Areas.Admin.ViewModels
         [DataType(DataType.MultilineText)]
         public string Notes { get; set; }
 
-        // القائمة الديناميكية للأطراف
-        public List<TransactionPartyViewModel> Parties { get; set; }
-
-        // (اختياري: خاص بوكالة جواز السفر)
-        // public List<PassportMinor> Minors { get; set; }
-        // 💡💡 === بداية الإضافة === 💡💡
-        [Display(Name = "بيانات القُصّر (لوكالة جواز السفر)")]
-        public List<PassportMinorViewModel> Minors { get; set; }
-        // 💡💡 === نهاية الإضافة === 💡💡
-
- 
-
-        // 💡💡 === بداية الإضافة === 💡💡
-        [Display(Name = "الموكل (الطرف الأول) يوقع عن نفسه أيضاً")]
+        // الوكالة الخاصة
+        [Display(Name = "الموكل يوقع عن نفسه أيضاً")]
         public bool IsActingForSelf { get; set; } = true;
 
-        [Display(Name = "صفة الموكل (في حال التوقيع عن الغير)")]
-        [StringLength(250)]
+        [Display(Name = "صفة الموكل")]
         public string AgentLegalCapacity { get; set; }
-        // 💡💡 === نهاية الإضافة === 💡💡
-        public ContractTransactionViewModel()
-        {
-            Parties = new List<TransactionPartyViewModel>();
-            // Minors = new List<PassportMinor>();
-            Minors = new List<PassportMinorViewModel>(); // 💡 (تهيئة القائمة الجديدة)
-        }
+
+        // القوائم الفرعية
+        public List<TransactionPartyViewModel> Parties { get; set; } = new List<TransactionPartyViewModel>();
+        public List<PassportMinorViewModel> Minors { get; set; } = new List<PassportMinorViewModel>();
+    }
+
+    public class TransactionPartyViewModel
+    {
+        [Required]
+        [Display(Name = "نوع الطرف (1=أول, 2=ثاني)")]
+        public int PartyType { get; set; }
+
+        [Required(ErrorMessage = "اسم الطرف مطلوب")]
+        [Display(Name = "اسم الطرف")]
+        [StringLength(200)]
+        public string PartyName { get; set; }
+
+        [Required(ErrorMessage = "رقم الهوية مطلوب")]
+        [Display(Name = "رقم الهوية")]
+        [StringLength(50)]
+        public string PartyIDNumber { get; set; }
+
+        [Required(ErrorMessage = "المحافظة مطلوبة")]
+        [Display(Name = "المحافظة")]
+        public int ProvinceId { get; set; }
+
+        [Required(ErrorMessage = "صفة الطرف مطلوبة")]
+        [Display(Name = "صفة الطرف (بائع، مشتري...)")]
+        public int PartyRoleId { get; set; }
+    }
+
+    public class PassportMinorViewModel
+    {
+        [Required(ErrorMessage = "اسم القاصر مطلوب")]
+        [Display(Name = "اسم القاصر")]
+        [StringLength(200)]
+        public string MinorName { get; set; }
+
+        [Required(ErrorMessage = "رقم هوية القاصر مطلوب")]
+        [Display(Name = "رقم الهوية")]
+        [StringLength(50)]
+        public string MinorIDNumber { get; set; }
+
+        [Required(ErrorMessage = "صفة الموكل مطلوبة")]
+        [Display(Name = "صفة الموكل (ولي، وصي...)")]
+        public int GuardianRoleId { get; set; }
+
+        // 💡💡 === بداية التعديل === 💡💡
+        [Required(ErrorMessage = "صفة القاصر مطلوبة")]
+        [Display(Name = "صفة القاصر (ابن، ابنة...)")]
+        public int MinorRelationshipId { get; set; } // (استبدال GuardianRoleId)
+        // 💡💡 === نهاية التعديل === 💡💡
     }
 }

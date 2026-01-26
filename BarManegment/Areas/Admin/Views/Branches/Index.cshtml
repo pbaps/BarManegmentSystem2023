@@ -1,0 +1,78 @@
+﻿@model IEnumerable<BarManegment.Models.Branch>
+
+@{
+    ViewBag.Title = "إدارة الفروع والمواقع";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-primary"><i class="bi bi-geo-alt-fill me-2"></i> مقرات وفروع النقابة</h4>
+        <a href="@Url.Action("Create")" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> إضافة فرع جديد
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>اسم الفرع</th>
+                            <th>الإحداثيات (Lat, Lng)</th>
+                            <th>نطاق السماح</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold text-start ps-4">@item.Name</td>
+                                <td dir="ltr" class="font-monospace small">@item.Latitude, @item.Longitude</td>
+                                <td><span class="badge bg-info text-dark">@item.AllowedRadius متر</span></td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">متوقف</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+
+                                        <form action="@Url.Action("Delete", new { id = item.Id })" method="post" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الفرع؟');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-map fs-1 d-block mb-3 opacity-25"></i>
+                    <h5>لا توجد فروع مسجلة</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>

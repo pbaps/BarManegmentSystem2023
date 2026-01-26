@@ -314,5 +314,36 @@
             });
             $(document).on('click', '.btn-remove-minor', function () { $(this).closest('.minor-row').remove(); });
         });
+
+        // داخل دالة $.getJSON للرسوم
+        if (data.success) {
+            if (data.isFixed) {
+                $('#FinalFee').val(data.fee.toFixed(2)).prop('readonly', true);
+                $('#ContractValueInput').prop('disabled', true).val(0); // حقل قيمة العقد
+            } else {
+                // إذا كان نسبة
+                var contractVal = parseFloat($('#ContractValueInput').val()) || 0;
+                var calculated = contractVal * data.percent;
+                // تطبيق الحد الأدنى إذا وجد (يمكن إرساله من السيرفر أيضاً)
+                $('#FinalFee').val(calculated.toFixed(2)).prop('readonly', true);
+                $('#ContractValueInput').prop('disabled', false);
+
+                // تخزين النسبة للحساب عند تغيير القيمة
+                $('#ContractValueInput').data('percent', data.percent);
+            }
+            $('#currency-symbol').text(data.currency);
+        }
+
+        // إضافة حدث لتغيير قيمة العقد
+        $('#ContractValueInput').on('input', function () {
+            var val = parseFloat($(this).val()) || 0;
+            var percent = $(this).data('percent') || 0;
+            if (percent > 0) {
+                $('#FinalFee').val((val * percent).toFixed(2));
+            }
+        });
+
+
+
     </script>
 }

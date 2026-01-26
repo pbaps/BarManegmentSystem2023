@@ -78,12 +78,32 @@ namespace BarManegment.Models
         [Display(Name = "سبب القرض")]
         [StringLength(1000)]
         public string Notes { get; set; } // (هذا هو الحقل المفقود)
-        // 💡💡 === نهاية الإضافة === 💡💡
+                                          // 💡💡 === نهاية الإضافة === 💡💡
+                                          // ✅✅✅ الإضافات المطلوبة لحل الخطأ ✅✅✅
 
+ 
+
+        [Display(Name = "مسار قرار المجلس")]
+        public string CouncilApprovalPath { get; set; }
+
+        [Display(Name = "مسار الكمبيالة")]
+        public string MainPromissoryNotePath { get; set; }
+
+        [Display(Name = "مسار سند الدين")]
+        public string DebtBondPath { get; set; }
 
         // --- Navigation Properties ---
         public virtual ICollection<Guarantor> Guarantors { get; set; }
         public virtual ICollection<LoanInstallment> Installments { get; set; }
+
+
+        // ✅✅✅ أضف هذا السطر لحل الخطأ ✅✅✅
+        public bool IsPaid { get; set; } = false;
+
+ 
+
+
+
 
         public LoanApplication()
         {

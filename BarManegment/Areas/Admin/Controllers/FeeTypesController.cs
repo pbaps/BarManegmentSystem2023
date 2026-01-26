@@ -1,6 +1,6 @@
 ﻿using BarManegment.Helpers;
 using BarManegment.Models;
-using BarManegment.Areas.Admin.ViewModels;
+using BarManegment.Services;
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
@@ -8,135 +8,113 @@ using System.Web.Mvc;
 
 namespace BarManegment.Areas.Admin.Controllers
 {
-    [CustomAuthorize]
+    [CustomAuthorize(Permission = "CanView")]
     public class FeeTypesController : BaseController
     {
         private readonly ApplicationDbContext db = new ApplicationDbContext();
 
-        // (Index: يبقى كما هو، التعديل في الواجهة)
+        // GET: Admin/FeeTypes
         public ActionResult Index()
         {
-            var feeTypes = db.FeeTypes.Include(f => f.Currency).Include(f => f.BankAccount).ToList();
-            return View(feeTypes);
+            var feeTypes = db.FeeTypes
+                .Include(f => f.BankAccount)
+                .Include(f => f.Currency)
+                .Include(f => f.RevenueAccount); // ✅ تضمين حساب الإيراد
+            return View(feeTypes.ToList());
         }
 
-        // (Create GET: يبقى كما هو)
+        // GET: Admin/FeeTypes/Create
         [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult Create()
         {
-            var viewModel = new FeeTypeViewModel
-            {
-                Currencies = new SelectList(db.Currencies, "Id", "Name"),
-                BankAccounts = new SelectList(db.BankAccounts.Where(b => b.IsActive), "Id", "AccountName"),
-                // (قيم افتراضية للنسب)
-                LawyerPercentage = 0.0m,
-                BarSharePercentage = 1.0m // (100% للنقابة افتراضياً)
-            };
-            return View(viewModel);
+            ViewBag.BankAccountId = new SelectList(db.BankAccounts, "Id", "BankName");
+            ViewBag.CurrencyId = new SelectList(db.Currencies, "Id", "Name");
+
+            // ✅ جلب حسابات الإيرادات فقط (التي تبدأ بـ 4 وهي حركية)
+            var revenueAccounts = db.Accounts
+                .Where(a => a.Code.StartsWith("4") && a.IsTransactional)
+                .Select(a => new { a.Id, Name = a.Code + " - " + a.Name })
+                .ToList();
+            ViewBag.RevenueAccountId = new SelectList(revenueAccounts, "Id", "Name");
+
+            return View();
         }
 
+        // POST: Admin/FeeTypes/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorize(Permission = "CanAdd")]
-        public ActionResult Create(FeeTypeViewModel viewModel)
+        public ActionResult Create(FeeType feeType)
         {
             if (ModelState.IsValid)
             {
-                var feeType = new FeeType
-                {
-                    Name = viewModel.Name,
-                    DefaultAmount = viewModel.DefaultAmount,
-                    CurrencyId = viewModel.CurrencyId,
-                    BankAccountId = viewModel.BankAccountId,
-                    IsActive = viewModel.IsActive,
-
-                    // --- ⬇️ ⬇️ بداية الإضافة ⬇️ ⬇️ ---
-                    LawyerPercentage = viewModel.LawyerPercentage,
-                    BarSharePercentage = viewModel.BarSharePercentage
-                    // --- ⬆️ ⬆️ نهاية الإضافة ⬆️ ⬆️ ---
-                };
                 db.FeeTypes.Add(feeType);
                 db.SaveChanges();
-                TempData["SuccessMessage"] = "تمت إضافة نوع الرسم بنجاح.";
+                AuditService.LogAction("Create FeeType", "FeeTypes", $"Added {feeType.Name}");
                 return RedirectToAction("Index");
             }
 
-            viewModel.Currencies = new SelectList(db.Currencies, "Id", "Name", viewModel.CurrencyId);
-            viewModel.BankAccounts = new SelectList(db.BankAccounts.Where(b => b.IsActive), "Id", "AccountName", viewModel.BankAccountId);
-            return View(viewModel);
+            ViewBag.BankAccountId = new SelectList(db.BankAccounts, "Id", "BankName", feeType.BankAccountId);
+            ViewBag.CurrencyId = new SelectList(db.Currencies, "Id", "Name", feeType.CurrencyId);
+
+            var revenueAccounts = db.Accounts
+                .Where(a => a.Code.StartsWith("4") && a.IsTransactional)
+                .Select(a => new { a.Id, Name = a.Code + " - " + a.Name })
+                .ToList();
+            ViewBag.RevenueAccountId = new SelectList(revenueAccounts, "Id", "Name", feeType.RevenueAccountId);
+
+            return View(feeType);
         }
 
+        // GET: Admin/FeeTypes/Edit/5
         [CustomAuthorize(Permission = "CanEdit")]
         public ActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            FeeType feeType = db.FeeTypes.Find(id);
-            if (feeType == null)
-            {
-                return HttpNotFound();
-            }
+            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            var feeType = db.FeeTypes.Find(id);
+            if (feeType == null) return HttpNotFound();
 
-            var viewModel = new FeeTypeViewModel
-            {
-                Id = feeType.Id,
-                Name = feeType.Name,
-                DefaultAmount = feeType.DefaultAmount,
-                CurrencyId = feeType.CurrencyId,
-                BankAccountId = feeType.BankAccountId,
-                IsActive = feeType.IsActive,
+            ViewBag.BankAccountId = new SelectList(db.BankAccounts, "Id", "BankName", feeType.BankAccountId);
+            ViewBag.CurrencyId = new SelectList(db.Currencies, "Id", "Name", feeType.CurrencyId);
 
-                // --- ⬇️ ⬇️ بداية الإضافة ⬇️ ⬇️ ---
-                LawyerPercentage = feeType.LawyerPercentage,
-                BarSharePercentage = feeType.BarSharePercentage,
-                // --- ⬆️ ⬆️ نهاية الإضافة ⬆️ ⬆️ ---
+            // ✅ جلب حسابات الإيرادات
+            var revenueAccounts = db.Accounts
+                .Where(a => a.Code.StartsWith("4") && a.IsTransactional)
+                .Select(a => new { a.Id, Name = a.Code + " - " + a.Name })
+                .ToList();
+            ViewBag.RevenueAccountId = new SelectList(revenueAccounts, "Id", "Name", feeType.RevenueAccountId);
 
-                Currencies = new SelectList(db.Currencies, "Id", "Name", feeType.CurrencyId),
-                BankAccounts = new SelectList(db.BankAccounts.Where(b => b.IsActive), "Id", "AccountName", feeType.BankAccountId)
-            };
-
-            return View(viewModel);
+            return View(feeType);
         }
 
+        // POST: Admin/FeeTypes/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorize(Permission = "CanEdit")]
-        public ActionResult Edit(FeeTypeViewModel viewModel)
+        public ActionResult Edit(FeeType feeType)
         {
             if (ModelState.IsValid)
             {
-                var feeType = new FeeType
-                {
-                    Id = viewModel.Id,
-                    Name = viewModel.Name,
-                    DefaultAmount = viewModel.DefaultAmount,
-                    CurrencyId = viewModel.CurrencyId,
-                    BankAccountId = viewModel.BankAccountId,
-                    IsActive = viewModel.IsActive,
-
-                    // --- ⬇️ ⬇️ بداية الإضافة ⬇️ ⬇️ ---
-                    LawyerPercentage = viewModel.LawyerPercentage,
-                    BarSharePercentage = viewModel.BarSharePercentage
-                    // --- ⬆️ ⬆️ نهاية الإضافة ⬆️ ⬆️ ---
-                };
                 db.Entry(feeType).State = EntityState.Modified;
                 db.SaveChanges();
-                TempData["SuccessMessage"] = "تم تعديل نوع الرسم بنجاح.";
+                AuditService.LogAction("Edit FeeType", "FeeTypes", $"Updated {feeType.Name}");
                 return RedirectToAction("Index");
             }
-            viewModel.Currencies = new SelectList(db.Currencies, "Id", "Name", viewModel.CurrencyId);
-            viewModel.BankAccounts = new SelectList(db.BankAccounts.Where(b => b.IsActive), "Id", "AccountName", viewModel.BankAccountId);
-            return View(viewModel);
+            ViewBag.BankAccountId = new SelectList(db.BankAccounts, "Id", "BankName", feeType.BankAccountId);
+            ViewBag.CurrencyId = new SelectList(db.Currencies, "Id", "Name", feeType.CurrencyId);
+
+            var revenueAccounts = db.Accounts
+                .Where(a => a.Code.StartsWith("4") && a.IsTransactional)
+                .Select(a => new { a.Id, Name = a.Code + " - " + a.Name })
+                .ToList();
+            ViewBag.RevenueAccountId = new SelectList(revenueAccounts, "Id", "Name", feeType.RevenueAccountId);
+
+            return View(feeType);
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                db.Dispose();
-            }
+            if (disposing) db.Dispose();
             base.Dispose(disposing);
         }
     }

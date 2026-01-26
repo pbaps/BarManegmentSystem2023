@@ -1,78 +1,54 @@
 ﻿@{
-    ViewBag.Title = "التسجيل مغلق حاليًا";
+    ViewBag.Title = "التسجيل مغلق";
     Layout = "~/Views/Shared/_PublicLayout.cshtml";
 
-    var startDate = ViewBag.RegistrationStartDate as DateTime?;
-    var endDate = ViewBag.RegistrationEndDate as DateTime?;
+    var startDate = ViewBag.StartDate as DateTime?;
+    var endDate = ViewBag.EndDate as DateTime?;
 }
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 col-xl-6">
+<div class="row justify-content-center py-5">
+    <div class="col-lg-8 text-center">
 
-            <!-- رأس الصفحة والشعار -->
-            <div class="text-center mb-5">
-                <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" class="mb-3" style="height: 100px;" onerror="this.style.display='none'">
-                <h2 class="fw-bold text-primary">نقابة المحامين الفلسطينيين - مركز غزة</h2>
-            </div>
+        <div class="mb-4">
+            <span class="bg-danger bg-opacity-10 text-danger p-4 rounded-circle d-inline-block">
+                <i class="bi bi-calendar-x-fill" style="font-size: 4rem;"></i>
+            </span>
+        </div>
 
-            <div class="card shadow-lg border-0 rounded-3 text-center">
-                <!-- شريط أحمر علوي للتنبيه -->
-                <div class="card-header bg-danger text-white border-0 py-3 rounded-top-3">
-                    <h5 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i> تنبيه هام</h5>
-                </div>
+        <h2 class="fw-bold text-dark mb-3">عذراً، باب التسجيل مغلق حالياً</h2>
 
-                <div class="card-body p-5">
+        <p class="lead text-muted mb-5">
+            نأسف لعدم تمكنك من تقديم الطلب في الوقت الحالي. يرجى مراجعة فترات التسجيل المعلنة أدناه والمحاولة لاحقاً في الموعد المحدد.
+        </p>
 
-                    <!-- أيقونة الإغلاق -->
-                    <div class="mb-4">
-                        <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                            <i class="bi bi-calendar-x text-danger" style="font-size: 5rem;"></i>
-                        </div>
-                    </div>
-
-                    <h3 class="fw-bold text-dark mb-3">@ViewBag.Title</h3>
-
-                    <p class="text-muted lead mb-4">
-                        نأسف، لا يمكنك تقديم طلب التحاق في الوقت الحالي لأن فترة التسجيل قد انتهت أو لم تبدأ بعد.
-                    </p>
-
-                    @if (startDate.HasValue && endDate.HasValue)
-                    {
-                        <div class="card bg-light border-0 mb-4">
-                            <div class="card-body">
-                                <h6 class="fw-bold text-secondary text-uppercase small mb-3">فترة التسجيل المحددة</h6>
-                                <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
-                                    <div class="badge bg-white text-dark border px-3 py-2 fs-6 shadow-sm">
-                                        <i class="bi bi-calendar-check me-2 text-success"></i>
-                                        من: @startDate.Value.ToString("yyyy/MM/dd")
-                                    </div>
-                                    <i class="bi bi-arrow-left text-muted"></i>
-                                    <div class="badge bg-white text-dark border px-3 py-2 fs-6 shadow-sm">
-                                        <i class="bi bi-calendar-x me-2 text-danger"></i>
-                                        إلى: @endDate.Value.ToString("yyyy/MM/dd")
-                                    </div>
-                                </div>
+        @if (startDate != null && endDate != null)
+        {
+            <div class="card border-0 shadow-sm bg-light mb-5">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-primary mb-3">فترة التسجيل المعتمدة لهذه الدورة</h5>
+                    <div class="d-flex justify-content-center gap-4 flex-wrap">
+                        <div class="d-flex align-items-center bg-white px-4 py-2 rounded border">
+                            <i class="bi bi-hourglass-top text-success fs-4 me-2"></i>
+                            <div class="text-start">
+                                <small class="d-block text-muted" style="font-size: 0.75rem;">يبدأ التسجيل</small>
+                                <span class="fw-bold dir-ltr">@startDate.Value.ToString("yyyy/MM/dd")</span>
                             </div>
                         </div>
-                    }
 
-                    <p class="text-muted small mb-4">
-                        يرجى المحاولة مرة أخرى خلال فترة التسجيل المحددة. مع تمنياتنا لكم بالتوفيق.
-                    </p>
-
-                    <div class="d-grid gap-2 col-md-8 mx-auto">
-                        <a href="@Url.Action("Index", "Home", new { area = "" })" class="btn btn-primary btn-lg shadow-sm">
-                            <i class="bi bi-house-door-fill me-2"></i> العودة للرئيسية
-                        </a>
+                        <div class="d-flex align-items-center bg-white px-4 py-2 rounded border">
+                            <i class="bi bi-hourglass-bottom text-danger fs-4 me-2"></i>
+                            <div class="text-start">
+                                <small class="d-block text-muted" style="font-size: 0.75rem;">ينتهي التسجيل</small>
+                                <span class="fw-bold dir-ltr">@endDate.Value.ToString("yyyy/MM/dd")</span>
+                            </div>
+                        </div>
                     </div>
-
                 </div>
             </div>
+        }
 
-            <div class="text-center mt-4 text-muted small">
-                &copy; @DateTime.Now.Year نقابة المحامين الفلسطينيين
-            </div>
-        </div>
+        <a href="https://palba.ps" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-box-arrow-right me-2"></i> الانتقال لموقع النقابة الرسمي
+        </a>
     </div>
 </div>

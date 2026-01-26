@@ -1,0 +1,38 @@
+﻿@{
+    ViewBag.Title = "غير مصرح";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-5">
+                    <div class="mb-4 text-warning">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 5rem;"></i>
+                    </div>
+
+                    <h2 class="fw-bold text-dark mb-3">عفواً، هذه الصفحة مخصصة للموظفين فقط</h2>
+
+                    <p class="text-muted lead mb-4">
+                        حسابك الحالي (@Session["UserType"]) غير مرتبط بملف موظف في سجلات الموارد البشرية،
+                        لذلك لا يمكنك استخدام نظام الحضور والانصراف الذكي.
+                    </p>
+
+                    <div class="alert alert-info small bg-opacity-10 border-info text-start d-inline-block">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>ملاحظة للإدارة:</strong> إذا كنت موظفاً وترى هذه الرسالة، يرجى ربط حساب المستخدم الخاص بك بملف الموظف من خلال شاشة "سجل الموظفين".
+                    </div>
+
+                    <div class="mt-5">
+                        <a href="@Url.Action("Index", "Home", new { area = "Admin" })" class="btn btn-primary px-5 py-2 fw-bold rounded-pill">
+                            <i class="bi bi-house-door-fill me-2"></i> العودة للرئيسية
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -6,17 +6,25 @@
 
 <div class="container-fluid pt-4 px-4">
 
+    @* --- عنوان الصفحة --- *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark"><i class="bi bi-arrow-left-right me-2"></i> مركز تبادل البيانات</h4>
+            <p class="text-muted mb-0">تصدير البيانات للأرشيف أو استيراد بيانات من ملفات Excel خارجية.</p>
+        </div>
+    </div>
+
     @* --- رسائل التنبيه (نجاح / خطأ) --- *@
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -27,85 +35,36 @@
         @* ============================================= *@
         @* 1. قسم التصدير (Export Section) *@
         @* ============================================= *@
-        <div class="col-md-5">
+        <div class="col-lg-5">
             <div class="card h-100 shadow-sm border-0">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-cloud-download me-2"></i>تصدير البيانات (Export)</h5>
+                <div class="card-header bg-gradient-primary text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-cloud-download-fill me-2"></i> تصدير البيانات (Export)</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">
-                        اختر البيانات التي تريد تصديرها إلى ملف Excel. الملف الناتج سيكون مطابقاً لنموذج الاستيراد.
-                    </p>
+                    <div class="alert alert-light border-start border-primary border-4">
+                        <small class="text-muted">
+                            اختر نوع البيانات لتصديرها إلى ملف Excel (.xlsx). يمكنك استخدام الملف الناتج كقالب لإعادة الاستيراد لاحقاً.
+                        </small>
+                    </div>
 
                     @using (Html.BeginForm("ExportData", "DataExchange", FormMethod.Post))
                     {
                         @Html.AntiForgeryToken()
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">اختر الجدول:</label>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark">اختر الجدول المطلوب:</label>
                             <select name="type" class="form-select form-select-lg" required>
                                 <option value="" disabled selected>-- اختر من القائمة --</option>
-
-                                <optgroup label="1. الثوابت الأساسية">
-                                    <option value="UserTypes">أنواع المستخدمين</option>
-                                    <option value="ApplicationStatuses">حالات الطلب</option>
-                                    <option value="Genders">الجنس</option>
-                                    <option value="NationalIdTypes">أنواع الهوية</option>
-                                    <option value="Currencies">العملات</option>
-                                    <option value="ExamTypes">أنواع الامتحانات</option>
-                                    <option value="AttachmentTypes">أنواع المرفقات</option>
-                                    <option value="QualificationTypes">أنواع المؤهلات</option>
-                                </optgroup>
-
-                                <optgroup label="2. البيانات المالية (التعريفات)">
-                                    <option value="BankAccounts">الحسابات البنكية</option>
-                                    <option value="FeeTypes">أنواع الرسوم</option>
-                                </optgroup>
-
-                                <optgroup label="3. البيانات الرئيسية">
-                                    <option value="Graduates">سجلات الخريجين والمتدربين</option>
-                                </optgroup>
-
-                                <optgroup label="4. الامتحانات">
-                                    <option value="Exams">سجلات الامتحانات</option>
-                                    <option value="ExamResults">نتائج الامتحانات</option>
-                                </optgroup>
-
-                                <optgroup label="5. المعاملات المالية">
-                                    <option value="Payments">الدفعات وسندات القبض</option>
-                                </optgroup>
-
-                                <optgroup label="6. العقود والأرشيف">
-                                    <option value="Provinces">المحافظات</option>
-                                    <option value="PartyRoles">صفات الأطراف</option>
-                                    <option value="ContractExemptionReasons">أسباب الإعفاء</option>
-                                    <option value="ContractTypes">أنواع العقود</option>
-                                    <option value="Contracts">أرشيف العقود</option>
-                                </optgroup>
-
-                                <optgroup label="7. الطوابع">
-                                    <option value="StampContractors">متعهدي الطوابع</option>
-                                    <option value="StampBooks">دفاتر الطوابع</option>
-                                    <option value="StampSales">مبيعات الطوابع</option>
-                                </optgroup>
-
-                                <optgroup label="8. لجان واختبارات">
-                                    <option value="OralExamResults">نتائج الشفوي</option>
-                                    <option value="LegalResearch">نتائج البحث</option>
-                                    <option value="Loans">القروض</option>
-                                </optgroup>
+                                @RenderOptions()
                             </select>
                         </div>
 
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-file-earmark-excel me-2"></i> تصدير البيانات المحددة
+                        <div class="d-grid mt-auto">
+                            <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                                <i class="bi bi-file-earmark-excel me-2"></i> تحميل ملف الإكسل
                             </button>
                         </div>
                     }
-                </div>
-                <div class="card-footer bg-light text-muted small">
-                    * يتم تصدير الملفات بصيغة .xlsx جاهزة للتعديل وإعادة الاستيراد.
                 </div>
             </div>
         </div>
@@ -113,100 +72,54 @@
         @* ============================================= *@
         @* 2. قسم الاستيراد (Import Section) *@
         @* ============================================= *@
-        <div class="col-md-7">
+        <div class="col-lg-7">
             <div class="card h-100 shadow-sm border-0">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-cloud-upload me-2"></i>استيراد البيانات (Import)</h5>
+                <div class="card-header bg-gradient-success text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-cloud-upload-fill me-2"></i> استيراد البيانات (Import)</h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info py-2">
-                        <small><i class="bi bi-info-circle me-1"></i> ملاحظة هامة: يرجى مراعاة الترتيب عند استيراد البيانات لتجنب الأخطاء (ابدأ بالمرحلة 1 ثم 2 وهكذا).</small>
+                    <div class="alert alert-light border-start border-success border-4">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle-fill text-success me-1"></i>
+                            تأكد من اختيار <strong>نوع البيانات</strong> أولاً لتحميل النموذج المناسب، ثم ارفع الملف المعبأ.
+                        </small>
                     </div>
 
                     @using (Html.BeginForm("ImportData", "DataExchange", FormMethod.Post, new { enctype = "multipart/form-data" }))
                     {
                         @Html.AntiForgeryToken()
 
-                        @* --- القائمة المنسدلة لأنواع البيانات --- *@
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">1. اختر نوع البيانات المراد استيرادها:</label>
-                            <div class="input-group">
-                                <select name="EntityType" id="entityTypeSelect" class="form-select form-select-lg" required>
-                                    <option value="" disabled selected>-- اختر من القائمة --</option>
-
-                                    <optgroup label="المرحلة الأولى: جداول الثوابت">
-                                        <option value="UserTypes">أنواع المستخدمين</option>
-                                        <option value="ApplicationStatuses">حالات الطلب</option>
-                                        <option value="Genders">الجنس</option>
-                                        <option value="NationalIdTypes">أنواع الهوية</option>
-                                        <option value="Currencies">العملات</option>
-                                        <option value="ExamTypes">أنواع الامتحانات</option>
-                                        <option value="AttachmentTypes">أنواع المرفقات</option>
-                                        <option value="QualificationTypes">أنواع المؤهلات</option>
-                                    </optgroup>
-
-                                    <optgroup label="المرحلة الثانية: البيانات المالية">
-                                        <option value="BankAccounts">الحسابات البنكية</option>
-                                        <option value="FeeTypes">أنواع الرسوم</option>
-                                    </optgroup>
-
-                                    <optgroup label="المرحلة الثالثة: البيانات الرئيسية">
-                                        <option value="Graduates">سجلات الخريجين والمتدربين</option>
-                                    </optgroup>
-
-                                    <optgroup label="المرحلة الرابعة: الامتحانات">
-                                        <option value="Exams">تعريف الامتحانات</option>
-                                        <option value="ExamResults">نتائج الامتحانات</option>
-                                    </optgroup>
-
-                                    <optgroup label="المرحلة الخامسة: المعاملات المالية">
-                                        <option value="Payments">الدفعات وسندات القبض</option>
-                                    </optgroup>
-
-                                    <optgroup label="المرحلة السادسة: العقود والأرشيف">
-                                        <option value="Provinces">المحافظات</option>
-                                        <option value="PartyRoles">صفات الأطراف</option>
-                                        <option value="ContractExemptionReasons">أسباب الإعفاء</option>
-                                        <option value="ContractTypes">أنواع العقود</option>
-                                        <option value="Contracts">أرشيف العقود والمعاملات</option>
-                                    </optgroup>
-
-                                    <optgroup label="المرحلة السابعة: الطوابع">
-                                        <option value="StampContractors">متعهدي الطوابع</option>
-                                        <option value="StampBooks">دفاتر الطوابع</option>
-                                        <option value="StampSales">مبيعات الطوابع</option>
-                                    </optgroup>
-
-                                    <optgroup label="المرحلة الثامنة: لجان واختبارات">
-                                        <option value="OralExamResults">نتائج الاختبار الشفوي</option>
-                                        <option value="LegalResearch">نتائج البحث القانوني</option>
-                                        <option value="Loans">أرشيف القروض</option>
-                                    </optgroup>
+                        <div class="row g-3 mb-3">
+                            @* القائمة المنسدلة *@
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold text-dark">1. نوع البيانات:</label>
+                                <select name="EntityType" id="entityTypeSelect" class="form-select" required>
+                                    <option value="" disabled selected>-- اختر الجدول --</option>
+                                    @RenderOptions()
                                 </select>
+                            </div>
 
-                                @* زر تحميل القالب *@
-                                <a id="downloadTemplateBtn" href="#" class="btn btn-outline-secondary disabled" target="_blank">
-                                    <i class="bi bi-file-earmark-arrow-down"></i> تحميل النموذج
+                            @* زر تحميل القالب *@
+                            <div class="col-md-4 d-flex align-items-end">
+                                <a id="downloadTemplateBtn" href="#" class="btn btn-outline-secondary w-100 disabled" target="_blank">
+                                    <i class="bi bi-download me-1"></i> تحميل النموذج
                                 </a>
                             </div>
-                            <div class="form-text">اختر نوع البيانات أولاً لتفعيل زر تحميل النموذج المناسب.</div>
                         </div>
 
-                        @* --- حقل رفع الملف --- *@
                         <div class="mb-4">
-                            <label class="form-label fw-bold">2. اختر ملف Excel (.xlsx):</label>
+                            <label class="form-label fw-bold text-dark">2. ملف البيانات (Excel):</label>
                             <input type="file" name="File" class="form-control" accept=".xlsx" required />
-                            <div class="form-text mt-2">
-                                <i class="bi bi-exclamation-circle"></i> تأكد من أن الصف الأول في الملف يحتوي على العناوين، وأن البيانات تبدأ من الصف الثاني.
+                            <div class="form-text mt-2 text-muted">
+                                <i class="bi bi-exclamation-circle"></i> يجب أن يبدأ الملف بالعناوين في الصف الأول، والبيانات من الصف الثاني.
                             </div>
                         </div>
 
-                        <hr />
+                        <hr class="my-4" />
 
-                        @* --- زر الإرسال --- *@
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('هل أنت متأكد من بدء عملية الاستيراد؟ قد تستغرق العملية بعض الوقت.');">
-                                <i class="bi bi-check-lg me-2"></i> بدء الاستيراد
+                            <button type="submit" class="btn btn-success btn-lg shadow-sm" onclick="return confirm('هل أنت متأكد من بدء عملية الاستيراد؟\nقد تستغرق العملية بعض الوقت حسب حجم الملف.');">
+                                <i class="bi bi-check-circle-fill me-2"></i> بدء عملية الاستيراد
                             </button>
                         </div>
                     }
@@ -217,22 +130,105 @@
     </div>
 </div>
 
-@* --- كود JavaScript لتفعيل زر تحميل النموذج --- *@
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var select = document.getElementById("entityTypeSelect");
-        var btn = document.getElementById("downloadTemplateBtn");
-        var baseUrl = "@Url.Action("DownloadTemplate", "DataExchange")"; // رابط الأكشن
+@* --- دالة مساعدة لطباعة الخيارات (لتجنب التكرار في الكود) --- *@
+@helper RenderOptions()
+{
+    <optgroup label="1. الثوابت الأساسية (النظام)">
+        <option value="UserTypes">أنواع المستخدمين</option>
+        <option value="ApplicationStatuses">حالات الطلب</option>
+        <option value="Genders">الجنس</option>
+        <option value="NationalIdTypes">أنواع الهوية</option>
+        <option value="Currencies">العملات</option>
+        <option value="ExamTypes">أنواع الامتحانات</option>
+        <option value="AttachmentTypes">أنواع المرفقات</option>
+        <option value="QualificationTypes">أنواع المؤهلات</option>
+        <option value="Provinces">المحافظات</option>
+        <option value="PartyRoles">صفات الأطراف (للعقود)</option>
+        <option value="ContractExemptionReasons">أسباب الإعفاء</option>
+        <option value="ContractTypes">أنواع العقود</option>
+    </optgroup>
 
-        select.addEventListener("change", function() {
-            var selectedValue = this.value;
-            if (selectedValue) {
-                btn.href = baseUrl + "?type=" + selectedValue;
-                btn.classList.remove("disabled");
-                btn.classList.replace("btn-outline-secondary", "btn-outline-primary");
-            } else {
-                btn.classList.add("disabled");
-            }
+    <optgroup label="2. الإعدادات المالية">
+        <option value="BankAccounts">الحسابات البنكية</option>
+        <option value="FeeTypes">أنواع الرسوم</option>
+    </optgroup>
+
+    <optgroup label="3. الأعضاء والتدريب">
+        <option value="Graduates">سجل الخريجين والمتدربين</option>
+    </optgroup>
+
+    <optgroup label="4. الامتحانات">
+        <option value="Exams">جدول الامتحانات</option>
+        <option value="ExamResults">نتائج الامتحانات</option>
+        <option value="OralExamResults">نتائج الاختبار الشفوي</option>
+    </optgroup>
+
+    <optgroup label="5. المعاملات المالية">
+        <option value="Payments">سندات القبض والدفعات</option>
+    </optgroup>
+
+    <optgroup label="6. العقود والأرشيف">
+        <option value="Contracts">أرشيف العقود والمعاملات</option>
+    </optgroup>
+
+    <optgroup label="7. نظام الطوابع">
+        <option value="StampContractors">متعهدي الطوابع</option>
+        <option value="StampBooks">دفاتر الطوابع</option>
+        <option value="StampSales">سجل مبيعات الطوابع</option>
+    </optgroup>
+    <optgroup label="نقل البيانات (مرة واحدة)">
+        <option value="OpeningJournal">القيد الافتتاحي (ميزان المراجعة)</option>
+    </optgroup>
+    <optgroup label="8. أخرى">
+        <option value="LegalResearch">الأبحاث القانونية</option>
+        <option value="Loans">أرشيف القروض</option>
+    </optgroup>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // منطق تفعيل زر تحميل النموذج
+            var select = document.getElementById("entityTypeSelect");
+            var btn = document.getElementById("downloadTemplateBtn");
+            var baseUrl = "@Url.Action("DownloadTemplate", "DataExchange", new { area = "Admin" })";
+
+            select.addEventListener("change", function() {
+                var selectedValue = this.value;
+                if (selectedValue) {
+                    // تحديث الرابط وتفعيل الزر
+                    btn.href = baseUrl + "?type=" + selectedValue;
+                    btn.classList.remove("disabled", "btn-outline-secondary");
+                    btn.classList.add("btn-success"); // تغيير اللون ليكون بارزاً
+                } else {
+                    // تعطيل الزر
+                    btn.href = "#";
+                    btn.classList.add("disabled", "btn-outline-secondary");
+                    btn.classList.remove("btn-success");
+                }
+            });
         });
-    });
-</script>
+    </script>
+
+    <style>
+        /* تحسينات بصرية إضافية */
+        .bg-gradient-primary {
+            background: linear-gradient(45deg, #4e73df, #224abe);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(45deg, #1cc88a, #13855c);
+        }
+
+        .form-select optgroup {
+            font-weight: bold;
+            color: #4e73df;
+        }
+
+        .form-select option {
+            color: #333;
+            font-weight: normal;
+            padding: 5px;
+        }
+    </style>
+}

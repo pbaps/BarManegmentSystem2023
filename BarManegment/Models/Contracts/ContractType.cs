@@ -18,6 +18,13 @@ namespace BarManegment.Models
         [Display(Name = "الرسوم الافتراضية")]
         public decimal DefaultFee { get; set; }
 
+        // إضافة للتحكم في نوع الاحتساب (ثابت أم نسبة)
+        [Display(Name = "هل الرسم ثابت؟")]
+        public bool IsFixedFee { get; set; } = true;
+
+        [Display(Name = "نسبة الرسم (إذا لم يكن ثابتاً)")]
+        public decimal Percentage { get; set; } // مثال 0.005
+
         [Required]
         [Display(Name = "العملة")]
         public int CurrencyId { get; set; }

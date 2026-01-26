@@ -1,0 +1,227 @@
+﻿@model BarManegment.Models.Employee
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قسيمة راتب - @Model.FullName</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #eee;
+            padding: 20px;
+        }
+
+        .slip-container {
+            background: white;
+            max-width: 210mm; /* A4 width */
+            margin: 0 auto;
+            padding: 10mm;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-section {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .table-custom th {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .table-custom td, .table-custom th {
+            padding: 8px 12px;
+            border-color: #dee2e6;
+        }
+
+        .total-box {
+            background-color: #e9ecef;
+            border: 2px solid #ced4da;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        @@media print {
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+            }
+
+            .slip-container {
+                border: none;
+                box-shadow: none;
+                width: 100%;
+                max-width: 100%;
+                margin: 0;
+                padding: 5mm;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .bg-light {
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .table-custom th {
+                background-color: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="text-center no-print mb-4">
+        <button onclick="window.print()" class="btn btn-primary fw-bold px-4"><i class="bi bi-printer"></i> طباعة القسيمة</button>
+        <button onclick="window.close()" class="btn btn-secondary px-4">إغلاق</button>
+    </div>
+
+    <div class="slip-container">
+        <div class="row header-section align-items-center">
+            <div class="col-4 text-center">
+                <h5 class="fw-bold mb-1">نقابة المحامين الفلسطينيين</h5>
+                <small>الدائرة المالية - الرواتب</small>
+            </div>
+            <div class="col-4 text-center">
+                <h4 class="fw-bold text-decoration-underline">قسيمة راتب تعريفية</h4>
+                <small class="text-muted">تاريخ الطباعة: @DateTime.Now.ToString("yyyy/MM/dd")</small>
+            </div>
+            <div class="col-4 text-center">
+                <div style="border: 1px solid #333; padding: 5px; display: inline-block; font-weight: bold;">
+                    رقم الموظف: @Model.Id
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-8">
+                <table class="table table-borderless table-sm mb-0">
+                    <tr>
+                        <td width="120" class="fw-bold text-muted">اسم الموظف:</td>
+                        <td class="fw-bold fs-5">@Model.FullName</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">القسم / الوظيفة:</td>
+                        <td>@(Model.Department?.Name ?? "-") / @(Model.JobTitle?.Name ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">تاريخ التعيين:</td>
+                        <td>@(Model.HireDate.HasValue ? Model.HireDate.Value.ToString("yyyy/MM/dd") : "-")</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-4 text-center">
+                <div class="total-box">
+                    <small class="d-block text-muted fw-bold">صافي الراتب المتوقع</small>
+                    <h3 class="mb-0 fw-bold">@Model.NetSalary.ToString("N2")</h3>
+                    <small>شيكل</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6">
+                <div class="card border-success h-100">
+                    <div class="card-header bg-success text-white text-center py-1">
+                        <strong>الاستحقاقات (Earnings)</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-custom table-striped mb-0">
+                            <tr>
+                                <td>الراتب الأساسي</td>
+                                <td class="text-end">@Model.BasicSalary.ToString("N2")</td>
+                            </tr>
+                            <tr>
+                                <td>العلاوات الإدارية</td>
+                                <td class="text-end">@((Model.ManagerAllowance + Model.HeadOfDeptAllowance).ToString("N2"))</td>
+                            </tr>
+                            <tr>
+                                <td>علاوة المؤهل العلمي</td>
+                                <td class="text-end">@((Model.MasterDegreeAllowance + Model.PhdDegreeAllowance).ToString("N2"))</td>
+                            </tr>
+                            <tr>
+                                <td>علاوة تخصص/مهنة</td>
+                                <td class="text-end">@Model.SpecializationAllowance.ToString("N2")</td>
+                            </tr>
+                            <tr>
+                                <td>الزيادة السنوية (المتراكمة)</td>
+                                <td class="text-end">@((Model.AnnualIncrementAmount ?? 0).ToString("N2"))</td>
+                            </tr>
+                            <tr>
+                                <td>بدل مواصلات</td>
+                                <td class="text-end">@Model.TransportAllowance.ToString("N2")</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td class="text-success">إجمالي الاستحقاق (Gross)</td>
+                                <td class="text-end text-success">@Model.TotalSalary.ToString("N2")</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <div class="card border-danger h-100">
+                    <div class="card-header bg-danger text-white text-center py-1">
+                        <strong>الاستقطاعات (Deductions)</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-custom table-striped mb-0">
+                            <tr>
+                                <td>حصة التقاعد (@Model.EmployeePensionPercent%)</td>
+                                <td class="text-end">@Model.PensionAmountEmployee.ToString("N2")</td>
+                            </tr>
+                            <tr>
+                                <td>خصومات أخرى ثابتة</td>
+                                <td class="text-end">@Model.OtherMonthlyDeduction.ToString("N2")</td>
+                            </tr>
+                            <tr><td>&nbsp;</td><td></td></tr>
+                            <tr><td>&nbsp;</td><td></td></tr>
+                            <tr><td>&nbsp;</td><td></td></tr>
+                            <tr><td>&nbsp;</td><td></td></tr>
+                            <tr class="fw-bold">
+                                <td class="text-danger">إجمالي الاستقطاع</td>
+                                <td class="text-end text-danger">@((Model.PensionAmountEmployee + Model.OtherMonthlyDeduction).ToString("N2"))</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-6 text-center">
+                <p class="fw-bold">توقيع الموظف</p>
+                <br>
+                <div style="border-top: 1px dashed #000; width: 60%; margin: 0 auto;"></div>
+            </div>
+            <div class="col-6 text-center">
+                <p class="fw-bold">المدير المالي / الختم</p>
+                <br>
+                <div style="border-top: 1px dashed #000; width: 60%; margin: 0 auto;"></div>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-2 border-top text-center text-muted small">
+            هذه القسيمة تعريفية وتوضح هيكلية الراتب الحالي ولا تعتبر سند قبض نهائي عن شهر محدد.
+        </div>
+    </div>
+
+</body>
+</html>

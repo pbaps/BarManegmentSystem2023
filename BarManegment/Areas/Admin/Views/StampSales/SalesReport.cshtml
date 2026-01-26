@@ -1,0 +1,125 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.StampSalesReportViewModel
+@{
+    ViewBag.Title = "تقرير مبيعات الطوابع";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    bool isContractor = ViewBag.ContractorsList == null; // إذا كانت القائمة فارغة فهو متعهد
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 font-weight-bold text-primary"><i class="bi bi-file-earmark-spreadsheet-fill"></i> تقرير حركة مبيعات الطوابع</h5>
+        <button onclick="window.print()" class="btn btn-sm btn-secondary d-print-none">
+            <i class="bi bi-printer"></i> طباعة
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="d-print-none border p-3 rounded bg-light mb-4">
+            @using (Html.BeginForm("SalesReport", "StampSales", FormMethod.Get, new { @class = "row g-3" }))
+            {
+                <div class="col-md-3">
+                    @Html.LabelFor(m => m.FromDate, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(m => m.FromDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                </div>
+                <div class="col-md-3">
+                    @Html.LabelFor(m => m.ToDate, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(m => m.ToDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                </div>
+
+                if (!isContractor)
+                {
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">المتعهد</label>
+                        @Html.DropDownList("contractorId", (SelectList)ViewBag.ContractorsList, "-- كل المتعهدين --", new { @class = "form-select" })
+                    </div>
+                }
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> عرض</button>
+                </div>
+            }
+        </div>
+
+        <div class="row text-center mb-4">
+            <div class="col-md-3">
+                <div class="border rounded p-2 bg-white shadow-sm">
+                    <small class="text-muted d-block">عدد الطوابع المباعة</small>
+                    <h4 class="fw-bold text-primary">@Model.TotalQuantity</h4>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-2 bg-white shadow-sm">
+                    <small class="text-muted d-block">إجمالي القيمة</small>
+                    <h4 class="fw-bold text-success">@Model.TotalValue.ToString("N0") ₪</h4>
+                </div>
+            </div>
+            @if (!isContractor) // فقط المشرف يرى تفاصيل الحصص بوضوح
+            {
+                <div class="col-md-3">
+                    <div class="border rounded p-2 bg-white shadow-sm">
+                        <small class="text-muted d-block">حصة المحامين</small>
+                        <h5 class="fw-bold text-info">@Model.TotalLawyerShare.ToString("N2")</h5>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-2 bg-white shadow-sm">
+                        <small class="text-muted d-block">حصة النقابة</small>
+                        <h5 class="fw-bold text-warning">@Model.TotalBarShare.ToString("N2")</h5>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>اسم المتعهد</th>
+                        <th>اسم المحامي (المشتري)</th>
+                        <th class="text-center">رقم الطابع</th>
+                        <th class="text-center">القيمة</th>
+                        @if (!isContractor)
+                        {
+                            <th class="text-center">ح. محامي</th>
+                            <th class="text-center">ح. نقابة</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Sales.Any())
+                    {
+                        foreach (var item in Model.Sales)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.SaleDate.ToString("yyyy/MM/dd HH:mm")</td>
+                                <td>@item.ContractorName</td>
+                                <td>
+                                    <span class="fw-bold">@item.LawyerName</span>
+                                    <br />
+                                    <small class="text-muted">(@item.LawyerMembershipId)</small>
+                                </td>
+                                <td class="text-center fw-bold text-primary">@item.SerialNumber</td>
+                                <td class="text-center">@item.Value.ToString("N0")</td>
+                                @if (!isContractor)
+                                {
+                                    <td class="text-center">@item.LawyerShare.ToString("N2")</td>
+                                    <td class="text-center">@item.BarShare.ToString("N2")</td>
+                                }
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="@(isContractor ? 6 : 8)" class="text-center py-4 text-muted">
+                                لا توجد مبيعات في الفترة المحددة.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -25,5 +25,14 @@ namespace BarManegment.Models
 
         [Display(Name = "الحد الأعلى لعدد الأقساط")]
         public int MaxInstallments { get; set; }
+
+
+        // داخل كلاس LoanType أضف التالي:
+
+        [Display(Name = "حساب الذمم المدينة (المحاسبي)")]
+        public int? ReceivableAccountId { get; set; }
+
+        [ForeignKey("ReceivableAccountId")]
+        public virtual Account ReceivableAccount { get; set; }
     }
 }

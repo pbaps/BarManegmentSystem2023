@@ -3,7 +3,7 @@ using BarManegment.Services;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data.Entity.Migrations;
+using System.Data.Entity.Migrations; // يمكن إزالة هذا الـ using إذا حذفت الكود
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -25,9 +25,11 @@ namespace BarManegment
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             // =========================================================
-            // 💡 إضافة كود تفعيل الـ Migrations والـ Seed تلقائياً
+            // 🛑 تم إيقاف التحديث التلقائي لقاعدة البيانات (مهم للاستضافة)
+            // في بيئة الإنتاج (Production)، يتم تحديث القاعدة يدوياً عبر SQL Script
             // =========================================================
-            try
+
+            /* try
             {
                 var configuration = new BarManegment.Migrations.Configuration();
                 var migrator = new DbMigrator(configuration);
@@ -35,25 +37,23 @@ namespace BarManegment
             }
             catch (Exception ex)
             {
-                // في حال فشل الاتصال أو وجود خطأ في قاعدة البيانات
-                throw new Exception("فشل تحديث قاعدة البيانات تلقائياً: " + ex.Message);
+                // تسجيل الخطأ بدلاً من إيقاف التطبيق
+                // System.Diagnostics.Trace.TraceError("Migration Error: " + ex.Message);
             }
+      
 
-            var domain = "http://maj.pbaps.ps";
-            var webhookUrl = $"{domain}/TelegramBot/Update";
-
-            Task.Run(async () =>
-            {
-                try
-                {
-                    await TelegramService.SetWebhookAsync(webhookUrl);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Webhook Error: {ex.Message}");
-                }
-            });
-        } 
-       
+      try
+      {
+          var configuration = new BarManegment.Migrations.Configuration();
+          var migrator = new DbMigrator(configuration);
+          migrator.Update();
+      }
+      catch (Exception ex)
+      {
+          // في حال فشل الاتصال أو وجود خطأ في قاعدة البيانات
+          throw new Exception("فشل تحديث قاعدة البيانات تلقائياً: " + ex.Message);
+      }
+        */
+        }
     }
 }

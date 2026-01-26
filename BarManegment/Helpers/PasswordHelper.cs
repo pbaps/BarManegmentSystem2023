@@ -1,53 +1,36 @@
-﻿using System.Security.Cryptography;
-using System;
+﻿using System;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace BarManegment.Helpers
 {
     public static class PasswordHelper
     {
-        private const int SaltSize = 16;
-        private const int HashSize = 20;
-        private const int Iterations = 100000;
+        // نستخدم مفتاحاً ثابتاً لضمان أن التشفير يعطي نفس النتيجة دائماً لنفس الكلمة
+        // (يمكنك تغيير هذا النص لأي شيء تريده لزيادة الأمان)
+        private static readonly string FixedSalt = "PBA_Secret_Salt_2026@Gaza";
 
         public static string HashPassword(string password)
         {
-            byte[] salt;
-            new RNGCryptoServiceProvider().GetBytes(salt = new byte[SaltSize]);
+            if (string.IsNullOrEmpty(password)) return null;
 
-            var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations);
-            var hash = pbkdf2.GetBytes(HashSize);
+            using (var sha256 = SHA256.Create())
+            {
+                // دمج كلمة المرور مع الملح الثابت
+                var combinedPassword = password + FixedSalt;
+                var bytes = Encoding.UTF8.GetBytes(combinedPassword);
+                var hash = sha256.ComputeHash(bytes);
 
-            var hashBytes = new byte[SaltSize + HashSize];
-            Array.Copy(salt, 0, hashBytes, 0, SaltSize);
-            Array.Copy(hash, 0, hashBytes, SaltSize, HashSize);
-
-            return Convert.ToBase64String(hashBytes);
+                // تحويل البايتات إلى نص Base64 للحفظ في قاعدة البيانات
+                return Convert.ToBase64String(hash);
+            }
         }
 
-        public static bool VerifyPassword(string password, string hashedPassword)
+        // دالة للتحقق (اختيارية لأننا سنستخدم المقارنة المباشرة)
+        public static bool VerifyPassword(string enteredPassword, string storedHash)
         {
-            try
-            {
-                var hashBytes = Convert.FromBase64String(hashedPassword);
-                var salt = new byte[SaltSize];
-                Array.Copy(hashBytes, 0, salt, 0, SaltSize);
-
-                var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations);
-                byte[] hash = pbkdf2.GetBytes(HashSize);
-
-                for (var i = 0; i < HashSize; i++)
-                {
-                    if (hashBytes[i + SaltSize] != hash[i])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            string newHash = HashPassword(enteredPassword);
+            return newHash == storedHash;
         }
     }
 }

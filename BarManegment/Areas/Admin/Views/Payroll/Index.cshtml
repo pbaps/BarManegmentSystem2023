@@ -9,9 +9,16 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold text-primary"><i class="bi bi-cash-stack me-2"></i> سجل مسيرات الرواتب</h4>
-        <a href="@Url.Action("Create")" class="btn btn-success fw-bold">
-            <i class="bi bi-plus-lg me-1"></i> إصدار مسير جديد
-        </a>
+
+        <div>
+            <a href="@Url.Action("ManageAnnualIncrements")" class="btn btn-warning fw-bold me-2">
+                <i class="bi bi-graph-up-arrow me-1"></i> العلاوات السنوية
+            </a>
+
+            <a href="@Url.Action("Create")" class="btn btn-success fw-bold">
+                <i class="bi bi-plus-lg me-1"></i> إصدار مسير جديد
+            </a>
+        </div>
     </div>
 
     @if (TempData["SuccessMessage"] != null)

@@ -38,6 +38,11 @@ namespace BarManegment.Models
         [StringLength(500)]
         public string PromissoryNoteScannedPath { get; set; }
 
+
+        // ✅✅✅ أضف هذا السطر لحل الخطأ ✅✅✅
+        public bool IsPaid { get; set; } = false;
+ 
+
         // --- الربط المالي (الأهم) ---
 
         [Display(Name = "قسيمة الدفع")]

@@ -55,5 +55,50 @@ namespace BarManegment.Areas.Admin.ViewModels
         [Display(Name = "نسبة مساهمة النقابة في التأمين (%)")]
         [Range(0, 100, ErrorMessage = "النسبة يجب أن تكون بين 0 و 100")]
         public decimal EmployerPensionPercent { get; set; }
+
+
+        // ✅✅✅ الإضافة الجديدة: تفعيل رسوم الامتحان ✅✅✅
+        [Display(Name = "تفعيل رسوم تسجيل الامتحان")]
+        public bool IsExamFeeEnabled { get; set; }
+
+        // =========================================================
+        // 💰 إعدادات الربط المحاسبي (جديد)
+        // =========================================================
+        [Display(Name = "حساب إيراد الطوابع المؤجل (Prepaid)")]
+        public int? StampPrepaidAccountId { get; set; }
+
+        [Display(Name = "حساب أمانات المحامين (ذمم دائنة)")]
+        public int? StampLawyerShareAccountId { get; set; }
+
+        [Display(Name = "حساب إيرادات النقابة من الطوابع")]
+        public int? StampRevenueAccountId { get; set; }
+
+        [Display(Name = "حساب البنك الافتراضي للصرف")]
+        public int? DefaultBankPaymentAccountId { get; set; }
+
+        [Display(Name = "نوع رسم امتحان القبول")]
+        public int? ExamRegistrationFeeTypeId { get; set; }
+
+        [Display(Name = "نوع رسم تصديق العقود")]
+        public int? ContractFeeTypeId { get; set; }
+
+        [Display(Name = "نوع عقد 'وكالة جواز السفر'")]
+        public int? PassportAgencyContractTypeId { get; set; }
+
+        [Display(Name = "نوع رسم بيع الطوابع للمتعهد")]
+        public int? StampContractorFeeTypeId { get; set; }
+
+        // ✅ إعدادات الحضور الذكي (جديد)
+        [Display(Name = "خط العرض (Latitude)")]
+        [Required(ErrorMessage = "مطلوب لتحديد الموقع")]
+        public string OfficeLatitude { get; set; }
+
+        [Display(Name = "خط الطول (Longitude)")]
+        [Required(ErrorMessage = "مطلوب لتحديد الموقع")]
+        public string OfficeLongitude { get; set; }
+
+        [Display(Name = "نطاق السماح (متر)")]
+        [Range(10, 5000, ErrorMessage = "النطاق يجب أن يكون بين 10 و 5000 متر")]
+        public int AllowedRadiusMeters { get; set; } = 100;
     }
 }

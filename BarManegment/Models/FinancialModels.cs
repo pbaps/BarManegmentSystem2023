@@ -20,12 +20,19 @@ namespace BarManegment.Models
 
         public int Level { get; set; }
         public AccountType AccountType { get; set; }
+ 
+
+
         public int? ParentId { get; set; }
+        [ForeignKey("ParentId")]
+        public virtual Account ParentAccount { get; set; }
 
         [Display(Name = "رصيد افتتاحي")]
         public decimal OpeningBalance { get; set; } = 0;
 
         public bool IsTransactional { get; set; } = true;
+
+        public virtual ICollection<Account> ChildAccounts { get; set; }
     }
 
     public enum AccountType

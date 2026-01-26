@@ -3,7 +3,8 @@
 @{
     Layout = null;
     string amountText = ViewBag.AmountInWords as string;
-    bool isCash = Model.PaymentMethod == "نقدي";
+    // تم التعديل: الدفع دائماً بنكي في هذا السياق
+    bool isCash = false;
 }
 
 <!DOCTYPE html>
@@ -265,10 +266,10 @@
         <div class="voucher-half">
             <div class="voucher-header">
                 <div class="header-right">
-                    <img src="/Content/Images/logo.png" alt="Logo" onerror="this.style.display='none'">
+                    <img src="@Url.Content("~/Content/Images/logo.png")" alt="Logo" onerror="this.style.display='none'">
                 </div>
                 <div class="header-center">
-                    <h2>نقابة المحامين النظاميين</h2>
+                    <h2>نقابة المحامين الفلسطينيين</h2>
                     <h4>سند قبض / Payment Voucher</h4>
                 </div>
                 <div class="header-left">
@@ -285,7 +286,7 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">طريقة الدفع:</span>
-                    <span class="info-value">@vm.PaymentMethod @(isCash ? "" : "(بنكي)")</span>
+                    <span class="info-value">سداد بنكي</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">بواسطة:</span>
@@ -309,15 +310,17 @@
                         <tr>
                             <td class="text-center">@(counter++)</td>
                             <td>@item.FeeTypeName</td>
-                            <td class="text-center text-muted" style="font-size: 10px;">
+                            <td class="text-start" style="font-size: 10px;">
                                 @if (!string.IsNullOrEmpty(item.BankName))
                                 {
-                                    <span>@item.BankName</span>
+                                    <div class="fw-bold text-dark">@item.BankName</div>
                                     if (!string.IsNullOrEmpty(item.AccountNumber))
-                                    { <br><span>@item.AccountNumber</span> }
-                            }
-                            else
-                            { <span>-</span>}
+                                    { <div>رقم الحساب: <span class="font-monospace">@item.AccountNumber</span></div> }
+                                if (!string.IsNullOrEmpty(item.Iban))
+                                { <div>IBAN: <span class="font-monospace">@item.Iban</span></div> }
+                        }
+                        else
+                        { <div class="text-center">-</div>}
                             </td>
                             <td class="text-center fw-bold">@item.Amount.ToString("N2") @item.CurrencySymbol</td>
                         </tr>
