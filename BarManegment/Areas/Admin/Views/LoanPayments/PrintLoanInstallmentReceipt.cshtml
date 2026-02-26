@@ -1,170 +1,333 @@
-﻿**المسار:** `~/Areas/Admin/Views/LoanPayments/PrintLoanInstallmentReceipt.cshtml`
-```html
-@model BarManegment.Areas.Admin.ViewModels.PrintLoanReceiptViewModel
+﻿@model BarManegment.Areas.Admin.ViewModels.PrintLoanReceiptViewModel
+
 @{
-    ViewBag.Title = "طباعة إيصال سداد قسط";
-    Layout = "~/Areas/Admin/Views/Shared/_PrintLOanayout.cshtml"; // (استخدام تخطيط الطباعة النظيف)
+    Layout = null;
+    string amountText = Model.AmountInWords;
 }
 
-@section styles {
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>سند قبض قروض - @Model.ReceiptFullNumber</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
 
-        .receipt-print-container {
-            border: 2px solid #000;
-            padding: 15px;
-            margin: 15px;
+        body {
             font-family: 'Cairo', sans-serif;
-            font-weight: bold;
+            background-color: #525659;
+            margin: 0;
+            padding: 20px;
         }
 
-        .header-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 5px;
-            margin-bottom: 10px;
+        .page-container {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            height: auto;
+            margin: 0 auto;
+            padding: 10mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            position: relative;
+            box-sizing: border-box;
         }
 
-        .header-item {
-            border: 1px solid #000;
-            padding: 5px;
-            text-align: center;
+        /* تنسيق النصف صفحة */
+        .receipt-half {
+            min-height: 130mm;
+            height: auto;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            margin-bottom: 8mm;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
         }
 
-            .header-item.logo {
-                text-align: right;
-                border: none;
-                padding: 0;
-            }
-
-            .header-item img {
-                max-height: 50px;
-            }
-
-            .header-item label {
-                display: block;
-                font-size: 0.9em;
-                color: #555;
-            }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-
-        .main-item {
-            border: 1px solid #000;
-            padding: 5px;
-            text-align: center;
-        }
-
-            .main-item label {
-                display: block;
-                font-size: 0.9em;
-                color: #555;
-            }
-
-        .footer-line {
-            border-bottom: 2px solid #000;
-            margin: 15px 0;
+        /* الترويسة */
+        .receipt-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            padding-bottom: 5px;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .header-right img {
+            max-height: 70px;
+        }
+
+        .header-center {
+            text-align: center;
+        }
+
+        .header-center h2 {
+            font-size: 20px;
+            font-weight: 800;
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .header-center h4 {
+            font-size: 16px;
+            margin: 5px 0 0;
+            font-weight: 600;
+            background-color: #eee;
+            padding: 2px 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .header-left {
+            text-align: left;
+        }
+
+        .receipt-number {
+            font-size: 14px;
+            font-weight: bold;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .copy-label {
+            font-size: 11px;
+            background: #333;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        /* شبكة المعلومات */
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            background: #fcfcfc;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+        }
+
+        .info-item {
+            flex: 1 1 45%;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .info-label {
+            font-weight: 700;
+            min-width: 90px;
+            color: #555;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #000;
+            border-bottom: 1px dotted #999;
+            flex-grow: 1;
+        }
+
+        /* الجدول */
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+
+        .details-table th {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .details-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            vertical-align: middle;
+        }
+
+        .total-row td {
+            background-color: #e9ecef;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* المبلغ بالحروف */
+        .amount-words {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* التواقيع */
+        .footer-signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px dotted #999;
+        }
+
+        .sig-box {
+            text-align: center;
+            width: 30%;
+        }
+
+        .sig-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-decoration: underline;
+        }
+
+        /* خط القص */
+        .cut-line {
+            border-top: 2px dashed #999;
+            width: 100%;
+            margin: 15px 0;
+            position: relative;
+            height: 1px;
+        }
+
+        .cut-icon {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 10px;
+            font-size: 12px;
+            color: #777;
         }
 
         @@media print {
-            .receipt-print-container {
-                border: none;
-                margin: 0;
-                padding: 0;
-            }
-
-            .print-footer-layout {
-                display: none;
-            }
+            body { background: none; padding: 0; margin: 0; }
+            .page-container { box-shadow: none; width: 100%; margin: 0; padding: 5mm; }
+            .no-print { display: none !important; }
+            .receipt-half { page-break-inside: avoid; margin-bottom: 10mm; }
         }
     </style>
-}
+</head>
+<body>
 
-@* (دالة مساعدة لطباعة النسخ المتعددة) *@
-@helper RenderReceiptBody(string copyName)
-{
-    <div class="receipt-print-container">
-        <div class="header-grid">
-            <div class="logo-container logo">
-                @* (يمكن إضافة الشعار هنا إذا أردت) *@
-                <strong>نقابة المحامين الفلسطينيين</strong><br />
-                <small>PALESTINIAN BAR ASSOCIATION</small>
-            </div>
-            <div class="header-item">
-                <label>بنك فلسطين - الرمال / رقم حساب:</label>
-                <div>(رقم الحساب)</div>
-            </div>
-            <div class="header-item">
-                <label>رقم الإيصال</label>
-                <div>@Model.ReceiptFullNumber</div>
-            </div>
-            <div class="header-item">
-                <label>تاريخ السداد</label>
-                <div>@Model.PaymentDate.ToString("yyyy-MM-dd")</div>
-            </div>
-        </div>
-
-        <div class="main-grid">
-            <div class="main-item">
-                <label>رقم القرض</label>
-                <div>@Model.LoanId</div>
-            </div>
-            <div class="main-item">
-                <label>قيمة القرض</label>
-                <div>(قيمة القرض الكلية)</div> @* (ملاحظة: نحتاج لإضافة هذا للـ ViewModel) *@
-            </div>
-            <div class="main-item">
-                <label>العملة</label>
-                <div>@Model.CurrencySymbol</div>
-            </div>
-            <div class="main-item">
-                <label>عدد الأقساط</label>
-                <div>(إجمالي الأقساط)</div> @* (ملاحظة: نحتاج لإضافة هذا للـ ViewModel) *@
-            </div>
-            <div class="main-item">
-                <label>رقم القسط</label>
-                <div>@Model.InstallmentNumber</div>
-            </div>
-            <div class="main-item">
-                <label>رقم وصل البنك</label>
-                <div>@Model.BankReceiptNumber</div>
-            </div>
-        </div>
-
-        <div class="footer-line">
-            <strong>اسم المحامي/</strong> @Model.LawyerName
-            <strong>آخر موعد للدفع/</strong> @Model.PaymentDate.ToString("yyyy/MM/dd")
-        </div>
-        <div class="footer-line">
-            <strong>مبلغ الدفع/</strong> @Model.AmountPaid.ToString("N2") @Model.CurrencySymbol
-        </div>
-        <div class="footer-line">
-            <strong>المبلغ بالكلمات/</strong> @Model.AmountInWords
-        </div>
-        <div class="footer-line">
-            <strong>الموظف/</strong> @Model.EmployeeName
-            <strong>توقيع/</strong> .......................
-        </div>
-
-        <p class="text-center mt-3">(@copyName)</p>
+    <div class="text-center mb-4 no-print">
+        <button onclick="window.print()" class="btn btn-primary btn-lg shadow fw-bold"><i class="bi bi-printer"></i> طباعة الإيصال</button>
+        <button onclick="window.close()" class="btn btn-secondary btn-lg ms-2">إغلاق</button>
     </div>
-}
 
-@RenderReceiptBody("نسخة المحامي")
-<hr style="border-top: 2px dashed #000; margin: 20px;" />
-@RenderReceiptBody("نسخة المحاسبة")
+    <div class="page-container">
+        @RenderReceipt("نسخة المحامي", Model, amountText)
 
+        <div class="cut-line no-print"><span class="cut-icon">قص من هنا</span></div>
 
-@section scripts {
-    <script>window.addEventListener("load", function () {
-            window.print();
-        });</script>
-}
+        @RenderReceipt("نسخة الملف / المحاسبة", Model, amountText)
+    </div>
+
+    @helper RenderReceipt(string copyTitle, BarManegment.Areas.Admin.ViewModels.PrintLoanReceiptViewModel vm, string amountText)
+    {
+        <div class="receipt-half">
+            <div class="receipt-header">
+                <div class="header-right">
+                    @*  - تأكد من صحة المسار *@
+                    <img src="/Content/Images/logo.png" alt="Logo" onerror="this.style.display='none'">
+                </div>
+                <div class="header-center">
+                    <h2>نقابة المحامين الفلسطينيين</h2>
+                    <h4>سند قبض (أقساط قروض)</h4>
+                </div>
+                <div class="header-left">
+                    <div class="receipt-number">رقم السند: @vm.ReceiptFullNumber</div>
+                    <div style="text-align:center; margin-top:5px;"><span class="copy-label">@copyTitle</span></div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">استلمنا من:</span>
+                    <span class="info-value">@vm.LawyerName</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">تاريخ السداد:</span>
+                    <span class="info-value">@vm.PaymentDate.ToString("yyyy/MM/dd")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">نوع القرض:</span>
+                    <span class="info-value">@vm.LoanTypeName (رقم @vm.LoanId)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">الموظف:</span>
+                    <span class="info-value">@vm.EmployeeName</span>
+                </div>
+            </div>
+
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th width="10%">#</th>
+                        <th width="60%">البيان / التفاصيل</th>
+                        <th width="30%">المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-center">1</td>
+                        <td>
+                            <strong>سداد القسط رقم (@vm.InstallmentNumber)</strong>
+                            <br />
+                            <small class="text-muted">
+                                بموجب إشعار بنكي رقم: <span class="font-monospace text-dark">@vm.BankReceiptNumber</span>
+                            </small>
+                        </td>
+                        <td class="text-center fw-bold">
+                            @vm.AmountPaid.ToString("N2") @vm.CurrencySymbol
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="2" class="text-end pe-3">الإجمالي المقبوض:</td>
+                        <td class="text-center">@vm.AmountPaid.ToString("N2") @vm.CurrencySymbol</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="amount-words">
+                مبلغ وقدره: @amountText فقط لا غير.
+            </div>
+
+            <div class="footer-signatures">
+                <div class="sig-box">
+                    <div class="sig-title">توقيع المستلم</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-title">الختم الرسمي</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-title">أمين الصندوق</div>
+                </div>
+            </div>
+        </div>
+    }
+
+</body>
+</html>

@@ -783,6 +783,10 @@
                             {
                                 <li><a href="@Url.Action("Index", "SystemSettings", new { area = "Admin" })"><i class="bi bi-sliders"></i> إعدادات النظام</a></li>
                             }
+                             @if (PermissionHelper.HasPermission("SystemSettings"))
+                            {
+                                <li><a href="@Url.Action("AccountingSettings", "SystemSettings", new { area = "Admin" })"><i class="bi bi-sliders"></i> الربط المالي</a></li>
+                            }
                             @if (PermissionHelper.HasPermission("AuditLogs"))
                             {
                                 <li><a href="@Url.Action("Index", "AuditLogs", new { area = "Admin" })"><i class="bi bi-journal-bookmark-fill"></i> سجلات التدقيق</a></li>

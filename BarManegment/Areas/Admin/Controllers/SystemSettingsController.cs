@@ -220,6 +220,117 @@ namespace BarManegment.Areas.Admin.Controllers
                 });
             }
         }
+        // ============================================================
+        // صفحة إعدادات الربط المحاسبي (GET) - محدثة
+        // ============================================================
+        [CustomAuthorize(Permission = "CanEdit")]
+        public ActionResult AccountingSettings()
+        {
+            PrepareAccountingDropdowns();
+
+            var viewModel = new AccountingSettingsViewModel
+            {
+                // الحسابات
+                MainBoxAccountId = db.SystemSettings.Find("GL_MainBoxAccount")?.ValueInt,
+                DefaultBankAccountId = db.SystemSettings.Find("GL_DefaultBankAccount")?.ValueInt,
+                StampPrepaidAccountId = db.SystemSettings.Find("GL_StampPrepaidAccount")?.ValueInt,
+                StampLawyerShareAccountId = db.SystemSettings.Find("GL_StampLawyerShareAccount")?.ValueInt,
+                StampRevenueAccountId = db.SystemSettings.Find("GL_StampRevenueAccount")?.ValueInt,
+                LoanReceivableAccountId = db.SystemSettings.Find("GL_LoanReceivableAccount")?.ValueInt,
+                FinancialAidExpenseAccountId = db.SystemSettings.Find("GL_FinancialAidExpenseAccount")?.ValueInt,
+                PurchaseAccountId = db.SystemSettings.Find("GL_PurchaseAccount")?.ValueInt,
+                PayrollExpenseAccountId = db.SystemSettings.Find("GL_PayrollExpenseAccount")?.ValueInt,
+
+                // الرسوم
+                ExamRegistrationFeeTypeId = db.SystemSettings.Find("Fee_ExamRegistration")?.ValueInt,
+                ContractFeeTypeId = db.SystemSettings.Find("Fee_ContractDefault")?.ValueInt,
+                StampContractorFeeTypeId = db.SystemSettings.Find("Fee_StampContractor")?.ValueInt,
+                LawyerRenewalFeeTypeId = db.SystemSettings.Find("Fee_LawyerRenewal")?.ValueInt,
+                TraineeRegistrationFeeTypeId = db.SystemSettings.Find("Fee_TraineeRegistration")?.ValueInt,
+
+                // أخرى
+                PassportAgencyContractTypeId = db.SystemSettings.Find("Type_PassportContract")?.ValueInt
+            };
+
+            return View(viewModel);
+        }
+
+        // ============================================================
+        // حفظ إعدادات الربط المحاسبي (POST) - محدثة
+        // ============================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [CustomAuthorize(Permission = "CanEdit")]
+        public ActionResult AccountingSettings(AccountingSettingsViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // 1. حفظ الحسابات (GL)
+                    UpdateIntSetting("GL_MainBoxAccount", model.MainBoxAccountId, "حساب الصندوق الرئيسي");
+                    UpdateIntSetting("GL_DefaultBankAccount", model.DefaultBankAccountId, "حساب البنك الافتراضي");
+                    UpdateIntSetting("GL_StampPrepaidAccount", model.StampPrepaidAccountId, "حساب إيراد طوابع مؤجل");
+                    UpdateIntSetting("GL_StampLawyerShareAccount", model.StampLawyerShareAccountId, "حساب أمانات المحامين");
+                    UpdateIntSetting("GL_StampRevenueAccount", model.StampRevenueAccountId, "حساب إيراد الطوابع");
+                    UpdateIntSetting("GL_LoanReceivableAccount", model.LoanReceivableAccountId, "حساب ذمم القروض");
+                    UpdateIntSetting("GL_FinancialAidExpenseAccount", model.FinancialAidExpenseAccountId, "حساب مصروفات المساعدات");
+                    UpdateIntSetting("GL_PurchaseAccount", model.PurchaseAccountId, "حساب المشتريات");
+                    UpdateIntSetting("GL_PayrollExpenseAccount", model.PayrollExpenseAccountId, "حساب رواتب الموظفين");
+
+                    // 2. حفظ الرسوم (Fees)
+                    UpdateIntSetting("Fee_ExamRegistration", model.ExamRegistrationFeeTypeId, "رسم امتحان القبول");
+                    UpdateIntSetting("Fee_ContractDefault", model.ContractFeeTypeId, "رسم تصديق العقود");
+                    UpdateIntSetting("Fee_StampContractor", model.StampContractorFeeTypeId, "رسم بيع الطوابع");
+                    UpdateIntSetting("Fee_LawyerRenewal", model.LawyerRenewalFeeTypeId, "رسم تجديد المزاولة");
+                    UpdateIntSetting("Fee_TraineeRegistration", model.TraineeRegistrationFeeTypeId, "رسم تسجيل متدرب");
+
+                    // 3. حفظ الأنواع (Types)
+                    UpdateIntSetting("Type_PassportContract", model.PassportAgencyContractTypeId, "نوع عقد وكالة الجوازات");
+
+                    db.SaveChanges();
+                    AuditService.LogAction("Update Accounting Settings", "SystemSettings", "Updated comprehensive accounting mapping.");
+                    TempData["SuccessMessage"] = "تم تحديث إعدادات الربط المحاسبي والرسوم بنجاح.";
+
+                    return RedirectToAction("AccountingSettings");
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "حدث خطأ أثناء الحفظ: " + ex.Message);
+                }
+            }
+
+            PrepareAccountingDropdowns();
+            return View(model);
+        }
+
+        // دالة مساعدة لتجهيز القوائم لهذه الصفحة
+        private void PrepareAccountingDropdowns()
+        {
+            // جلب الحسابات الفرعية فقط (التي يمكن الترحيل عليها)
+            var accountsList = db.Accounts
+                .Where(a => !a.ChildAccounts.Any()) // يجلب الحسابات التي ليس لها أبناء (الفرعية)
+                .Select(a => new { a.Id, Name = a.Code + " - " + a.Name })
+                .OrderBy(a => a.Name)
+                .ToList();
+            ViewBag.AccountsList = new SelectList(accountsList, "Id", "Name");
+
+            // أنواع الرسوم
+            var feeTypesList = db.FeeTypes
+                .Where(f => f.IsActive)
+                .Select(f => new { f.Id, Name = f.Name + " (" + f.DefaultAmount + ")" })
+                .OrderBy(f => f.Name)
+                .ToList();
+            ViewBag.FeeTypesList = new SelectList(feeTypesList, "Id", "Name");
+
+            // أنواع العقود
+            var contractTypesList = db.ContractTypes
+                .Select(c => new { c.Id, Name = c.Name })
+                .OrderBy(c => c.Name).ToList();
+            ViewBag.ContractTypesList = new SelectList(contractTypesList, "Id", "Name");
+        }
+
+
 
         protected override void Dispose(bool disposing)
         {

@@ -280,6 +280,7 @@
     <Compile Include="Areas\Admin\Controllers\SuppliersController.cs" />
     <Compile Include="Areas\Admin\Controllers\SystemMaintenanceController.cs" />
     <Compile Include="Areas\Admin\Controllers\WorkShiftsController.cs" />
+    <Compile Include="Areas\Admin\ViewModels\AccountingSettingsViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\BalanceSheetViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\BankTransferReportViewModel.cs" />
     <Compile Include="Areas\Admin\ViewModels\BatchAidViewModel.cs" />
@@ -1057,6 +1058,9 @@
     <Content Include="Areas\Admin\Views\LoanApplications\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\StampSales\SalesReport.cshtml" />
     <Content Include="Areas\Admin\Views\SystemMaintenance\Index.cshtml" />
+    <Content Include="Areas\Members\Views\Dashboard\PrintVoucher.cshtml" />
+    <Content Include="Areas\Admin\Views\SystemSettings\AccountingSettings.cshtml" />
+    <Content Include="Areas\Admin\Views\LoanApplications\PrintLoanBooklet.cshtml" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.1.js" />
     <Content Include="Scripts\jquery-3.7.1.min.js" />

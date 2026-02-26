@@ -1,222 +1,341 @@
 ﻿@model BarManegment.Models.LoanApplication
 @{
-    ViewBag.Title = "طباعة قرار مجلس";
-    Layout = "~/Areas/Admin/Views/Shared/_PrintLOanayout.cshtml"; // 💡 تصحيح المسار
+    Layout = null;
+    ViewBag.Title = "قرار مجلس بصرف قرض";
 
-    // (جلب قائمة أعضاء المجلس من ViewBag)
-    var councilMembers = (ViewBag.CouncilMembers as List<BarManegment.Models.CouncilMember>) ?? new List<BarManegment.Models.CouncilMember>();
+    var membersList = ViewBag.CouncilMembers as List<BarManegment.Models.CouncilMember>;
 
-    // (استخدام "Title" وهو الاسم الصحيح من النموذج CouncilMember.cs)
-    var deputy = councilMembers.FirstOrDefault(m => m.Title == "نائب النقيب")?.Name ?? "..................";
-    var secretary = councilMembers.FirstOrDefault(m => m.Title == "أمين السر")?.Name ?? "..................";
-    var treasurer = councilMembers.FirstOrDefault(m => m.Title == "أمين الصندوق")?.Name ?? "..................";
+    // ترتيب المناصب
+    var deputy = membersList?.FirstOrDefault(m => m.Title.Contains("نائب"));
+    var secretary = membersList?.FirstOrDefault(m => m.Title.Contains("أمين السر"));
+    var treasurer = membersList?.FirstOrDefault(m => m.Title.Contains("الصندوق"));
 
-    // (جلب الأعضاء فقط)
-    var members = councilMembers.Where(m => m.Title == "عضو مجلس").ToList();
+    var otherMembers = membersList?
+        .Where(m => m != deputy && m != secretary && m != treasurer)
+        .ToList() ?? new List<BarManegment.Models.CouncilMember>();
 }
 
-@section styles {
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title - @Model.Lawyer.ArabicName</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .print-container {
-            direction: rtl;
-            background: #fff;
-            padding: 20mm;
-            margin: 20px auto;
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 16pt;
-            line-height: 2.2;
-            position: relative;
+        @@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #555;
+            margin: 0;
+            padding: 20px;
         }
 
-            .print-container::before {
+        .a4-page {
+            width: 210mm;
+            height: 296mm; /* ارتفاع ثابت */
+            background: white;
+            margin: 0 auto;
+            padding: 20mm;
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+            .a4-page::before {
                 content: "PALESTINE";
                 position: absolute;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%) rotate(-45deg);
-                font-size: 120pt;
+                font-size: 100pt;
                 font-weight: bold;
-                color: rgba(220, 220, 220, 0.2);
-                z-index: 1;
+                color: rgba(220, 220, 220, 0.15);
+                z-index: 0;
+                pointer-events: none;
             }
 
-        .print-header {
+        .content-layer {
+            position: relative;
+            z-index: 1;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* الترويسة */
+        .header-section {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #dc3545;
+            border-bottom: 3px solid #b71c1c;
             padding-bottom: 10px;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 2;
+            margin-bottom: 25px;
         }
 
-            .print-header .logo-container {
-                display: flex;
-                align-items: center;
-            }
+        .header-info h2 {
+            font-size: 16px;
+            font-weight: 800;
+            margin: 0;
+            color: #000;
+        }
+        /* تصغير الخط */
+        .header-info p {
+            font-size: 11px;
+            font-weight: 600;
+            margin: 0;
+            color: #555;
+            letter-spacing: 1px;
+        }
 
-            .print-header img {
-                max-height: 80px;
-                margin-left: 15px;
-            }
+        .logo-img {
+            max-height: 70px;
+            width: auto;
+        }
+        /* تصغير الشعار قليلاً */
 
-            .print-header .title-text {
-                font-family: 'Cairo', sans-serif;
-                font-size: 1.5rem;
-                font-weight: bold;
-                margin: 0;
-                color: #000;
-            }
-
-            .print-header .subtitle-text {
-                font-size: 1rem;
-                font-weight: bold;
-                margin: 0;
-                color: #333;
-            }
-
-            .print-header .loan-id {
-                border: 1px solid #000;
-                padding: 5px 10px;
-                font-weight: bold;
-            }
-
-        .print-title {
+        .date-box {
+            border: 2px solid #000;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
             text-align: center;
-            font-weight: bold;
-            font-size: 24pt;
-            text-decoration: underline;
-            margin: 30px 0;
-            position: relative;
-            z-index: 2;
         }
 
-        .print-body {
-            position: relative;
-            z-index: 2;
+        .main-title {
+            text-align: center;
+            font-size: 20pt; /* تصغير العنوان */
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-decoration: underline;
         }
 
-            .print-body p {
-                margin-bottom: 25px;
-                text-align: right;
-            }
+        .decision-body {
+            font-size: 14pt; /* ✅ تصغير خط النص الأساسي */
+            line-height: 1.8; /* ✅ تقليل تباعد الأسطر */
+            text-align: justify;
+            margin-bottom: 20px;
+        }
 
-            .print-body strong {
-                font-weight: bold;
-                color: #000;
-            }
-
-        .form-field {
+        .highlight {
             font-weight: bold;
-            font-family: 'Cairo', sans-serif;
-            text-decoration: underline;
+            border-bottom: 1px dotted #000;
             padding: 0 5px;
         }
 
-        .signature-grid {
+        .amount-box {
+            border: 2px solid #000;
+            padding: 5px 25px;
+            border-radius: 5px;
+            font-size: 16pt; /* تصغير خط المبلغ */
+            font-weight: bold;
+            display: inline-block;
+            margin: 15px 0;
+        }
+
+        /* تنسيق الختم الجديد (مدمج مع النص) */
+        .stamp-container {
+            margin-top: 10px;
+            display: flex;
+            justify-content: flex-end; /* وضع الختم جهة اليسار */
+            padding-left: 20px;
+        }
+
+        .stamp-circle {
+            border: 3px double #b71c1c;
+            color: #b71c1c;
+            padding: 10px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 50%;
+            width: 100px; /* تصغير حجم الختم */
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-15deg);
+            background-color: transparent;
+        }
+
+        /* شبكة التواقيع */
+        .council-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 40px 15px;
-            margin-top: 100px;
+            gap: 30px 15px;
+            margin-top: 40px; /* مسافة بعد الختم والنص */
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            page-break-inside: avoid;
+        }
+
+        .member-box {
             text-align: center;
+        }
+
+        .member-title {
+            font-size: 11pt; /* تصغير خط المنصب */
             font-weight: bold;
-            position: relative;
-            z-index: 2;
-            font-size: 12pt;
+            color: #b71c1c;
+            margin-bottom: 2px;
         }
 
-        .sig-box {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            min-height: 80px;
+        .member-name {
+            font-size: 10pt; /* تصغير خط الاسم */
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 15px;
         }
 
-            .sig-box .sig-line {
-                border-bottom: 1px dotted #000;
-                margin-bottom: 5px;
-            }
+        .signature-line {
+            width: 70%;
+            margin: 0 auto;
+            border-bottom: 1px dotted #000;
+            height: 30px;
+        }
+
+        .no-print {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
         @@media print {
-            body {
-                background: #fff;
-            }
-
-            .print-container {
-                border: none;
-                padding: 0;
+            @@page {
+                size: A4;
                 margin: 0;
             }
 
-            .print-footer-layout {
-                display: none;
+            body {
+                background: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .a4-page {
+                width: 100%;
+                height: 296mm;
+                box-shadow: none;
+                margin: 0;
+                padding: 15mm;
+                border: none;
+            }
+
+            .no-print {
+                display: none !important;
             }
         }
     </style>
-}
+</head>
+<body>
 
-<div class="print-container">
+    <div class="no-print">
+        <div class="bg-white p-3 rounded shadow d-inline-block mt-3">
+            <button onclick="window.print()" class="btn btn-primary fw-bold px-4"><i class="bi bi-printer-fill me-2"></i> طباعة القرار</button>
+            <button onclick="window.close()" class="btn btn-secondary px-4 ms-2">إغلاق</button>
+        </div>
+    </div>
 
-    @* --- رأس الصفحة (كما في الصورة) --- *@
-    <div class="print-header">
-        <div class="logo-container">
-            <img src="@Url.Content("~/Content/Images/logo.png")" alt="شعار نقابة المحامين" />
-            <div>
-                <h2 class="title-text">نقابة المحامين الفلسطينيين</h2>
-                <p class="subtitle-text">PALESTINIAN BAR ASSOCIATION</p>
+    <div class="a4-page">
+        <div class="content-layer">
+            <div class="header-section">
+                <div class="header-info d-flex align-items-center">
+                    <img src="@Url.Content("~/Content/Images/logo.png")" class="logo-img ms-3" alt="Logo" />
+                    <div>
+                        <h2>نقابة المحامين الفلسطينيين</h2>
+                        <p>PALESTINIAN BAR ASSOCIATION</p>
+                    </div>
+                </div>
+                <div class="date-box">
+                    <div>التاريخ: @DateTime.Now.ToString("yyyy/MM/dd")</div>
+                    <div>رقم القرار: @Model.Id/LN</div>
+                </div>
             </div>
+
+            <div class="main-title">قرار صرف قرض حسن</div>
+
+            <div class="decision-body">
+                <p>
+                    بناءً على الطلب المقدم من الزميل المحامي/ <span class="highlight">@Model.Lawyer.ArabicName</span>،
+                    والذي يحمل رقم عضوية <span class="highlight">@Model.Lawyer.MembershipId</span>،
+                    للحصول على قرض حسن.
+                </p>
+                <p>
+                    وبعد الاطلاع على ملف الطلب واستيفاء كافة الشروط والمستندات المطلوبة، وتوفر الضمانات والكفالات اللازمة،
+                    <strong>قرر مجلس النقابة</strong> الموافقة على صرف مبلغ وقدره:
+                </p>
+
+                <div class="text-center">
+                    <span class="amount-box">
+                        @Model.Amount.ToString("N0") @(Model.LoanType.BankAccount?.Currency?.Name ?? "شيكل")
+                    </span>
+                </div>
+
+                <p>
+                    على أن يتم سداد المبلغ على أقساط شهرية عددها (<span class="highlight">@Model.InstallmentCount</span>) قسطاً،
+                    تبدأ من تاريخ <span class="highlight">@Model.StartDate.ToString("yyyy/MM/dd")</span>.
+                </p>
+
+                <div class="stamp-container">
+                    <div class="stamp-circle">
+                        مستوفي الشروط
+                    </div>
+                </div>
+            </div>
+
+            <div class="council-grid">
+
+                @* 1. نائب النقيب *@
+                <div class="member-box">
+                    <div class="member-title">@(deputy?.Title ?? "نائب النقيب")</div>
+                    <div class="member-name">@(deputy?.Name ?? "....................")</div>
+                    <div class="signature-line"></div>
+                </div>
+
+                @* 2. أمين السر *@
+                <div class="member-box">
+                    <div class="member-title">@(secretary?.Title ?? "أمين السر")</div>
+                    <div class="member-name">@(secretary?.Name ?? "....................")</div>
+                    <div class="signature-line"></div>
+                </div>
+
+                @* 3. أمين الصندوق *@
+                <div class="member-box">
+                    <div class="member-title">@(treasurer?.Title ?? "أمين الصندوق")</div>
+                    <div class="member-name">@(treasurer?.Name ?? "....................")</div>
+                    <div class="signature-line"></div>
+                </div>
+
+                @* 4. باقي الأعضاء *@
+                @if (otherMembers.Any())
+                {
+                    foreach (var member in otherMembers)
+                    {
+                        <div class="member-box">
+                            <div class="member-title">@member.Title</div>
+                            <div class="member-name">@member.Name</div>
+                            <div class="signature-line"></div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        <div class="member-box">
+                            <div class="member-title">عضو مجلس</div>
+                            <div class="member-name">....................</div>
+                            <div class="signature-line"></div>
+                        </div>
+                    }
+                }
+            </div>
+
         </div>
-        <div class="loan-id">
-            رقم القرض/ @Model.Id
-        </div>
     </div>
 
-    <div class="print-title">
-        قرار مجلس
-    </div>
-
-    @* --- جسم النموذج (معبأ بالبيانات) --- *@
-    <div class="print-body">
-        <p>
-            قرر مجلس النقابة منح مقدم الطلب الأستاذ/ <span class="form-field">@Model.Lawyer.ArabicName</span>
-        </p>
-        <p>
-            مبلغ وقدره / <span class="form-field">@Model.Amount.ToString("N2")</span>
-            على برنامج القرض الحسن بعد ان يتم مراجعة وتدقيق الطلب
-        </p>
-        <p>
-            واستيفاء اي نقص فيه ويوقع هو الكفلاء وتستكمل الاجراءات الاخرى على ان يسدد القرض على اقساط
-            شهرية بواقع / <span class="form-field">@Model.InstallmentAmount.ToString("N2")</span>
-            شهريا وعلى ان تبدأ من تاريخ / <span class="form-field">@Model.StartDate.ToString("yyyy/MM/dd")</span>
-            وحتى الوفاء التام.
-        </p>
-    </div>
-
-    @* (تواقيع أعضاء المجلس) *@
-    <div class="signature-grid">
-        <div class="sig-box">نائب النقيب <div class="sig-line"></div> <small>@deputy</small></div>
-        <div class="sig-box">أمين السر <div class="sig-line"></div> <small>@secretary</small></div>
-        <div class="sig-box">أمين الصندوق <div class="sig-line"></div> <small>@treasurer</small></div>
-
-        @* (عرض باقي الأعضاء) *@
-        @foreach (var member in members.Take(3))
-        {
-            <div class="sig-box">عضو مجلس <div class="sig-line"></div> <small>@member.Name</small></div>
-        }
-        @* (إضافة خانات فارغة إذا كان عدد الأعضاء أقل من 3) *@
-        @for (int i = 0; i < (3 - members.Count()); i++)
-        {
-            <div class="sig-box">عضو مجلس <div class="sig-line"></div> <small>..................</small></div>
-        }
-    </div>
-
-</div>
-
-@section scripts {
-    <script>
-        window.addEventListener("load", function () {
-            window.print();
-        });
-    </script>
-}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</body>
+</html>

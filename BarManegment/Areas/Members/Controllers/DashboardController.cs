@@ -5,12 +5,12 @@ using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
 using System.Collections.Generic;
-using BarManegment.Areas.Admin.ViewModels; // (مطلوب لـ PrintReceiptViewModel)
+using BarManegment.Areas.Admin.ViewModels;
 using System.Net;
 using System.Web;
 using System.IO;
-using BarManegment.Helpers; // (مطلوب لـ TafqeetHelper)
-using Tafqeet; // (مطلوب لـ TafqeetHelper)
+using BarManegment.Helpers;
+using Tafqeet;
 
 namespace BarManegment.Areas.Members.Controllers
 {
@@ -24,7 +24,6 @@ namespace BarManegment.Areas.Members.Controllers
         // ============================================================
         public ActionResult Index()
         {
-            // 1. التحقق من الجلسة
             if (Session["UserId"] == null)
             {
                 System.Web.Security.FormsAuthentication.SignOut();
@@ -45,7 +44,6 @@ namespace BarManegment.Areas.Members.Controllers
             var viewModel = new MemberDashboardViewModel
             {
                 GraduateInfo = graduateApp,
-                // 💡 تهيئة القوائم لتجنب NullReferenceException
                 AvailableJobTests = new List<AvailableExamViewModel>(),
                 EnrolledExams = new List<EnrolledExamViewModel>(),
                 FinishedExams = new List<EnrolledExamViewModel>()
@@ -136,9 +134,6 @@ namespace BarManegment.Areas.Members.Controllers
             }
             else if (status.Contains("محامي") || status == "Advocate")
             {
-                // 💡 1. منطق جلب الاختبارات الوظيفية المتاحة للتقدم
-
-                // 💡 التصحيح الهام: التأكد من تهيئة القائمة قبل الاستخدام
                 if (viewModel.AvailableJobTests == null)
                 {
                     viewModel.AvailableJobTests = new List<AvailableExamViewModel>();
@@ -151,20 +146,17 @@ namespace BarManegment.Areas.Members.Controllers
 
                 foreach (var exam in availableTests)
                 {
-                    // تخطي إذا كان مسجلاً بالفعل
                     if (allMyExams.Any(e => e.ExamId == exam.Id)) continue;
 
                     bool isEligible = true;
                     string reason = "";
 
-                    // التحقق من الحالة المطلوبة
                     if (exam.RequiredApplicationStatusId.HasValue && exam.RequiredApplicationStatusId != graduateApp.ApplicationStatusId)
                     {
                         isEligible = false;
                         reason = "حالة العضوية غير مطابقة للشروط.";
                     }
 
-                    // التحقق من سنوات المزاولة
                     if (isEligible && exam.MinPracticeYears.HasValue)
                     {
                         var practiceStartDate = graduateApp.PracticeStartDate ?? DateTime.Now;
@@ -189,7 +181,6 @@ namespace BarManegment.Areas.Members.Controllers
                     });
                 }
 
-                // للمحامي المزاول (بيانات أخرى)
                 viewModel.MyTrainees = db.GraduateApplications
                     .Where(t => t.SupervisorId == graduateApp.Id && t.ApplicationStatus.Name == "متدرب مقيد")
                     .Select(t => new MyTraineeViewModel { Id = t.Id, Name = t.ArabicName, SerialNo = t.TraineeSerialNo, StartDate = t.TrainingStartDate ?? DateTime.Now })
@@ -242,7 +233,7 @@ namespace BarManegment.Areas.Members.Controllers
         }
 
         // ============================================================
-        // 💡 2. دالة التقدم للامتحان
+        // Apply for Job Test
         // ============================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -261,19 +252,16 @@ namespace BarManegment.Areas.Members.Controllers
                 return RedirectToAction("Index");
             }
 
-            // التحقق من التسجيل المسبق
             if (db.ExamEnrollments.Any(e => e.ExamId == examId && e.GraduateApplicationId == lawyer.Id))
             {
                 TempData["InfoMessage"] = "أنت مسجل بالفعل في هذا الامتحان.";
                 return RedirectToAction("Index");
             }
 
-            // تسجيل المحامي
             var enrollment = new ExamEnrollment
             {
                 ExamId = examId,
                 GraduateApplicationId = lawyer.Id,
-                // ExamApplicationId يبقى null لأنه محامي موجود
             };
 
             db.ExamEnrollments.Add(enrollment);
@@ -297,7 +285,6 @@ namespace BarManegment.Areas.Members.Controllers
             var applicantId = (int?)Session["ApplicantId"];
             if (applicantId.HasValue && enrollment.ExamApplicationId != applicantId && enrollment.GraduateApplicationId != applicantId)
             {
-                // حماية بسيطة لمنع عرض نتائج الآخرين
                 return RedirectToAction("Index", "Dashboard");
             }
 
@@ -307,22 +294,9 @@ namespace BarManegment.Areas.Members.Controllers
             return View(enrollment);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-        // 💡💡 === بداية الإضافة: دوال القروض الجديدة === 💡💡
-
-        // GET: Members/Dashboard/MyLoans
-        // (صفحة عرض جميع القروض)
+        // ============================================================
+        // Loan Methods
+        // ============================================================
         public ActionResult MyLoans()
         {
             var graduateApp = GetCurrentLawyer();
@@ -349,8 +323,6 @@ namespace BarManegment.Areas.Members.Controllers
             return View(model);
         }
 
-        // GET: Members/Dashboard/MyLoanDetails/5
-        // (صفحة عرض تفاصيل القرض والأقساط)
         public ActionResult MyLoanDetails(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -360,16 +332,14 @@ namespace BarManegment.Areas.Members.Controllers
 
             var lawyerId = graduateApp.Id;
 
-            // (جلب القرض مع الأقساط)
             var loan = db.LoanApplications
                 .Include(l => l.LoanType)
                 .Include(l => l.Installments.Select(i => i.PaymentVoucher))
                 .Include(l => l.Installments.Select(i => i.Receipt))
-                .FirstOrDefault(l => l.Id == id && l.LawyerId == lawyerId); // (تأكيد الملكية)
+                .FirstOrDefault(l => l.Id == id && l.LawyerId == lawyerId);
 
             if (loan == null) return HttpNotFound();
 
-            // (تحويله إلى ViewModel)
             var viewModel = new MemberLoanViewModel
             {
                 LoanId = loan.Id,
@@ -394,16 +364,6 @@ namespace BarManegment.Areas.Members.Controllers
             return View(viewModel);
         }
 
-        // 💡💡 === نهاية الإضافة === 💡💡
-
-        // (دوال مراجعة سجل التدريب للمشرف - تبقى كما هي)
-        // ... (ReviewLog, ApproveLog, RejectLog) ...
-
-
-        // ============================================================
-        // 4. إجراءات المشرف على السجلات (قبول / رفض)
-        // ============================================================
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ApproveLog(int logId)
@@ -413,8 +373,7 @@ namespace BarManegment.Areas.Members.Controllers
 
             if (log != null && log.SupervisorId == currentLawyer.Id)
             {
-                log.Status = "معتمد"; // أو "Approved" حسب المسميات في قاعدة بياناتك
-                // log.ApprovalDate = DateTime.Now; // إذا كان الحقل موجوداً
+                log.Status = "معتمد";
                 db.SaveChanges();
                 TempData["SuccessMessage"] = "تم اعتماد السجل الشهري بنجاح.";
             }
@@ -435,8 +394,8 @@ namespace BarManegment.Areas.Members.Controllers
 
             if (log != null && log.SupervisorId == currentLawyer.Id)
             {
-                log.Status = "مرفوض"; // أو "Rejected"
-                log.SupervisorNotes = rejectionReason; // تخزين سبب الرفض
+                log.Status = "مرفوض";
+                log.SupervisorNotes = rejectionReason;
                 db.SaveChanges();
                 TempData["InfoMessage"] = "تم رفض السجل وإعادته للمتدرب للتصحيح.";
             }
@@ -448,26 +407,21 @@ namespace BarManegment.Areas.Members.Controllers
             return RedirectToAction("ViewTraineeProfile", new { id = log?.GraduateApplicationId });
         }
 
-        // دالة لتحميل المرفق الخاص بالسجل
-        // دالة لتحميل المرفق الخاص بالسجل
         public ActionResult GetTrainingLogAttachment(int logId)
         {
             var currentLawyer = GetCurrentLawyer();
             var log = db.TrainingLogs.Find(logId);
 
-            // التحقق من الصلاحية
             if (log == null || (log.SupervisorId != currentLawyer.Id && log.GraduateApplicationId != currentLawyer.Id))
             {
                 return HttpNotFound();
             }
 
-            // ✅ التصحيح: استخدام FilePath بدلاً من AttachmentPath
             if (string.IsNullOrEmpty(log.FilePath))
             {
                 return Content("لا يوجد مرفق.");
             }
 
-            // ✅ التصحيح: استخدام FilePath
             string filePath = Server.MapPath(log.FilePath);
             if (!System.IO.File.Exists(filePath)) return HttpNotFound("الملف غير موجود على السيرفر.");
 
@@ -475,13 +429,11 @@ namespace BarManegment.Areas.Members.Controllers
             return File(filePath, "application/pdf", fileName);
         }
 
-        // (دالة بدء الامتحان - تبقى كما هي)
         public ActionResult StartTraineeExam(int? examId)
         {
-            // ... (الكود سليم)
             return RedirectToAction("StartExam", "TakeExam", new { area = "ExamPortal" });
         }
-        // (دالة مساعدة لجلب بيانات المحامي الحالي)
+
         private GraduateApplication GetCurrentLawyer()
         {
             if (Session["UserId"] == null) return null;
@@ -491,8 +443,7 @@ namespace BarManegment.Areas.Members.Controllers
                 .Include(g => g.ApplicationStatus)
                 .FirstOrDefault(g => g.UserId == userId);
         }
-        // 💡💡 === بداية الإضافة: دالة "عرض كل الحصص" === 💡💡
-        // GET: Members/Dashboard/MyContractShares
+
         public ActionResult MyContractShares(string searchString, DateTime? from, DateTime? to)
         {
             var graduateApp = GetCurrentLawyer();
@@ -501,13 +452,11 @@ namespace BarManegment.Areas.Members.Controllers
                 return RedirectToAction("Login", "Account", new { area = "Members" });
             }
 
-            // (جلب الاستعلام الأساسي)
             var query = db.FeeDistributions
                 .Include(d => d.ContractTransaction.ContractType)
                 .Include(d => d.Receipt)
                 .Where(d => d.LawyerId == graduateApp.Id);
 
-            // (تطبيق التصفية)
             if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(d =>
@@ -525,7 +474,6 @@ namespace BarManegment.Areas.Members.Controllers
                 query = query.Where(d => d.Receipt.BankPaymentDate < toDate);
             }
 
-            // (جلب النتائج)
             var shares = query
                 .OrderByDescending(d => d.Receipt.BankPaymentDate)
                 .Select(d => new MemberShareViewModel
@@ -534,7 +482,7 @@ namespace BarManegment.Areas.Members.Controllers
                     ContractTypeName = d.ContractTransaction.ContractType.Name,
                     PaymentDate = d.Receipt.BankPaymentDate,
                     LawyerShareAmount = d.Amount,
-                    Status = d.IsOnHold ? "محجوزة" : (d.IsSentToBank ? "مرسلة للبنك" : "جاهزة للدفع")
+                    Status = d.IsSentToBank ? "مدفوع" : "معلق"
                 }).ToList();
 
             ViewBag.SearchString = searchString;
@@ -543,15 +491,7 @@ namespace BarManegment.Areas.Members.Controllers
 
             return View(shares);
         }
-        // 💡💡 === نهاية الإضافة === 💡💡
 
-
-
-
-        // (دالة عرض ملف المتدرب للمشرف - تبقى كما هي)
-        // ============================================================
-        // 3. عرض ملف المتدرب وسجلاته للمشرف
-        // ============================================================
         public ActionResult ViewTraineeProfile(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -559,7 +499,6 @@ namespace BarManegment.Areas.Members.Controllers
             var currentLawyer = GetCurrentLawyer();
             if (currentLawyer == null) return RedirectToAction("Login", "Account");
 
-            // جلب بيانات المتدرب الأساسية
             var trainee = db.GraduateApplications
                 .Include(t => t.ContactInfo)
                 .Include(t => t.ApplicationStatus)
@@ -568,44 +507,32 @@ namespace BarManegment.Areas.Members.Controllers
 
             if (trainee == null) return HttpNotFound();
 
-            // التحقق الأمن: هل هذا المتدرب يتبع للمشرف الحالي؟
             if (trainee.SupervisorId != currentLawyer.Id)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "عذراً، هذا المتدرب ليس تحت إشرافك الحالي.");
             }
 
-            // إعداد الموديل الشامل
             var viewModel = new TraineeReviewViewModel
             {
                 Trainee = trainee,
-
-                // 1. سجلات التدريب
                 Logs = db.TrainingLogs
                     .Where(l => l.GraduateApplicationId == trainee.Id)
                     .OrderByDescending(l => l.Year).ThenByDescending(l => l.Month)
                     .ToList(),
-
-                // 2. السجل المالي
                 Receipts = db.Receipts
                     .Include(r => r.PaymentVoucher)
                     .Where(r => r.PaymentVoucher.GraduateApplicationId == trainee.Id)
                     .OrderByDescending(r => r.BankPaymentDate)
                     .ToList(),
-
-                // 3. الأبحاث
                 Researches = db.LegalResearches
                     .Where(r => r.GraduateApplicationId == trainee.Id)
                     .OrderByDescending(r => r.SubmissionDate)
                     .ToList(),
-
-                // 4. الامتحانات
                 Exams = db.ExamEnrollments
                     .Include(e => e.Exam)
                     .Where(e => e.GraduateApplicationId == trainee.Id)
                     .OrderByDescending(e => e.Exam.StartTime)
                     .ToList(),
-
-                // 5. الطلبات الإدارية
                 Requests = db.SupervisorChangeRequests
                     .Where(r => r.TraineeId == trainee.Id)
                     .OrderByDescending(r => r.RequestDate)
@@ -615,17 +542,10 @@ namespace BarManegment.Areas.Members.Controllers
             return View(viewModel);
         }
 
-        // (دالة جلب مرفق سجل التدريب - تبقى كما هي)
-
-
-        // أضف هذا الأكشن في DashboardController (كمسؤول) أو قم بتنفيذه عبر SQL
-        // هذا الكود للتأكد من وجود الصلاحيات
         public ActionResult FixCommitteePermissions()
         {
-            // 1. تحديد المودول الخاص ببوابة اللجان
             var committeeModule = db.Modules.FirstOrDefault(m => m.ControllerName == "CommitteePortal");
 
-            // إذا لم يكن موجوداً، نقوم بإنشائه
             if (committeeModule == null)
             {
                 committeeModule = new ModuleModel { NameArabic = "بوابة لجان المناقشة والاختبارات", ControllerName = "CommitteePortal" };
@@ -633,30 +553,26 @@ namespace BarManegment.Areas.Members.Controllers
                 db.SaveChanges();
             }
 
-            // 2. تحديد الأدوار التي تحتاج صلاحية (محامي + عضو لجنة)
             var roles = db.UserTypes.Where(u => u.NameEnglish == "Advocate" || u.NameEnglish == "CommitteeMember").ToList();
 
             foreach (var role in roles)
             {
-                // التحقق هل الصلاحية موجودة؟
                 var perm = db.Permissions.FirstOrDefault(p => p.UserTypeId == role.Id && p.ModuleId == committeeModule.Id);
 
                 if (perm == null)
                 {
-                    // إنشاء الصلاحية
                     db.Permissions.Add(new PermissionModel
                     {
                         UserTypeId = role.Id,
                         ModuleId = committeeModule.Id,
-                        CanView = true, // ضروري للدخول
-                        CanAdd = true,  // لإضافة الدرجات
-                        CanEdit = true, // لتعديل الدرجات
+                        CanView = true,
+                        CanAdd = true,
+                        CanEdit = true,
                         CanDelete = false
                     });
                 }
                 else
                 {
-                    // تحديث الصلاحية لضمان التفعيل
                     perm.CanView = true;
                     perm.CanAdd = true;
                     perm.CanEdit = true;
@@ -668,63 +584,106 @@ namespace BarManegment.Areas.Members.Controllers
             return Content("تم تحديث صلاحيات بوابة اللجان بنجاح للمحامين وأعضاء اللجان.");
         }
 
-
         // ============================================================
-        // طباعة الإيصال (تم التصحيح)
+        // طباعة القسيمة أو الإيصال (للأعضاء) - دالة موحدة ومصححة
         // ============================================================
-        public ActionResult PrintReceipt(int? id)
+        // ============================================================
+        // طباعة القسيمة أو الإيصال (موحدة ومصححة)
+        // ============================================================
+        public ActionResult PrintVoucher(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
             if (Session["UserId"] == null) return RedirectToAction("Login", "Account", new { area = "Members" });
-
             var userId = (int)Session["UserId"];
-            // التأكد من أن الإيصال يخص المستخدم الحالي
             var graduateApp = db.GraduateApplications.FirstOrDefault(g => g.UserId == userId);
 
-            var receipt = db.Receipts
-                .Include(r => r.PaymentVoucher.GraduateApplication.ApplicationStatus)
-                .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType.Currency))
-                .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType))
-                .FirstOrDefault(r => r.Id == id);
+            if (graduateApp == null) return HttpNotFound();
 
-            if (receipt == null || (graduateApp != null && receipt.PaymentVoucher.GraduateApplicationId != graduateApp.Id))
+            // 1. محاولة العثور على إيصال مسدد (Receipt) أولاً
+            var receipt = db.Receipts
+                .Include(r => r.PaymentVoucher.GraduateApplication)
+                .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType.Currency))
+                .Include(r => r.PaymentVoucher.VoucherDetails.Select(d => d.FeeType.BankAccount))
+                .FirstOrDefault(r => r.Id == id); // نبحث بمعرف الإيصال
+
+            if (receipt != null)
             {
-                return HttpNotFound("الإيصال غير موجود أو لا تملك صلاحية لعرضه.");
+                if (receipt.PaymentVoucher.GraduateApplicationId != graduateApp.Id)
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "لا تملك صلاحية لعرض هذا الإيصال.");
+
+                var currencySymbol = receipt.PaymentVoucher.VoucherDetails.FirstOrDefault()?.FeeType.Currency?.Symbol ?? "₪";
+                string amountInWords = TafqeetHelper.ConvertToArabic(receipt.PaymentVoucher.TotalAmount, currencySymbol);
+                ViewBag.AmountInWords = amountInWords;
+
+                // إعداد الموديل للإيصال المسدد
+                var viewModel = new PrintVoucherViewModel
+                {
+                    VoucherId = receipt.Id,
+                    IssueDate = receipt.BankPaymentDate, // تاريخ السداد الفعلي
+                    ExpiryDate = DateTime.MaxValue,      // لا تنتهي صلاحيته لأنه مسدد
+                    TraineeName = receipt.PaymentVoucher.GraduateApplication?.ArabicName ?? "غير محدد",
+                    TotalAmount = receipt.PaymentVoucher.TotalAmount,
+                    PaymentMethod = "سداد بنكي/نقدي",
+                    IssuedByUserName = receipt.IssuedByUserName ?? "النظام الإلكتروني",
+                    // تفاصيل الرسوم (بدون تفاصيل بنكية لأنها سُددت)
+                    Details = receipt.PaymentVoucher.VoucherDetails.Select(d => new VoucherPrintDetail
+                    {
+                        FeeTypeName = d.FeeType.Name,
+                        Amount = d.Amount,
+                        CurrencySymbol = d.FeeType.Currency?.Symbol ?? currencySymbol,
+                        BankName = "", // نخفي البنك لأنه تم السداد
+                        AccountNumber = "",
+                        Iban = ""
+                    }).ToList()
+                };
+                return View("PrintReceipt", viewModel);
             }
 
-            var currencySymbol = receipt.PaymentVoucher.VoucherDetails.FirstOrDefault()?.FeeType.Currency?.Symbol ?? "";
+            // 2. إذا لم نجد إيصالاً، نبحث عن قسيمة غير مسددة (PaymentVoucher)
+            var voucher = db.PaymentVouchers
+                .Include(v => v.GraduateApplication)
+                .Include(v => v.VoucherDetails.Select(d => d.FeeType.Currency))
+                .Include(v => v.VoucherDetails.Select(d => d.FeeType.BankAccount))
+                .FirstOrDefault(v => v.Id == id); // نبحث بمعرف القسيمة
 
-            // استخدام TafqeetHelper الموجود في مجلد Helpers
-            var amountInWords = TafqeetHelper.ConvertToArabic(receipt.PaymentVoucher.TotalAmount, currencySymbol);
-
-            var viewModel = new PrintReceiptViewModel
+            if (voucher != null)
             {
-                ReceiptFullNumber = $"{receipt.SequenceNumber}/{receipt.Year}",
-                ReceiptId = receipt.Id,
-                ApplicantName = receipt.PaymentVoucher.GraduateApplication?.ArabicName ?? "غير محدد",
-                ApplicantStatus = receipt.PaymentVoucher.GraduateApplication?.ApplicationStatus?.Name ?? "-",
-                BankPaymentDate = receipt.BankPaymentDate,
-                BankReceiptNumber = receipt.BankReceiptNumber,
-                CreationDate = receipt.CreationDate,
-                IssuedByUserName = receipt.IssuedByUserName,
-                TotalAmount = receipt.PaymentVoucher.TotalAmount,
-                TotalAmountInWords = amountInWords, // تمرير التفقيد هنا
-                CurrencySymbol = currencySymbol,
-                PaymentMethod = receipt.PaymentVoucher.PaymentMethod,
-                Details = receipt.PaymentVoucher.VoucherDetails.Select(d => new ReceiptDetailViewModel
+                if (voucher.GraduateApplicationId != graduateApp.Id)
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "لا تملك صلاحية لعرض هذه القسيمة.");
+
+                var currencySymbol = voucher.VoucherDetails.FirstOrDefault()?.FeeType.Currency?.Symbol ?? "₪";
+                string amountInWords = TafqeetHelper.ConvertToArabic(voucher.TotalAmount, currencySymbol);
+                ViewBag.AmountInWords = amountInWords;
+
+                // إعداد الموديل للقسيمة (للدفع)
+                var viewModel = new PrintVoucherViewModel
                 {
-                    FeeTypeName = d.FeeType.Name,
-                    Amount = d.Amount,
-                    Description = d.Description
-                }).ToList()
-            };
+                    VoucherId = voucher.Id,
+                    IssueDate = voucher.IssueDate,
+                    // ✅ تم الإصلاح: استخدام ExpiryDate مباشرة لأنه DateTime
+                    ExpiryDate = voucher.ExpiryDate,
+                    TraineeName = voucher.GraduateApplication?.ArabicName ?? "غير محدد",
+                    TotalAmount = voucher.TotalAmount,
+                    PaymentMethod = "إيداع بنكي مطلوب",
+                    IssuedByUserName = voucher.IssuedByUserName ?? "النظام الإلكتروني",
+                    // تفاصيل الرسوم (مع التفاصيل البنكية للدفع)
+                    Details = voucher.VoucherDetails.Select(d => new VoucherPrintDetail
+                    {
+                        FeeTypeName = d.FeeType.Name,
+                        Amount = d.Amount,
+                        CurrencySymbol = d.FeeType.Currency?.Symbol ?? currencySymbol,
+                        BankName = d.FeeType.BankAccount?.BankName,
+                        AccountNumber = d.FeeType.BankAccount?.AccountNumber,
+                        Iban = d.FeeType.BankAccount?.Iban
+                    }).ToList()
+                };
 
-            // 💡 التصحيح: إرجاع الفيو الافتراضي (PrintReceipt) الموجود في نفس مجلد الكونترولر
-            return View(viewModel);
+                return View("PrintReceipt", viewModel);
+            }
+
+            return HttpNotFound("لم يتم العثور على القسيمة أو الإيصال.");
         }
-
-
 
         protected override void Dispose(bool disposing)
         {

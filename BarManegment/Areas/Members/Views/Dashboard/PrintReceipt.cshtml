@@ -1,263 +1,128 @@
-﻿@model BarManegment.Areas.Admin.ViewModels.PrintReceiptViewModel
+﻿@model BarManegment.Areas.Admin.ViewModels.PrintVoucherViewModel
 
 @{
     Layout = null;
-    ViewBag.Title = "إيصال قبض رقم " + Model.ReceiptFullNumber;
+    string amountText = ViewBag.AmountInWords as string;
+
+    // تحديد نوع المستند: إذا كان هناك تفاصيل بنكية فهو "قسيمة إيداع"، وإلا فهو "سند قبض"
+    bool isVoucherForPayment = Model.Details.Any(d => !string.IsNullOrEmpty(d.BankName));
+    string docTitle = isVoucherForPayment ? "أمر توريد / قسيمة إيداع" : "سند قبض";
+    string dateLabel = isVoucherForPayment ? "تاريخ الإصدار" : "تاريخ السداد";
 }
 
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8" />
-    <title>@ViewBag.Title</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-
+    <title>@docTitle - @Model.VoucherId</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: #525659; /* لون الخلفية للعرض */
-            margin: 0;
-            padding: 0;
-            font-size: 13px;
-        }
-
-        .page {
-            width: 210mm;
-            min-height: 148mm; /* نصف A4 تقريباً للإيصال */
-            padding: 10mm;
-            margin: 10mm auto;
-            background: white;
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            position: relative;
-            box-sizing: border-box;
-        }
-
-        /* تصميم الإيصال */
-        .receipt-container {
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-            position: relative;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-
-        .header-right {
-            text-align: right;
-        }
-
-        .header-right h2 {
-            font-family: 'Amiri', serif;
-            color: #ce1126;
-            font-weight: bold;
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .header-left {
-            text-align: left;
-        }
-
-        .receipt-title {
-            text-align: center;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 50px;
-            padding: 5px 20px;
-            margin: 10px auto;
-            width: fit-content;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .info-label {
-            font-weight: bold;
-            color: #555;
-            width: 120px;
-            display: inline-block;
-        }
-
-        .info-value {
-            font-weight: bold;
-            color: #000;
-            border-bottom: 1px dotted #999;
-            padding-left: 20px;
-            min-width: 200px;
-            display: inline-block;
-        }
-
-        .amount-box {
-            background-color: #e9ecef;
-            padding: 10px;
-            text-align: center;
-            border-radius: 5px;
-            margin: 20px 0;
-            font-weight: bold;
-            font-size: 16px;
-            border: 1px solid #ced4da;
-        }
-
-        .details-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        .details-table th {
-            background-color: #0d6efd;
-            color: white;
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #0d6efd;
-        }
-
-        .details-table td {
-            border: 1px solid #dee2e6;
-            padding: 8px;
-            text-align: center;
-        }
-
-        .signatures {
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .sig-block {
-            text-align: center;
-            width: 40%;
-        }
-
-        .sig-line {
-            margin-top: 40px;
-            border-bottom: 1px solid #000;
-            width: 80%;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        @@media print {
-            body { background-color: white; }
-            .page { margin: 0; border: none; box-shadow: none; width: 100%; height: auto; padding: 0; }
-            .no-print { display: none !important; }
-            .receipt-container { break-inside: avoid; }
-            .details-table th { background-color: #eee !important; color: black !important; border-color: #000; -webkit-print-color-adjust: exact; }
-        }
+        @@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #525659; margin: 0; padding: 20px; }
+        .page-container { background: white; width: 210mm; min-height: 297mm; height: auto; margin: 0 auto; padding: 10mm; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .voucher-half { min-height: 130mm; height: auto; border: 2px solid #333; border-radius: 8px; padding: 15px; margin-bottom: 8mm; display: flex; flex-direction: column; background-color: white; page-break-inside: avoid; }
+        .voucher-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
+        .header-center h2 { font-size: 20px; font-weight: 800; margin: 0; color: #2c3e50; }
+        .header-center h4 { font-size: 16px; margin: 5px 0 0; font-weight: 600; background-color: #eee; padding: 2px 10px; border-radius: 5px; display: inline-block; }
+        .voucher-number { font-size: 14px; font-weight: bold; color: #dc3545; border: 1px solid #dc3545; padding: 3px 8px; border-radius: 4px; }
+        .info-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 13px; background: #fcfcfc; padding: 10px; border: 1px dashed #ccc; border-radius: 5px; }
+        .info-item { flex: 1 1 45%; display: flex; align-items: baseline; }
+        .info-label { font-weight: 700; min-width: 90px; color: #555; }
+        .info-value { font-weight: 600; border-bottom: 1px dotted #999; flex-grow: 1; }
+        .details-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px; flex-grow: 1; }
+        .details-table th { background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 6px; text-align: center; }
+        .details-table td { border: 1px solid #dee2e6; padding: 6px; vertical-align: middle; }
+        .total-row td { background-color: #e9ecef; font-weight: bold; font-size: 14px; }
+        .amount-words { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 5px 10px; font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 10px; }
+        .cut-line { border-top: 2px dashed #999; width: 100%; margin: 15px 0; position: relative; height: 1px; }
+        .cut-icon { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 10px; font-size: 12px; color: #777; }
+        @@media print { body { background: none; padding: 0; margin: 0; } .page-container { box-shadow: none; width: 100%; margin: 0; padding: 5mm; } .no-print { display: none !important; } }
     </style>
 </head>
 <body>
-
-    <div class="no-print p-3 bg-white shadow-sm mb-4 text-center">
-        <button onclick="window.print()" class="btn btn-primary px-4 fw-bold"><i class="bi bi-printer"></i> طباعة الإيصال</button>
-        <button onclick="window.close()" class="btn btn-secondary px-4 ms-2">إغلاق</button>
+    <div class="text-center mb-4 no-print">
+        <button onclick="window.print()" class="btn btn-primary btn-lg shadow fw-bold">طباعة</button>
+        <button onclick="window.close()" class="btn btn-secondary btn-lg ms-2">إغلاق</button>
     </div>
 
-    <div class="page">
-        <div class="receipt-container">
-            <!-- الترويسة -->
-            <div class="header">
-                <div class="header-right">
-                    <img src="~/Content/Images/logo.png" width="60" style="float: right; margin-left: 10px;" onerror="this.style.display='none'" />
+    <div class="page-container">
+        @RenderVoucher(docTitle, "نسخة البنك / المالية", Model, amountText, dateLabel, isVoucherForPayment)
+        <div class="cut-line no-print"><span class="cut-icon">قص من هنا</span></div>
+        @RenderVoucher(docTitle, "نسخة المحامي", Model, amountText, dateLabel, isVoucherForPayment)
+    </div>
+
+    @helper RenderVoucher(string title, string copyType, BarManegment.Areas.Admin.ViewModels.PrintVoucherViewModel vm, string amountText, string dateLabel, bool isVoucher)
+    {
+        <div class="voucher-half">
+            <div class="voucher-header">
+                <div class="header-right"><img src="/Content/Images/logo.png" style="height: 60px;" onerror="this.style.display='none'"></div>
+                <div class="header-center">
                     <h2>نقابة المحامين الفلسطينيين</h2>
-                    <div class="small text-muted">Palestinian Bar Association</div>
+                    <h4>@title</h4>
                 </div>
                 <div class="header-left">
-                    <div><strong>التاريخ:</strong> @Model.CreationDate.ToString("yyyy/MM/dd")</div>
-                    <div><strong>الوقت:</strong> @Model.CreationDate.ToString("hh:mm tt")</div>
-                    <div class="text-danger mt-1"><strong>رقم الإيصال: @Model.ReceiptFullNumber</strong></div>
+                    <div class="voucher-number">رقم: @vm.VoucherId</div>
+                    <div style="font-size: 11px;">@copyType</div>
                 </div>
             </div>
 
-            <div class="receipt-title">إيصال قبض مالي</div>
-
-            <!-- البيانات الأساسية -->
-            <div class="row mb-3">
-                <div class="col-12 mb-2">
-                    <span class="info-label">استلمنا من السيد/ة:</span>
-                    <span class="info-value" style="width: 70%;">@Model.ApplicantName</span>
-                </div>
-                <div class="col-12 mb-2">
-                    <span class="info-label">الصفة/الحالة:</span>
-                    <span class="info-value">@Model.ApplicantStatus</span>
-                </div>
-                @if (!string.IsNullOrEmpty(Model.BankReceiptNumber))
+            <div class="info-grid">
+                <div class="info-item"><span class="info-label">الاسم:</span><span class="info-value">@vm.TraineeName</span></div>
+                <div class="info-item"><span class="info-label">@dateLabel:</span><span class="info-value">@vm.IssueDate.ToString("yyyy/MM/dd")</span></div>
+                @if (isVoucher)
                 {
-                    <div class="col-12 mb-2">
-                        <span class="info-label">رقم الإيداع البنكي:</span>
-                        <span class="info-value">@Model.BankReceiptNumber</span>
-                        <span class="small text-muted ms-2">(تاريخ البنك: @Model.BankPaymentDate.ToString("yyyy/MM/dd"))</span>
-                    </div>
+                    <div class="info-item"><span class="info-label">صالح لغاية:</span><span class="info-value text-danger">@vm.ExpiryDate.ToString("yyyy/MM/dd")</span></div>
                 }
+                <div class="info-item"><span class="info-label">المصدر:</span><span class="info-value">@vm.IssuedByUserName</span></div>
             </div>
 
-            <!-- جدول التفاصيل -->
             <table class="details-table">
                 <thead>
                     <tr>
-                        <th style="width: 10%;">م</th>
-                        <th style="width: 50%;">البيان / نوع الرسم</th>
-                        <th style="width: 40%;">المبلغ</th>
+                        <th width="5%">#</th>
+                        <th width="40%">البيان</th>
+                        @if (isVoucher)
+                        {
+                            <th width="35%">بيانات الإيداع</th>
+}
+                        <th width="20%">المبلغ</th>
                     </tr>
                 </thead>
                 <tbody>
                     @{ int i = 1; }
-                    @foreach (var item in Model.Details)
+                    @foreach (var item in vm.Details)
                     {
                         <tr>
-                            <td>@(i++)</td>
-                            <td style="text-align: right; padding-right: 15px;">
-                                @item.FeeTypeName
-                                @if (!string.IsNullOrEmpty(item.Description))
-                                {
-                                    <span class="small text-muted d-block">@item.Description</span>
-                                }
-                            </td>
-                            <td class="fw-bold">@item.Amount.ToString("N2") @Model.CurrencySymbol</td>
+                            <td class="text-center">@(i++)</td>
+                            <td>@item.FeeTypeName</td>
+                            @if (isVoucher)
+                            {
+                                <td style="font-size: 10px;">
+                                    <strong>@item.BankName</strong><br />
+                                    @if (!string.IsNullOrEmpty(item.AccountNumber))
+                                    {<span>حـ/: @item.AccountNumber</span>}
+                                </td>
+                            }
+                            <td class="text-center fw-bold">@item.Amount.ToString("N2") @item.CurrencySymbol</td>
                         </tr>
                     }
                 </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="@(isVoucher ? 3 : 2)" class="text-end pe-3">الإجمالي:</td>
+                        <td class="text-center">@vm.TotalAmount.ToString("N2")</td>
+                    </tr>
+                </tfoot>
             </table>
 
-            <!-- المبلغ الإجمالي والتفقيط -->
-            <div class="amount-box">
-                <div>المبلغ الإجمالي: <span style="font-size: 1.2em; color: #0d6efd;">@Model.TotalAmount.ToString("N2") @Model.CurrencySymbol</span></div>
-                <div class="small text-muted mt-1">فقط: @Model.TotalAmountInWords</div>
-            </div>
+            <div class="amount-words">مبلغ وقدره: @amountText فقط لا غير.</div>
 
-            <!-- التوقيعات -->
-            <div class="signatures">
-                <div class="sig-block">
-                    <strong>توقيع المستلم (الدافع)</strong>
-                    <div class="sig-line"></div>
-                </div>
-                <div class="sig-block">
-                    <strong>أمين الصندوق / المحاسب</strong>
-                    <div class="sig-line"></div>
-                    <div class="small mt-1">@Model.IssuedByUserName</div>
-                </div>
-            </div>
-
-            <div class="text-center mt-4 small text-muted border-top pt-2">
-                حرر هذا الإيصال إلكترونياً ويعتبر مستنداً مالياً رسمياً.
+            <div class="footer-signatures">
+                <div class="sig-box"><div class="sig-title">توقيع الزميل</div></div>
+                <div class="sig-box"><div class="sig-title">الختم الرسمي</div></div>
+                <div class="sig-box"><div class="sig-title">الموظف المسؤول</div></div>
             </div>
         </div>
-    </div>
-
+    }
 </body>
 </html>

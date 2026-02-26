@@ -3,9 +3,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BarManegment.Areas.Admin.ViewModels
 {
-    // نموذج لطباعة إيصال سداد القسط
     public class PrintLoanReceiptViewModel
     {
+        public int ReceiptId { get; set; }
+
         [Display(Name = "رقم الإيصال")]
         public string ReceiptFullNumber { get; set; }
 
@@ -38,16 +39,5 @@ namespace BarManegment.Areas.Admin.ViewModels
 
         [Display(Name = "اسم الموظف")]
         public string EmployeeName { get; set; }
-
-        public int ReceiptId { get; set; }
-        public string ReceiptNumber { get; set; }
-        public DateTime ReceiptDate { get; set; }
-        public decimal Amount { get; set; }
- 
-        public string PayerName { get; set; }
-        public string Description { get; set; }
- 
-        public string LoanType { get; set; }
- 
     }
 }

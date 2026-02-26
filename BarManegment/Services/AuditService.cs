@@ -1,5 +1,4 @@
-﻿// File Path: BarManegment/Services/AuditService.cs
-using BarManegment.Models;
+﻿using BarManegment.Models;
 using System;
 using System.Web;
 
@@ -11,16 +10,24 @@ namespace BarManegment.Services
         /// يسجل إجراء مهماً في قاعدة البيانات.
         /// </summary>
         /// <param name="action">اسم الإجراء (e.g., "Create", "Login").</param>
-        /// <param name="controller">اسم المتحكم (e.g., "Users", "Account").</param>
+        /// <param name="controller">اسم المتحكم أو المصدر (e.g., "Accounting").</param>
         /// <param name="details">تفاصيل إضافية عن الحدث.</param>
-        public static void LogAction(string action, string controller, string details)
+        /// <param name="explicitUserId">معرف المستخدم (اختياري، إذا لم يتم تمريره سيؤخذ من الجلسة).</param>
+        public static void LogAction(string action, string controller, string details, int? explicitUserId = null)
         {
             try
             {
                 using (var db = new ApplicationDbContext())
                 {
-                    var userId = (int?)HttpContext.Current.Session["UserId"];
-                    var ipAddress = HttpContext.Current.Request.UserHostAddress;
+                    // الأولوية للمعرف الممرر، ثم للجلسة الحالية
+                    var userId = explicitUserId;
+
+                    if (userId == null && HttpContext.Current != null && HttpContext.Current.Session != null)
+                    {
+                        userId = (int?)HttpContext.Current.Session["UserId"];
+                    }
+
+                    var ipAddress = HttpContext.Current?.Request?.UserHostAddress ?? "::1";
 
                     var auditLog = new AuditLogModel
                     {
@@ -38,8 +45,8 @@ namespace BarManegment.Services
             }
             catch (Exception ex)
             {
-                // في مشروع حقيقي، يمكنك تسجيل هذا الخطأ في ملف نصي أو نظام مراقبة آخر
-                Console.WriteLine(ex.Message);
+                // في حال فشل التسجيل، نكتب في الكونسول حتى لا نوقف النظام
+                System.Diagnostics.Debug.WriteLine("Audit Log Failed: " + ex.Message);
             }
         }
     }

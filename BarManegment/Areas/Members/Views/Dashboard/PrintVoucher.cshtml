@@ -4,8 +4,6 @@
     Layout = null;
     string amountText = ViewBag.AmountInWords as string;
 
-    // تحديد نوع المستند بناءً على البيانات (للعرض فقط)
-    // إذا كان هناك تفاصيل بنكية وتاريخ انتهاء، فهي غالباً قسيمة دفع للبنك
     bool isVoucher = Model.Details.Any(d => !string.IsNullOrEmpty(d.AccountNumber));
     string docTitle = isVoucher ? "أمر توريد / قسيمة إيداع" : "سند قبض";
 }
@@ -30,7 +28,9 @@
         .page-container {
             background: white;
             width: 210mm;
+            /* ✅ تعديل: السماح للصفحة بالتمدد إذا زاد المحتوى عن صفحة واحدة */
             min-height: 297mm;
+            height: auto;
             margin: 0 auto;
             padding: 10mm;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -38,9 +38,11 @@
             box-sizing: border-box;
         }
 
-        /* تنسيق القسيمة الواحدة (نصف صفحة) */
+        /* ✅✅ التعديل الجوهري هنا: تمدد الصندوق */
         .voucher-half {
-            height: 135mm;
+            /* كان height: 135mm ثابت */
+            min-height: 130mm; /* الحد الأدنى للارتفاع للحفاظ على الشكل */
+            height: auto;      /* يسمح بالتمدد حسب المحتوى */
             border: 2px solid #333;
             border-radius: 8px;
             padding: 15px;
@@ -48,6 +50,7 @@
             margin-bottom: 8mm;
             display: flex;
             flex-direction: column;
+            background-color: white; /* لضمان عدم الشفافية عند الطباعة */
         }
 
         .voucher-header {
@@ -67,22 +70,22 @@
             text-align: center;
         }
 
-            .header-center h2 {
-                font-size: 20px;
-                font-weight: 800;
-                margin: 0;
-                color: #2c3e50;
-            }
+        .header-center h2 {
+            font-size: 20px;
+            font-weight: 800;
+            margin: 0;
+            color: #2c3e50;
+        }
 
-            .header-center h4 {
-                font-size: 16px;
-                margin: 5px 0 0;
-                font-weight: 600;
-                background-color: #eee;
-                padding: 2px 10px;
-                border-radius: 5px;
-                display: inline-block;
-            }
+        .header-center h4 {
+            font-size: 16px;
+            margin: 5px 0 0;
+            font-weight: 600;
+            background-color: #eee;
+            padding: 2px 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
 
         .header-left {
             text-align: left;
@@ -99,7 +102,6 @@
             margin-bottom: 5px;
         }
 
-        /* شبكة المعلومات */
         .info-grid {
             display: flex;
             flex-wrap: wrap;
@@ -113,7 +115,7 @@
         }
 
         .info-item {
-            flex: 1 1 45%; /* عنصرين في السطر */
+            flex: 1 1 45%;
             display: flex;
             align-items: baseline;
         }
@@ -131,28 +133,27 @@
             flex-grow: 1;
         }
 
-        /* جدول التفاصيل */
         .details-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
-            margin-bottom: 5px;
+            margin-bottom: 15px; /* زيادة الهامش السفلي قليلاً */
             flex-grow: 1;
         }
 
-            .details-table th {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                padding: 6px;
-                text-align: center;
-                font-weight: 700;
-            }
+        .details-table th {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 6px;
+            text-align: center;
+            font-weight: 700;
+        }
 
-            .details-table td {
-                border: 1px solid #dee2e6;
-                padding: 6px;
-                vertical-align: middle;
-            }
+        .details-table td {
+            border: 1px solid #dee2e6;
+            padding: 6px;
+            vertical-align: middle;
+        }
 
         .total-row td {
             background-color: #e9ecef;
@@ -160,7 +161,6 @@
             font-size: 14px;
         }
 
-        /* المبلغ بالحروف */
         .amount-words {
             background-color: #fff3cd;
             border: 1px solid #ffeeba;
@@ -172,11 +172,10 @@
             margin-bottom: 10px;
         }
 
-        /* ملاحظات هامة للقسيمة */
         .voucher-notes {
             font-size: 11px;
             color: #666;
-            margin-bottom: 10px;
+            margin-bottom: 15px; /* زيادة الهامش */
             border-right: 3px solid #dc3545;
             padding-right: 10px;
         }
@@ -185,8 +184,9 @@
         .footer-signatures {
             display: flex;
             justify-content: space-between;
-            margin-top: auto;
-            padding-top: 5px;
+            margin-top: 15px; /* ضمان مسافة قبل التواقيع */
+            padding-top: 10px;
+            border-top: 1px dotted #ccc; /* خط فاصل خفيف */
         }
 
         .sig-box {
@@ -197,14 +197,14 @@
         .sig-title {
             font-size: 12px;
             font-weight: bold;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             text-decoration: underline;
         }
 
         .cut-line {
             border-top: 2px dashed #999;
             width: 100%;
-            margin: 0;
+            margin: 15px 0; /* هوامش لخط القص */
             position: relative;
             height: 1px;
         }
@@ -221,27 +221,14 @@
         }
 
         @@media print {
-            body {
-                background: none;
-                padding: 0;
-                margin: 0;
-            }
+            body { background: none; padding: 0; margin: 0; }
+            .page-container { box-shadow: none; width: 100%; margin: 0; padding: 5mm; }
+            .no-print { display: none !important; }
 
-            .page-container {
-                box-shadow: none;
-                width: 100%;
-                margin: 0;
-                padding: 5mm;
-                min-height: auto;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
+            /* منع انقسام القسيمة الواحدة بين صفحتين */
             .voucher-half {
                 page-break-inside: avoid;
-                margin-bottom: 5mm;
+                margin-bottom: 10mm;
             }
         }
     </style>
@@ -258,7 +245,6 @@
         @RenderVoucher(docTitle, "نسخة البنك / المالية", Model, amountText)
 
         <div class="cut-line no-print"><span class="cut-icon">قص من هنا</span></div>
-        <div style="height: 5mm;"></div>
 
         @RenderVoucher(docTitle, "نسخة المحامي", Model, amountText)
     </div>
@@ -268,7 +254,6 @@
         <div class="voucher-half">
             <div class="voucher-header">
                 <div class="header-right">
-                    @* تأكد من مسار الشعار *@
                     <img src="/Content/Images/logo.png" alt="Logo" style="height: 60px;" onerror="this.style.display='none'">
                 </div>
                 <div class="header-center">

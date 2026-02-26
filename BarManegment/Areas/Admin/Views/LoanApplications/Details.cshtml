@@ -22,6 +22,15 @@
             </button>
         }
     }
+    @* ✅ الزر الجديد: طباعة دفتر الأقساط (يظهر فقط إذا تم إنشاء الأقساط) *@
+    @if (Model.Installments != null && Model.Installments.Any())
+    {
+        <a href="@Url.Action("PrintLoanBooklet", "LoanApplications", new { id = Model.Id })" target="_blank" class="btn btn-dark shadow-sm">
+            <i class="bi bi-printer-fill me-1"></i> طباعة دفتر قسائم السداد
+        </a>
+    }
+
+
 
     @if (Model.Status.Contains("بانتظار الصرف") && !Model.IsDisbursed)
     {

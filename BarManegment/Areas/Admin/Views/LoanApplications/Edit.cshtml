@@ -1,6 +1,6 @@
 ﻿@model BarManegment.Areas.Admin.ViewModels.LoanApplicationViewModel
 @{
-    ViewBag.Title = "تعديل طلب القرض";
+    ViewBag.Title = "تعديل بيانات طلب القرض";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
 
@@ -19,13 +19,16 @@
                         @Html.HiddenFor(m => m.Id)
                         @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
 
+                        <div class="alert alert-warning border-0 shadow-sm mb-4">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>ملاحظة:</strong> يمكنك تعديل البيانات المالية والكفلاء فقط طالما لم يتم صرف القرض. لإدارة المرفقات، يرجى الانتقال لصفحة التفاصيل.
+                        </div>
+
                         <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">1. البيانات الأساسية</h6>
                         <div class="row g-3 mb-4">
-                            @* في التعديل، نجعل اسم المحامي للقراءة فقط لمنع تغيير المستفيد *@
                             <div class="col-md-6">
                                 @Html.LabelFor(m => m.LawyerIdentifier, new { @class = "form-label" })
-                                @Html.EditorFor(m => m.LawyerIdentifier, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
-                                <small class="text-muted">لا يمكن تغيير المستفيد في وضع التعديل.</small>
+                                @Html.EditorFor(m => m.LawyerIdentifier, new { htmlAttributes = new { @class = "form-control bg-light", @readonly = "readonly" } })
                             </div>
                             <div class="col-md-6">
                                 @Html.LabelFor(m => m.LoanTypeId, new { @class = "form-label" })
@@ -45,11 +48,11 @@
                             </div>
                             <div class="col-12">
                                 @Html.LabelFor(m => m.Notes, new { @class = "form-label" })
-                                @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "2" })
+                                @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "2", placeholder = "ملاحظات..." })
                             </div>
                         </div>
 
-                        <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">2. بيانات الكفلاء (تعديل)</h6>
+                        <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">2. بيانات الكفلاء</h6>
                         <div id="guarantors-container">
                             @if (Model.Guarantors != null)
                             {
@@ -57,7 +60,7 @@
                                 {
                                     <div class="guarantor-row border rounded p-3 mb-3 bg-light position-relative">
                                         <input type="hidden" name="Guarantors.Index" value="@i" />
-                                        <button type="button" class="btn-close position-absolute top-0 end-0 m-2 btn-remove-guarantor"></button>
+                                        <button type="button" class="btn-close position-absolute top-0 end-0 m-2 btn-remove-guarantor" title="حذف الكفيل"></button>
                                         <h6 class="fw-bold mb-3">الكفيل رقم @(i + 1)</h6>
 
                                         <div class="mb-3">
@@ -72,7 +75,7 @@
                                             </div>
                                             <div class="form-check">
                                                 @Html.CheckBoxFor(m => m.Guarantors[i].IsOverride, new { @class = "form-check-input", Name = $"Guarantors[{i}].IsOverride" })
-                                                <label class="form-check-label">تجاوز شروط الكفالة</label>
+                                                <label class="form-check-label">تجاوز شروط الكفالة (قرار إداري)</label>
                                             </div>
                                         </div>
 
@@ -86,18 +89,19 @@
                                             <div class="col-md-12"><label>البنك والحساب</label> @Html.TextBoxFor(m => m.Guarantors[i].BankAccountNumber, new { @class = "form-control", Name = $"Guarantors[{i}].BankAccountNumber" })</div>
                                         </div>
                                     </div>
-                                }
-                            }
+                                } // إغلاق الحلقة for
+                            } // إغلاق الشرط if
                         </div>
+
                         <button type="button" id="add-guarantor" class="btn btn-outline-primary btn-sm mb-4">
                             <i class="bi bi-plus-circle"></i> إضافة كفيل جديد
                         </button>
 
-                        @* 💡 ملاحظة: لا يوجد قسم لرفع الملفات في التعديل، يتم إدارتها من التفاصيل *@
-
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-warning px-5"><i class="bi bi-save me-2"></i> حفظ التعديلات</button>
-                            <a href="@Url.Action("Index")" class="btn btn-secondary px-4">إلغاء</a>
+                        <div class="text-center border-top pt-3">
+                            <button type="submit" class="btn btn-warning px-5 fw-bold shadow">
+                                <i class="bi bi-save me-2"></i> حفظ التعديلات
+                            </button>
+                            <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary px-4">إلغاء والعودة</a>
                         </div>
                     }
                 </div>
@@ -106,9 +110,7 @@
     </div>
 </div>
 
-@* --- استخدام نفس القالب والجافاسكريبت الموجود في Create --- *@
 <script type="text/template" id="guarantor-template">
-    @* ... (انسخ نفس محتوى القالب من Create.cshtml) ... *@
     <div class="guarantor-row border rounded p-3 mb-3 bg-light position-relative">
         <input type="hidden" name="Guarantors.Index" value="{index}" />
         <button type="button" class="btn-close position-absolute top-0 end-0 m-2 btn-remove-guarantor"></button>
@@ -125,7 +127,7 @@
 
         <div class="lawyer-fields" style="display:none;">
             <div class="mb-3">
-                <label class="form-label">معرف المحامي</label>
+                <label class="form-label">معرف المحامي (الهوية/العضوية)</label>
                 <input type="text" name="Guarantors[{index}].LawyerIdentifier" class="form-control" />
             </div>
             <div class="form-check">
@@ -142,7 +144,7 @@
             <div class="col-md-6"><label>جهة العمل</label> <input type="text" name="Guarantors[{index}].Workplace" class="form-control" /></div>
             <div class="col-md-6"><label>الرقم الوظيفي</label> <input type="text" name="Guarantors[{index}].WorkplaceEmployeeId" class="form-control" /></div>
             <div class="col-md-6"><label>الراتب</label> <input type="number" name="Guarantors[{index}].NetSalary" class="form-control" /></div>
-            <div class="col-md-12"><label>البنك والحساب</label> <input type="text" name="Guarantors[{index}].BankAccountNumber" class="form-control" /></div>
+            <div class="col-md-12"><label>البنك والحساب</label> <input type="text" name="Guarantors[{index}].BankAccountNumber" class="form-control" placeholder="اسم البنك - رقم الحساب" /></div>
         </div>
     </div>
 </script>
@@ -151,8 +153,11 @@
     @Scripts.Render("~/bundles/jqueryval")
     <script>
         $(document).ready(function () {
+            // عداد الكفلاء بناءً على العدد الحالي
+            // تأكدنا من عدم وجود أخطاء في الـ Syntax هنا
             var guarantorIndex = @(Model.Guarantors != null ? Model.Guarantors.Count : 0);
 
+            // إضافة كفيل جديد
             $('#add-guarantor').click(function () {
                 var template = $('#guarantor-template').html();
                 template = template.replace(/{index}/g, guarantorIndex);
@@ -161,10 +166,14 @@
                 guarantorIndex++;
             });
 
+            // حذف كفيل
             $(document).on('click', '.btn-remove-guarantor', function () {
-                $(this).closest('.guarantor-row').remove();
+                if(confirm('هل أنت متأكد من حذف هذا الكفيل؟')) {
+                    $(this).closest('.guarantor-row').remove();
+                }
             });
 
+            // تبديل الحقول حسب نوع الكفيل
             $(document).on('change', '.guarantor-type-select', function () {
                 var val = $(this).val();
                 var row = $(this).closest('.guarantor-row');
@@ -173,9 +182,7 @@
             });
 
             // تهيئة الحقول الموجودة عند التحميل
-            $('.guarantor-type-select').each(function() {
-                $(this).trigger('change');
-            });
+            $('.guarantor-type-select').trigger('change');
         });
     </script>
 }

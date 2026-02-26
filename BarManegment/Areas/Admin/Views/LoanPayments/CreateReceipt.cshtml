@@ -1,6 +1,4 @@
-﻿**المسار:** `~/Areas/Admin/Views/LoanPayments/CreateReceipt.cshtml`
-```html
-@model BarManegment.Areas.Admin.ViewModels.CreateLoanReceiptViewModel
+﻿@model BarManegment.Areas.Admin.ViewModels.CreateLoanReceiptViewModel
 @{
     ViewBag.Title = "تسجيل سداد قسط قرض";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -17,39 +15,58 @@
     @Html.ValidationSummary(false, "", new { @class = "text-danger" })
 
     <div class="form-horizontal">
-        <div class="alert alert-info">
+        <div class="alert alert-info shadow-sm">
             <dl class="row mb-0">
                 <dt class="col-sm-3">اسم المحامي:</dt>
-                <dd class="col-sm-9">@Model.LawyerName</dd>
+                <dd class="col-sm-9 fw-bold">@Model.LawyerName</dd>
 
                 <dt class="col-sm-3">رقم القسيمة:</dt>
-                <dd class="col-sm-9">@Model.VoucherId</dd>
+                <dd class="col-sm-9">
+                    @* ✅ التعديل هنا: فحص القيمة لعرض نص بديل للصفر *@
+                    @if (Model.VoucherId > 0)
+                    {
+                        <span class="font-monospace fw-bold">#@Model.VoucherId</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-magic me-1"></i> سيتم إصدارها آلياً مع الحفظ
+                        </span>
+                    }
+                </dd>
 
                 <dt class="col-sm-3">المبلغ المستحق:</dt>
-                <dd class="col-sm-9">@Model.Amount.ToString("N2")</dd>
+                <dd class="col-sm-9 fw-bold text-success">@Model.Amount.ToString("N2")</dd>
             </dl>
         </div>
 
-        <div class="form-group mb-3">
-            @Html.LabelFor(model => model.BankReceiptNumber, htmlAttributes: new { @class = "control-label col-md-3" })
-            <div class="col-md-9">
-                @Html.EditorFor(model => model.BankReceiptNumber, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.BankReceiptNumber, "", new { @class = "text-danger" })
+        <div class="card p-3 bg-light border-0 mb-3">
+            <h6 class="text-muted mb-3">بيانات الإيداع البنكي</h6>
+
+            <div class="form-group row mb-3">
+                @Html.LabelFor(model => model.BankReceiptNumber, htmlAttributes: new { @class = "control-label col-md-3 fw-bold" })
+                <div class="col-md-9">
+                    @Html.EditorFor(model => model.BankReceiptNumber, new { htmlAttributes = new { @class = "form-control", placeholder = "أدخل رقم فيشة البنك أو المرجع" } })
+                    @Html.ValidationMessageFor(model => model.BankReceiptNumber, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group row mb-3">
+                @Html.LabelFor(model => model.BankPaymentDate, htmlAttributes: new { @class = "control-label col-md-3 fw-bold" })
+                <div class="col-md-9">
+                    @Html.EditorFor(model => model.BankPaymentDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    @Html.ValidationMessageFor(model => model.BankPaymentDate, "", new { @class = "text-danger" })
+                </div>
             </div>
         </div>
 
-        <div class="form-group mb-3">
-            @Html.LabelFor(model => model.BankPaymentDate, htmlAttributes: new { @class = "control-label col-md-3" })
-            <div class="col-md-9">
-                @Html.EditorFor(model => model.BankPaymentDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
-                @Html.ValidationMessageFor(model => model.BankPaymentDate, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group mt-4">
-            <div class="col-md-offset-3 col-md-9">
-                <input type="submit" value="حفظ وإنشاء إيصال القبض" class="btn btn-primary" />
-                @Html.ActionLink("إلغاء", "LawyerInstallments", new { id = Model.InstallmentId }, new { @class = "btn btn-outline-secondary" })
+        <div class="form-group row mt-4">
+            <div class="col-md-offset-3 col-md-9 d-flex gap-2">
+                <button type="submit" class="btn btn-primary fw-bold px-4">
+                    <i class="bi bi-check-lg me-1"></i> حفظ وإنشاء إيصال القبض
+                </button>
+                @* تأكد من أن الرابط يعود لصفحة الأقساط *@
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">إلغاء</a>
             </div>
         </div>
     </div>

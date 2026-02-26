@@ -2,12 +2,12 @@
 
 <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+        <thead class="bg-light text-secondary small text-uppercase">
             <tr>
-                <th>سنة التجديد</th>
-                <th>تاريخ الدفع</th>
-                <th>رقم الإيصال</th>
-                <th>ملاحظات</th>
+                <th class="ps-3 border-0">سنة التجديد</th>
+                <th class="border-0">التاريخ</th>
+                <th class="border-0">الحالة</th>
+                <th class="text-center border-0">طباعة</th>
             </tr>
         </thead>
         <tbody>
@@ -15,40 +15,45 @@
             {
                 foreach (var renewal in Model)
                 {
+                    bool isPaid = renewal.ReceiptId.HasValue;
+                    bool hasVoucher = renewal.PaymentVoucherId.HasValue;
+
                     <tr>
-                        <td class="fw-bold">@renewal.RenewalYear</td>
+                        <td class="ps-3"><span class="badge bg-primary bg-opacity-10 text-primary">@renewal.RenewalYear</span></td>
                         <td>
-                            @* 💡 الإصلاح: التعامل مع التاريخ القابل للفراغ *@
-                            @if (renewal.PaymentDate.HasValue)
+                            @if (isPaid && renewal.Receipt != null)
                             {
-                                <span class="text-success">@renewal.PaymentDate.Value.ToString("yyyy-MM-dd")</span>
+                                <span class="text-success small fw-bold"><i class="bi bi-check2-all"></i> @string.Format("{0:yyyy-MM-dd}", renewal.Receipt.BankPaymentDate)</span>
                             }
                             else
                             {
-                                <span class="text-muted small">غير محدد</span>
+                                <span class="text-muted small"><i class="bi bi-clock"></i> @string.Format("{0:yyyy-MM-dd}", renewal.RenewalDate)</span>
                             }
                         </td>
                         <td>
-                            @if (renewal.Receipt != null)
-                            {
-                                <a href="@Url.Action("PrintReceipt", "Dashboard", new { area = "Members", id = renewal.Receipt.Id })" target="_blank" class="text-decoration-none font-monospace">
-                                    @renewal.Receipt.ReceiptNumber <i class="bi bi-printer small"></i>
-                                </a>
-                            }
+                            @if (isPaid)
+                            {<span class="badge bg-success">تم السداد</span> }
+                            else if (hasVoucher)
+                            { <span class="badge bg-warning text-dark">بانتظار الدفع</span> }
                             else
+                            { <span class="badge bg-secondary">غير مكتمل</span>}
+                        </td>
+                        <td class="text-center">
+                            @if (isPaid)
                             {
-                                <span class="text-muted">---</span>
+                                <a href="@Url.Action("PrintVoucher", "Dashboard", new { area = "Members", id = renewal.ReceiptId })" target="_blank" class="btn btn-sm btn-outline-success shadow-sm"><i class="bi bi-printer-fill"></i> سند قبض</a>
+                            }
+                            else if (hasVoucher)
+                            {
+                                <a href="@Url.Action("PrintVoucher", "Dashboard", new { area = "Members", id = renewal.PaymentVoucherId })" target="_blank" class="btn btn-sm btn-primary shadow-sm"><i class="bi bi-file-earmark-pdf"></i> قسيمة</a>
                             }
                         </td>
-                        <td>@renewal.Notes</td>
                     </tr>
                 }
             }
             else
             {
-                <tr>
-                    <td colspan="4" class="text-center text-muted py-3">لا توجد سجلات تجديد سابقة.</td>
-                </tr>
+                <tr><td colspan="4" class="text-center py-4 text-muted">لا توجد سجلات.</td></tr>
             }
         </tbody>
     </table>

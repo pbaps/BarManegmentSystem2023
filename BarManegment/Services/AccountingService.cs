@@ -9,13 +9,27 @@ namespace BarManegment.Services
     public class AccountingService : IDisposable
     {
         private readonly ApplicationDbContext db;
+        private readonly bool _shouldDispose; // متغير لتحديد هل نغلق قاعدة البيانات أم لا
 
         // ✅ 1. تعريف كائن القفل (Lock Object) لحل مشكلة تكرار أرقام القيود
         private static readonly object _entryLock = new object();
 
+ 
+
+ 
+
+        // 1. الكونستركتور الافتراضي (ينشئ اتصال جديد)
         public AccountingService()
         {
             db = new ApplicationDbContext();
+            _shouldDispose = true; // نحن أنشأناه، لذا نحن نغلقه
+        }
+
+        // 2. ✅ الكونستركتور الجديد (يستقبل اتصال موجود)
+        public AccountingService(ApplicationDbContext context)
+        {
+            db = context;
+            _shouldDispose = false; // هام جداً: لا تغلق الاتصال لأن الكنترولر يملكه
         }
 
         // ============================================================
@@ -98,25 +112,24 @@ namespace BarManegment.Services
         }
 
 
-        // دالة لجلب معرف الحساب من إعدادات النظام، أو استخدام كود احتياطي
+ 
+
+
+        // دالة مساعدة لجلب رقم الحساب من الإعدادات أو استخدام كود احتياطي
         private int GetAccountIdFromSettings(string settingKey, string fallbackCode)
         {
-            // محاولة جلب الحساب من SystemSettings
+            // 1. البحث في الإعدادات أولاً
             var setting = db.SystemSettings.FirstOrDefault(s => s.SettingKey == settingKey);
-
-
             if (setting != null && setting.ValueInt.HasValue)
             {
                 return setting.ValueInt.Value;
             }
 
-            // في حال لم يتم ضبط الإعداد، نبحث بالكود القديم كاحتياط
-            var account = db.Accounts.FirstOrDefault(a => a.Code == fallbackCode)
-                          ?? db.Accounts.FirstOrDefault(a => a.Code.StartsWith(fallbackCode));
+            // 2. البحث بالكود الاحتياطي
+            var account = db.Accounts.FirstOrDefault(a => a.Code == fallbackCode);
+            if (account != null) return account.Id;
 
-            if (account == null) throw new Exception($"الحساب المحاسبي للإعداد '{settingKey}' غير موجود، والكود الافتراضي '{fallbackCode}' غير موجود.");
-
-            return account.Id;
+            throw new Exception($"لم يتم العثور على الحساب المطلوب. يرجى ضبط الإعداد: {settingKey} أو التأكد من وجود حساب بالكود {fallbackCode}");
         }
 
         // ============================================================
@@ -639,87 +652,121 @@ namespace BarManegment.Services
         }
 
 
-        // ============================================================
-        // 6. Generate Entry For Loan Repayment (سداد القسط)
-        // ============================================================
-        // داخل AccountingService.cs
 
+        // ============================================================
+        // 6. إنشاء قيد سداد القسط (متوافق مع صفحة الإعدادات الجديدة)
+        // ============================================================
+ 
         public bool GenerateEntryForLoanRepayment(int receiptId, int loanTypeId, int userId)
         {
             try
             {
-                // 1. جلب الإيصال مع القسيمة وتفاصيلها
-                var receipt = db.Receipts
-                    .Include(r => r.PaymentVoucher)
-                    .Include(r => r.PaymentVoucher.VoucherDetails) // ✅ تضمين التفاصيل لحساب المبلغ
-                    .FirstOrDefault(r => r.Id == receiptId);
+                // إذا كنا نستخدم نفس الـ Context، فالبيانات قد تكون في الذاكرة (Local) ولم تذهب للقاعدة بعد
+                // لذا نستخدم Find أولاً لأنه يبحث في الذاكرة
+                var receipt = db.Receipts.Find(receiptId);
 
-                if (receipt == null || receipt.PaymentVoucher == null) return false;
+                // إذا لم نجدها في الذاكرة، أو نحتاج تحميل العلاقات (Include لا يعمل مع Find)
+                // نستخدم التوجيه الصريح لتحميل العلاقات إذا كانت فارغة
+                if (receipt != null)
+                {
+                    if (receipt.PaymentVoucher == null)
+                        db.Entry(receipt).Reference(r => r.PaymentVoucher).Load();
+
+                    if (receipt.PaymentVoucher != null && (receipt.PaymentVoucher.VoucherDetails == null || !receipt.PaymentVoucher.VoucherDetails.Any()))
+                        db.Entry(receipt.PaymentVoucher).Collection(v => v.VoucherDetails).Load();
+                }
+
+                if (receipt == null || receipt.PaymentVoucher == null)
+                    throw new Exception($"الإيصال رقم {receiptId} غير موجود أو غير مرتبط بقسيمة.");
 
                 var fiscalYear = db.FiscalYears.FirstOrDefault(y => y.IsCurrent && !y.IsClosed);
-                if (fiscalYear == null) return false;
+                if (fiscalYear == null) throw new Exception("لا توجد سنة مالية مفتوحة.");
 
-                // 2. تحديد الحسابات
-                int bankAccountId = 101;
-                int loanReceivableAccountId = 102;
+                // ... (باقي كود الدالة كما هو تماماً بدون تغيير) ...
 
-                var bankAcc = db.Accounts.FirstOrDefault(a => a.Code == "1102" || a.Name.Contains("بنك"));
-                if (bankAcc != null) bankAccountId = bankAcc.Id;
+                // (نسخ الكود من الرد السابق الخاص بتحديد الحسابات وإنشاء القيد)
+                // ...
+                // ...
 
-                var loanAcc = db.Accounts.FirstOrDefault(a => a.Code == "1103" || a.Name.Contains("قروض"));
-                if (loanAcc != null) loanReceivableAccountId = loanAcc.Id;
+                // تحديد الحسابات
+                int debitAccountId;
+                int creditAccountId;
 
-                // ✅✅✅ التصحيح هنا: حساب المبلغ من التفاصيل ✅✅✅
+                if (receipt.PaymentVoucher.PaymentMethod == "نقدي")
+                {
+                    debitAccountId = GetAccountIdFromSettings("GL_MainBoxAccount", "1101");
+                }
+                else
+                {
+                    debitAccountId = GetAccountIdFromSettings("GL_DefaultBankAccount", "1102");
+                }
+
+                var loanType = db.LoanTypes.Find(loanTypeId);
+                if (loanType != null && loanType.ReceivableAccountId.HasValue)
+                {
+                    creditAccountId = loanType.ReceivableAccountId.Value;
+                }
+                else
+                {
+                    creditAccountId = GetAccountIdFromSettings("GL_LoanReceivableAccount", "1103");
+                }
+
                 decimal amount = receipt.PaymentVoucher.VoucherDetails.Sum(d => d.Amount);
 
-                // 3. إنشاء القيد
                 var entry = new JournalEntry
                 {
                     FiscalYearId = fiscalYear.Id,
                     EntryNumber = GetNextEntryNumber(fiscalYear.Id),
                     EntryDate = receipt.BankPaymentDate,
-                    Description = $"سداد قرض - إيصال {receipt.SequenceNumber} - {receipt.IssuedByUserName}",
-                    ReferenceNumber = receipt.BankReceiptNumber,
+                    Description = $"سداد قسط قرض - {receipt.PaymentVoucher.GraduateApplication?.ArabicName} - إيصال {receipt.SequenceNumber}",
+                    ReferenceNumber = receipt.BankReceiptNumber ?? receipt.SequenceNumber.ToString(),
                     SourceModule = "LoanRepayment",
                     SourceId = receiptId,
                     IsPosted = true,
                     PostedDate = DateTime.Now,
                     CreatedBy = "System Auto",
+                    TotalDebit = amount,
+                    TotalCredit = amount,
                     JournalEntryDetails = new List<JournalEntryDetail>()
                 };
 
-                // 4. الطرف المدين (البنك/الصندوق)
                 entry.JournalEntryDetails.Add(new JournalEntryDetail
                 {
-                    AccountId = bankAccountId,
+                    AccountId = debitAccountId,
                     Debit = amount,
                     Credit = 0,
-                    Description = "إيداع بنكي - سداد قرض"
+                    Description = "قبض قسط قرض"
                 });
 
-                // 5. الطرف الدائن (ذمم القروض - تخفيض الأصل)
                 entry.JournalEntryDetails.Add(new JournalEntryDetail
                 {
-                    AccountId = loanReceivableAccountId,
+                    AccountId = creditAccountId,
                     Debit = 0,
                     Credit = amount,
-                    Description = "سداد قسط قرض"
+                    Description = $"سداد قسط رقم {receipt.Notes}"
                 });
 
                 BalanceEntry(entry);
                 db.JournalEntries.Add(entry);
-                db.SaveChanges();
+                db.SaveChanges(); // الحفظ هنا سيتم ضمن الترانزاكشن الخارجية
+
                 return true;
             }
             catch (Exception ex)
             {
-                AuditService.LogAction("AccountingError", "LoanRepayment", ex.Message);
+                AuditService.LogAction("AccountingError", "LoanRepayment", $"Error Receipt #{receiptId}: {ex.Message}");
                 return false;
             }
         }
+
         public void Dispose()
         {
-            if (db != null) db.Dispose();
+            // ✅ التصحيح: نغلق قاعدة البيانات فقط إذا كنا نحن من أنشأناها
+            // إذا تم تمريرها من الكنترولر (_shouldDispose == false)، لا نغلقها هنا
+            if (_shouldDispose && db != null)
+            {
+                db.Dispose();
+            }
         }
     }
 }

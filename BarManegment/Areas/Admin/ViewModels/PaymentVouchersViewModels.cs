@@ -161,6 +161,11 @@ namespace BarManegment.Areas.Admin.ViewModels
         public string PaymentMethod { get; set; }
         public string IssuedByUserName { get; set; }
         public List<VoucherPrintDetail> Details { get; set; }
+
+ 
+
+
+
     }
 
     public class VoucherPrintDetail
@@ -172,6 +177,11 @@ namespace BarManegment.Areas.Admin.ViewModels
         public string AccountName { get; set; }
         public string AccountNumber { get; set; }
         public string Iban { get; set; }
+
+ 
+
+
+
     }
 
     // =========================================================

@@ -1,0 +1,179 @@
+﻿@model BarManegment.Areas.Admin.ViewModels.AccountingSettingsViewModel
+
+@{
+    ViewBag.Title = "إعدادات الربط المحاسبي الشاملة";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid pt-4 px-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i> إعدادات الربط المالي (GL Mapping)</h5>
+                    <p class="mb-0 small opacity-75">تحديد الحسابات وأنواع الرسوم لجميع عمليات النظام.</p>
+                </div>
+
+                <div class="card-body bg-light">
+                    @using (Html.BeginForm("AccountingSettings", "SystemSettings", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom fw-bold text-dark d-flex align-items-center">
+                                <span class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; font-size: 0.8rem;">1</span>
+                                الحسابات الأساسية (الخزينة والبنوك)
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">حساب الصندوق الرئيسي (الخزينة)</label>
+                                        @Html.DropDownListFor(m => m.MainBoxAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                        <div class="form-text small">يستخدم عند القبض النقدي.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">حساب البنك الافتراضي</label>
+                                        @Html.DropDownListFor(m => m.DefaultBankAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                        <div class="form-text small">يستخدم عند القبض/الصرف البنكي الافتراضي.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom fw-bold text-dark d-flex align-items-center">
+                                <span class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; font-size: 0.8rem;">2</span>
+                                حسابات العمليات التشغيلية
+                            </div>
+                            <div class="card-body">
+                                <h6 class="text-primary small fw-bold mb-3 border-bottom pb-1">الطوابع</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">إيراد طوابع مؤجل (Prepaid)</label>
+                                        @Html.DropDownListFor(m => m.StampPrepaidAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                        <div class="form-text small">الحساب الدائن عند بيع الطوابع للمتعهد.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">أمانات المحامين (ذمم دائنة)</label>
+                                        @Html.DropDownListFor(m => m.StampLawyerShareAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                        <div class="form-text small">حصة المحامي عند استهلاك الطابع.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">إيرادات النقابة من الطوابع</label>
+                                        @Html.DropDownListFor(m => m.StampRevenueAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                        <div class="form-text small">حصة النقابة عند استهلاك الطابع.</div>
+                                    </div>
+                                </div>
+
+                                <h6 class="text-danger small fw-bold mb-3 border-bottom pb-1">القروض والمساعدات والمشتريات</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">ذمم القروض (المدين)</label>
+                                        @Html.DropDownListFor(m => m.LoanReceivableAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                        <div class="form-text small">الحساب المدين عند صرف القرض.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">مصروفات المساعدات</label>
+                                        @Html.DropDownListFor(m => m.FinancialAidExpenseAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">المشتريات / التوريدات</label>
+                                        @Html.DropDownListFor(m => m.PurchaseAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">مصروفات الرواتب</label>
+                                        @Html.DropDownListFor(m => m.PayrollExpenseAccountId, (SelectList)ViewBag.AccountsList, "--- اختر الحساب ---", new { @class = "form-select select2" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom fw-bold text-dark d-flex align-items-center">
+                                <span class="bg-warning text-dark rounded-circle d-inline-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; font-size: 0.8rem;">3</span>
+                                ربط أنواع الرسوم الافتراضية
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">امتحان القبول</label>
+                                        @Html.DropDownListFor(m => m.ExamRegistrationFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">تصديق العقود (الافتراضي)</label>
+                                        @Html.DropDownListFor(m => m.ContractFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">بيع الطوابع (للمتعهد)</label>
+                                        @Html.DropDownListFor(m => m.StampContractorFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">تجديد المزاولة (سنوي)</label>
+                                        @Html.DropDownListFor(m => m.LawyerRenewalFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">تسجيل متدرب جديد</label>
+                                        @Html.DropDownListFor(m => m.TraineeRegistrationFeeTypeId, (SelectList)ViewBag.FeeTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom fw-bold text-dark d-flex align-items-center">
+                                <span class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; font-size: 0.8rem;">4</span>
+                                إعدادات أخرى
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">نوع عقد 'وكالة جواز السفر'</label>
+                                        @Html.DropDownListFor(m => m.PassportAgencyContractTypeId, (SelectList)ViewBag.ContractTypesList, "--- اختر ---", new { @class = "form-select select2" })
+                                        <div class="form-text small">يستخدم لتمييز العقود التي لها معاملة خاصة في النظام.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <a href="@Url.Action("Index", "SystemSettings")" class="btn btn-outline-secondary me-2">رجوع للإعدادات العامة</a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold shadow">
+                                <i class="bi bi-save me-2"></i> حفظ كافة الإعدادات
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // تفعيل Select2 على جميع القوائم
+            $('.select2').select2({
+                theme: "bootstrap-5",
+                width: '100%',
+                dir: "rtl",
+                placeholder: "ابحث هنا...",
+                allowClear: true
+            });
+        });
+    </script>
+}

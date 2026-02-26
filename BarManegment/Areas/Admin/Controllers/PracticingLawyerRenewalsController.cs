@@ -256,39 +256,50 @@ namespace BarManegment.Areas.Admin.Controllers
             var lawyer = db.GraduateApplications.Find(viewModel.LawyerId);
             if (lawyer == null) return HttpNotFound();
 
+            // التحقق من الرسوم المختارة
             var selectedFees = viewModel.AvailableFees?.Where(f => f.IsSelected).ToList() ?? new List<FeeSelectionViewModel>();
-
             if (!selectedFees.Any()) ModelState.AddModelError("AvailableFees", "يجب اختيار رسم واحد على الأقل.");
 
-            bool alreadyRenewed = db.PracticingLawyerRenewals.Any(r => r.GraduateApplicationId == viewModel.LawyerId && r.RenewalYear == viewModel.RenewalYear);
-            if (alreadyRenewed) ModelState.AddModelError("RenewalYear", $"تم التجديد لسنة {viewModel.RenewalYear} مسبقاً.");
+            // التحقق من وجود قسيمة سابقة لنفس السنة (سواء مسددة أو غير مسددة)
+            // ملاحظة: يمكنك تخفيف الشرط للسماح بإصدار قسيمة جديدة إذا كانت القديمة ملغاة
+            bool alreadyExists = db.PracticingLawyerRenewals.Any(r => r.GraduateApplicationId == viewModel.LawyerId && r.RenewalYear == viewModel.RenewalYear);
+            if (alreadyExists) ModelState.AddModelError("RenewalYear", $"يوجد سجل تجديد لسنة {viewModel.RenewalYear} مسبقاً.");
 
             if (ModelState.IsValid)
             {
                 string feeDescription = $"تجديد مزاولة {viewModel.RenewalYear} - {lawyer.ArabicName}";
 
-                // ✅ استدعاء الدالة من BaseController (تم إزالة النسخة المحلية)
+                // 1. إنشاء القسيمة (Voucher) فقط
                 var voucher = CreateBatchPaymentVoucher(lawyer.Id, selectedFees, feeDescription, viewModel.ExpiryDate);
 
                 if (voucher != null)
                 {
-                    db.PaymentVouchers.Add(voucher);
+                    // حالة القسيمة تظل "غير مسدد" أو "بانتظار الدفع"
+                    voucher.PaymentMethod = "إيداع بنكي";
+                    voucher.Status = "غير مسدد";
 
+                    db.PaymentVouchers.Add(voucher);
+                    db.SaveChanges(); // حفظ القسيمة للحصول على ID
+
+                    // 2. إنشاء سجل التجديد وربطه بالقسيمة فقط (بدون إيصال)
                     var renewalRecord = new PracticingLawyerRenewal
                     {
                         GraduateApplicationId = lawyer.Id,
                         RenewalYear = viewModel.RenewalYear,
-                        RenewalDate = DateTime.Now,
+                        RenewalDate = DateTime.Now, // تاريخ طلب التجديد
                         PaymentVoucherId = voucher.Id,
-                        IsActive = false
+                        ReceiptId = null, // 👈 هام: لا يوجد إيصال بعد
+                        IsActive = false, // غير فعال حتى يتم السداد
+                        Notes = viewModel.VoucherNotes
                     };
                     db.PracticingLawyerRenewals.Add(renewalRecord);
-
                     db.SaveChanges();
 
-                    AuditService.LogAction("Create Renewal Voucher", "PracticingLawyerRenewals", $"Created voucher #{voucher.Id} for Lawyer {lawyer.ArabicName} (Year: {viewModel.RenewalYear}).");
+                    AuditService.LogAction("Create Renewal Voucher", "PracticingLawyerRenewals", $"Created Voucher #{voucher.Id} for Lawyer {lawyer.ArabicName} (Year: {viewModel.RenewalYear}).");
 
-                    TempData["SuccessMessage"] = "تم إصدار قسيمة التجديد بنجاح.";
+                    TempData["SuccessMessage"] = "تم إصدار قسيمة الدفع بنجاح. يمكن للمحامي الآن طباعتها والتوجه للبنك.";
+
+                    // توجيه لطباعة القسيمة (Admin View)
                     return RedirectToAction("PrintVoucher", "PaymentVouchers", new { id = voucher.Id, area = "Admin" });
                 }
                 else

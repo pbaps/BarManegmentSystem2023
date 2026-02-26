@@ -1,38 +1,36 @@
 ﻿@model IEnumerable<BarManegment.Areas.Members.ViewModels.MemberReceiptViewModel>
 
 <div class="card-body p-0">
-    @if (!Model.Any())
+    @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-light text-center mb-0">
-            لا يوجد أي إيصالات مسجلة باسمك حتى الآن.
-        </div>
+        <div class="alert alert-light text-center mb-0 py-3">لا توجد إيصالات مسجلة.</div>
     }
     else
     {
-        <table class="table table-hover small mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>رقم الإيصال</th>
-                    <th>تاريخ الدفع</th>
-                    <th>المبلغ</th>
-                    <th class="text-end"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var receipt in Model)
-                {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary small">
                     <tr>
-                        <td><strong>@receipt.ReceiptFullNumber</strong></td>
-                        <td>@receipt.PaymentDate.ToString("yyyy/MM/dd")</td>
-                        <td>@receipt.TotalAmount.ToString("N2") @receipt.CurrencySymbol</td>
-                        <td class="text-end">
-                            <a href="@Url.Action("PrintReceipt", "Dashboard", new { area = "Members", id = receipt.Id })" class="btn btn-info btn-sm" target="_blank">
-                                <i class="bi bi-printer"></i> طباعة
-                            </a>
-                        </td>
+                        <th class="ps-3 border-0">رقم الإيصال</th>
+                        <th class="border-0">تاريخ الدفع</th>
+                        <th class="border-0">المبلغ</th>
+                        <th class="text-end pe-3 border-0"></th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var receipt in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold">#@receipt.ReceiptFullNumber</td>
+                            <td class="text-muted small">@receipt.PaymentDate.ToString("yyyy/MM/dd")</td>
+                            <td><span class="badge bg-success bg-opacity-10 text-success">@receipt.TotalAmount.ToString("N2")</span></td>
+                            <td class="text-end pe-3">
+                                <a href="@Url.Action("PrintVoucher", "Dashboard", new { area = "Members", id = receipt.Id })" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm"><i class="bi bi-printer-fill"></i> طباعة</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 </div>

@@ -79,6 +79,7 @@ namespace BarManegment.Areas.Admin.Controllers
         [CustomAuthorize(Permission = "CanAdd")]
         public ActionResult Create(LoanApplicationViewModel viewModel)
         {
+            // التحقق من صحة البيانات
             if (ModelState.IsValid)
             {
                 using (var transaction = db.Database.BeginTransaction())
@@ -96,7 +97,7 @@ namespace BarManegment.Areas.Admin.Controllers
                             throw new Exception("بيانات المحامي غير صحيحة");
                         }
 
-                        // 2. حفظ طلب القرض
+                        // 2. حفظ طلب القرض (بيانات فقط بدون ملفات)
                         var loanApp = new LoanApplication
                         {
                             LawyerId = lawyer.Id,
@@ -106,20 +107,16 @@ namespace BarManegment.Areas.Admin.Controllers
                             ApplicationDate = viewModel.ApplicationDate,
                             StartDate = viewModel.StartDate,
                             Notes = viewModel.Notes,
-                            Status = "جديد", // الحالة الافتراضية
+                            Status = "جديد",
                             IsDisbursed = false
                         };
 
-                        // حفظ الملفات
-                        if (viewModel.ApplicationFormFile != null) loanApp.ApplicationFormPath = SaveFile(viewModel.ApplicationFormFile, lawyer.Id, "Apps");
-                        if (viewModel.CouncilApprovalFile != null) loanApp.CouncilApprovalPath = SaveFile(viewModel.CouncilApprovalFile, lawyer.Id, "Apps");
-                        if (viewModel.MainPromissoryNoteFile != null) loanApp.MainPromissoryNotePath = SaveFile(viewModel.MainPromissoryNoteFile, lawyer.Id, "Apps");
-                        if (viewModel.DebtBondFile != null) loanApp.DebtBondPath = SaveFile(viewModel.DebtBondFile, lawyer.Id, "Apps");
+                        // ❌ تم حذف كود حفظ الملفات من هنا لأننا لم ننشئ القرض بعد لطباعة نماذجه
 
                         db.LoanApplications.Add(loanApp);
-                        db.SaveChanges();
+                        db.SaveChanges(); // هنا حصلنا على ID القرض
 
-                        // 3. حفظ الكفلاء
+                        // 3. حفظ بيانات الكفلاء (بيانات فقط)
                         if (viewModel.Guarantors != null && viewModel.Guarantors.Any())
                         {
                             foreach (var gModel in viewModel.Guarantors)
@@ -127,7 +124,17 @@ namespace BarManegment.Areas.Admin.Controllers
                                 var guarantor = new Guarantor
                                 {
                                     LoanApplicationId = loanApp.Id,
-                                    GuarantorType = gModel.GuarantorType
+                                    GuarantorType = gModel.GuarantorType,
+                                    // ... باقي البيانات ...
+                                    IsOverride = gModel.IsOverride,
+                                    ExternalName = gModel.ExternalName,
+                                    ExternalIdNumber = gModel.ExternalIdNumber,
+                                    JobTitle = gModel.JobTitle,
+                                    Workplace = gModel.Workplace,
+                                    WorkplaceEmployeeId = gModel.WorkplaceEmployeeId,
+                                    NetSalary = gModel.NetSalary,
+                                    BankName = gModel.BankName,
+                                    BankAccountNumber = gModel.BankAccountNumber
                                 };
 
                                 if (gModel.GuarantorType == "Lawyer")
@@ -137,24 +144,9 @@ namespace BarManegment.Areas.Admin.Controllers
                                         gl.MembershipId == gModel.LawyerIdentifier);
 
                                     if (lawyerGuarantor != null) guarantor.LawyerGuarantorId = lawyerGuarantor.Id;
-                                    guarantor.IsOverride = gModel.IsOverride;
-                                }
-                                else
-                                {
-                                    guarantor.ExternalName = gModel.ExternalName;
-                                    guarantor.ExternalIdNumber = gModel.ExternalIdNumber;
-                                    guarantor.JobTitle = gModel.JobTitle;
-                                    guarantor.Workplace = gModel.Workplace;
-                                    guarantor.WorkplaceEmployeeId = gModel.WorkplaceEmployeeId;
-                                    guarantor.NetSalary = gModel.NetSalary;
-                                    guarantor.BankName = gModel.BankName;
-                                    guarantor.BankAccountNumber = gModel.BankAccountNumber;
                                 }
 
-                                if (gModel.GuarantorFormFile != null && gModel.GuarantorFormFile.ContentLength > 0)
-                                {
-                                    guarantor.GuarantorFormScannedPath = SaveFile(gModel.GuarantorFormFile, lawyer.Id, "Guarantors");
-                                }
+                                // ❌ تم حذف كود حفظ ملف الكفالة من هنا أيضاً
 
                                 db.Guarantors.Add(guarantor);
                             }
@@ -163,7 +155,10 @@ namespace BarManegment.Areas.Admin.Controllers
 
                         transaction.Commit();
                         AuditService.LogAction("Create Loan", "LoanApplications", $"Created Loan #{loanApp.Id}");
-                        return RedirectToAction("Index");
+
+                        // ✅ التغيير الجوهري: توجيه لصفحة التفاصيل للبدء بطباعة ورفع النماذج
+                        TempData["SuccessMessage"] = "تم إنشاء القرض بنجاح. يرجى الآن طباعة النماذج المطلوبة، توقيعها، ثم رفعها في الأسفل.";
+                        return RedirectToAction("Details", new { id = loanApp.Id });
                     }
                     catch (Exception ex)
                     {
@@ -309,14 +304,14 @@ namespace BarManegment.Areas.Admin.Controllers
         }
 
         // ============================================================
-        // === 5. توليد الأقساط والموافقة (Generate Installments) ===
+        // === 5. توليد الأقساط والقسائم (معدلة) ===
         // ============================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorize(Permission = "CanEdit")]
         public ActionResult GenerateInstallments(int id)
         {
-            var loan = db.LoanApplications.Find(id);
+            var loan = db.LoanApplications.Include(l => l.Lawyer).FirstOrDefault(l => l.Id == id);
             if (loan == null) return HttpNotFound();
 
             if (loan.Installments != null && loan.Installments.Any())
@@ -325,31 +320,106 @@ namespace BarManegment.Areas.Admin.Controllers
                 return RedirectToAction("Details", new { id = id });
             }
 
+            // 1. تحديد نوع الرسم والحساب البنكي للقرض
+            var loanFeeType = db.FeeTypes.Include(f => f.BankAccount)
+                                         .FirstOrDefault(f => f.Name.Contains("قرض") || f.Name.Contains("سداد"));
+
+            // في حال عدم وجود نوع رسم مخصص، نأخذ الأول (يجب ضبط هذا في الإعدادات)
+            if (loanFeeType == null) loanFeeType = db.FeeTypes.Include(f => f.BankAccount).FirstOrDefault();
+
+            int currentUserId = GetCurrentUserId();
+            string currentUserName = Session["FullName"] as string ?? "System";
             decimal monthlyAmount = loan.Amount / loan.InstallmentCount;
             DateTime dueDate = loan.StartDate;
 
-            for (int i = 1; i <= loan.InstallmentCount; i++)
+            using (var transaction = db.Database.BeginTransaction())
             {
-                var installment = new LoanInstallment
+                try
                 {
-                    LoanApplicationId = loan.Id,
-                    InstallmentNumber = i,
-                    DueDate = dueDate,
-                    Amount = monthlyAmount,
-                    IsPaid = false,
-                    Status = "غير مدفوع"
-                };
-                db.LoanInstallments.Add(installment);
-                dueDate = dueDate.AddMonths(1);
+                    for (int i = 1; i <= loan.InstallmentCount; i++)
+                    {
+                        // أ. إنشاء القسيمة أولاً
+                        var voucher = new PaymentVoucher
+                        {
+                            GraduateApplicationId = loan.LawyerId,
+                            IssueDate = DateTime.Now,
+                            ExpiryDate = dueDate, // تاريخ انتهاء القسيمة هو تاريخ استحقاق القسط
+                            Status = "غير مدفوع", // حالة جديدة
+                            TotalAmount = monthlyAmount,
+                            PaymentMethod = "إيداع بنكي",
+                            IssuedByUserId = currentUserId,
+                            IssuedByUserName = currentUserName,
+                            CheckNumber = "",
+                            ReferenceNumber = "", // سيتم ملؤه عند السداد
+                            VoucherDetails = new List<VoucherDetail>()
+                        };
+
+                        voucher.VoucherDetails.Add(new VoucherDetail
+                        {
+                            FeeTypeId = loanFeeType.Id,
+                            Amount = monthlyAmount,
+                            Description = $"قسط قرض رقم {i} من {loan.InstallmentCount} - {loan.Lawyer.ArabicName}",
+                            BankAccountId = loanFeeType.BankAccountId // تثبيت البنك المطلوب السداد عليه
+                        });
+
+                        db.PaymentVouchers.Add(voucher);
+                        db.SaveChanges(); // حفظ للحصول على ID
+
+                        // ب. إنشاء القسط وربطه بالقسيمة
+                        var installment = new LoanInstallment
+                        {
+                            LoanApplicationId = loan.Id,
+                            InstallmentNumber = i,
+                            DueDate = dueDate,
+                            Amount = monthlyAmount,
+                            IsPaid = false,
+                            Status = "غير مدفوع",
+                            PaymentVoucherId = voucher.Id // ✅ الربط هنا
+                        };
+                        db.LoanInstallments.Add(installment);
+
+                        // الانتقال للشهر التالي
+                        dueDate = dueDate.AddMonths(1);
+                    }
+
+                    loan.Status = "بانتظار الصرف";
+                    db.SaveChanges();
+                    transaction.Commit();
+
+                    AuditService.LogAction("Approve Loan", "LoanApplications", $"Generated {loan.InstallmentCount} vouchers for Loan #{loan.Id}");
+                    TempData["SuccessMessage"] = "تم إنشاء الأقساط وإصدار دفاتر السداد بنجاح.";
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    TempData["ErrorMessage"] = "حدث خطأ: " + ex.Message;
+                }
             }
 
-            loan.Status = "بانتظار الصرف"; // تحديث الحالة
-            db.SaveChanges();
-
-            AuditService.LogAction("Approve Loan", "LoanApplications", $"Approved and generated installments for Loan #{loan.Id}");
-            TempData["SuccessMessage"] = "تمت الموافقة وإنشاء جدول الأقساط بنجاح.";
-
             return RedirectToAction("Details", new { id = id });
+        }
+
+        // ============================================================
+        // === 8. طباعة دفتر الأقساط (جديد) ===
+        // ============================================================
+        public ActionResult PrintLoanBooklet(int id)
+        {
+            var loan = db.LoanApplications
+                .Include(l => l.Lawyer)
+                .Include(l => l.Installments.Select(i => i.PaymentVoucher.VoucherDetails.Select(d => d.BankAccount)))
+                .FirstOrDefault(l => l.Id == id);
+
+            if (loan == null) return HttpNotFound();
+
+            // جلب بيانات البنك من القسط الأول (بافتراض أن جميع الأقساط لنفس البنك)
+            var firstVoucher = loan.Installments.FirstOrDefault()?.PaymentVoucher;
+            var bankInfo = firstVoucher?.VoucherDetails.FirstOrDefault()?.BankAccount;
+
+            ViewBag.BankName = bankInfo?.BankName ?? "غير محدد";
+            ViewBag.AccountNumber = bankInfo?.AccountNumber ?? "---";
+            ViewBag.IBAN = bankInfo?.Iban ?? "---"; // تأكد أن الموديل BankAccount يحتوي على IBAN
+
+            return View(loan);
         }
 
         // ============================================================
@@ -444,6 +514,118 @@ namespace BarManegment.Areas.Admin.Controllers
             file.SaveAs(path);
             return $"/Uploads/Loans/{lawyerId}/{subFolder}/{fileName}";
         }
+
+        // ============================================================
+        // === 9. دوال الطباعة (النماذج) - مفقودة ويجب إضافتها ===
+        // ============================================================
+
+        // 1. طباعة طلب القرض
+        public ActionResult PrintApplicationForm(int id)
+        {
+            var loan = db.LoanApplications
+                .Include(l => l.Lawyer)
+                .Include(l => l.Lawyer.User)
+                .Include(l => l.Lawyer.ApplicationStatus)
+                .Include(l => l.Lawyer.ContactInfo) // تأكد من وجود هذا الجدول
+                .Include(l => l.LoanType)
+                .Include(l => l.LoanType.BankAccount)
+                .Include(l => l.LoanType.BankAccount.Currency)
+                .Include(l => l.Guarantors)
+                .Include(l => l.Guarantors.Select(g => g.LawyerGuarantor))
+                .Include(l => l.Guarantors.Select(g => g.LawyerGuarantor.ApplicationStatus))
+                .FirstOrDefault(l => l.Id == id);
+
+            if (loan == null) return HttpNotFound();
+
+            ViewBag.Guarantors = loan.Guarantors.ToList();
+            // يمكنك جلب اسم المحافظة الحقيقي هنا إذا كان لديك جدول محافظات
+            ViewBag.ProvinceName = "غزة";
+
+            return View(loan);
+        }
+
+        // 2. طباعة قرار المجلس
+        public ActionResult PrintCouncilApproval(int id)
+        {
+            var loan = db.LoanApplications
+                .Include(l => l.Lawyer)
+                .Include(l => l.LoanType)
+                .FirstOrDefault(l => l.Id == id);
+
+            if (loan == null) return HttpNotFound();
+
+            // جلب أعضاء المجلس الحاليين للطباعة
+            // تأكد من أن لديك جدول CouncilMembers أو قم بتمرير قائمة وهمية إذا لم يوجد
+            var councilMembers = db.CouncilMembers.Where(m => m.IsActive).ToList();
+            ViewBag.CouncilMembers = councilMembers;
+
+            return View(loan);
+        }
+
+        // 3. طباعة سند المديونية
+        public ActionResult PrintDebtBond(int id)
+        {
+            var loan = db.LoanApplications
+               .Include(l => l.Lawyer)
+               .Include(l => l.Lawyer.User)
+               .Include(l => l.LoanType)
+               .Include(l => l.LoanType.BankAccount) // مهم لجلب العملة
+               .Include(l => l.LoanType.BankAccount.Currency)
+               .FirstOrDefault(l => l.Id == id);
+
+            if (loan == null) return HttpNotFound();
+
+            string currencyName = loan.LoanType.BankAccount?.Currency?.Name ?? "شيكل";
+            ViewBag.AmountInWords = TafqeetHelper.ConvertToArabic(loan.Amount, currencyName);
+
+            return View(loan);
+        }
+
+        // 4. طباعة الكمبيالة الكبرى (Main Promissory Note)
+        public ActionResult PrintMainPromissoryNote(int id)
+        {
+            var loan = db.LoanApplications
+               .Include(l => l.Lawyer)
+               .Include(l => l.Lawyer.User)
+               .Include(l => l.LoanType)
+               .Include(l => l.LoanType.BankAccount)
+               .Include(l => l.LoanType.BankAccount.Currency)
+               .FirstOrDefault(l => l.Id == id);
+
+            if (loan == null) return HttpNotFound();
+
+            string currencyName = loan.LoanType.BankAccount?.Currency?.Name ?? "شيكل";
+            ViewBag.AmountInWords = TafqeetHelper.ConvertToArabic(loan.Amount, currencyName);
+
+            return View(loan);
+        }
+
+        // 5. طباعة نموذج الكفالة (ملاحظة: هذا يستقبل ID الكفيل وليس القرض)
+        public ActionResult PrintGuarantorForm(int id)
+        {
+            var guarantor = db.Guarantors
+                .Include(g => g.LoanApplication)
+                .Include(g => g.LoanApplication.Lawyer)
+                .Include(g => g.LoanApplication.Lawyer.User) // للمقترض
+                .Include(g => g.LoanApplication.LoanType)
+                .Include(g => g.LoanApplication.LoanType.BankAccount)
+                .Include(g => g.LoanApplication.LoanType.BankAccount.Currency)
+
+                .Include(g => g.LawyerGuarantor)
+                .Include(g => g.LawyerGuarantor.User)
+                // ✅✅ هذا السطر ضروري جداً لإظهار جوال وعنوان المحامي الكفيل ✅✅
+                .Include(g => g.LawyerGuarantor.ContactInfo)
+
+                .FirstOrDefault(g => g.Id == id);
+
+            if (guarantor == null) return HttpNotFound();
+
+            return View(guarantor);
+        }
+
+
+        // 2. طباعة قرار المجلس
+ 
 
         protected override void Dispose(bool disposing)
         {
